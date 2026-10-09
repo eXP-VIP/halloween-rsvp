@@ -38,7 +38,7 @@
           <span class="text-xl">🗓️</span>
           <div>
             <span class="text-purple-400 block font-semibold uppercase text-[10px] tracking-wider">Date & Time</span>
-            <span class="text-zinc-200 font-medium">Saturday 31 Oct • 18:00 – 23:00</span>
+            <span class="text-zinc-200 font-medium">Saturday 31 Oct • 18:00 to 23:00</span>
           </div>
         </div>
         <div class="bg-zinc-950/80 p-3 rounded-xl border border-purple-900/40 backdrop-blur-md flex items-center gap-3">
@@ -59,12 +59,12 @@
         <div id="formView" class="space-y-6">
 
           <!-- Event Story & Teaser Intro -->
-          <div class="text-xs md:text-sm text-zinc-200 leading-relaxed space-y-2">
+          <div class="text-sm md:text-base text-zinc-100 leading-relaxed space-y-2.5 font-medium">
             <p>
-              Something dark, sleek and high-profile is taking over the hidden party space inside Munich’s newest luxury boutique hotel by Marriott's Autograph Collection!
+              Something dark, sleek and high-profile is taking over the hidden party space inside Munich's iconic luxury boutique spot in Westend: The Dean Munich by Marriott's Autograph Collection!
             </p>
             <p>
-              We are claiming this ultra-premium haven for an unforgettable 🎃 <strong>Halloween</strong> 🎃 night of top DJs, curated drinks, and dark elegance.
+              We are claiming this ultra-premium haven for an unforgettable 🎃 <strong>Halloween</strong> 🎃 night of top DJs, curated drinks and dark elegance.
             </p>
           </div>
 
@@ -80,18 +80,18 @@
             </p>
             <p class="flex items-start gap-2.5">
               <span class="text-base">🎭</span> 
-              <span><strong>Dress Code (Dark Elegance):</strong> Decadent costumes, sharp dark attire, or a mysterious mask—or come as yourself if you're spooky enough! 😎🎭</span>
+              <span><strong>Dress Code (Dark Elegance):</strong> Chic gothic glam, decadent dark tailoring, mysterious masks or decadent costumes: or come as yourself if you are naturally spooky! 😎🎭</span>
             </p>
             <p class="flex items-start gap-2.5 text-amber-400/90 font-medium bg-amber-950/30 p-2.5 rounded-lg border border-amber-800/40">
               <span class="text-base">💵</span> 
-              <span><strong>Entry Fee:</strong> €20 includes curated Welcome Drink (Cash only at the door).</span>
+              <span><strong>Entry Fee:</strong> €20 includes curated Welcome Drink (cash-only at the entrance).</span>
             </p>
           </div>
 
           <!-- FORM START -->
           <form id="rsvpForm" action="https://formspree.io/f/mbgdopnl" method="POST" class="space-y-5">
             
-            <!-- Hidden Input to pass WhatsApp link into Formspree default email receipt -->
+            <!-- Hidden Input to pass WhatsApp link into Formspree email receipt -->
             <input 
               type="hidden" 
               name="VIP Group Link" 
@@ -116,6 +116,7 @@
                   id="name" 
                   name="Full Name" 
                   required 
+                  autofocus
                   placeholder="e.g. Alex Morgan"
                   class="w-full bg-zinc-900/90 text-white border border-zinc-700/80 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors text-sm"
                 />
@@ -151,7 +152,7 @@
                 />
               </div>
 
-              <!-- Mandatory Invited By Full Name Field -->
+              <!-- Mandatory Invited By Field -->
               <div>
                 <label for="invited_by" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
                   Invited By (Full Name) <span class="text-purple-400">*</span>
@@ -161,7 +162,7 @@
                   id="invited_by" 
                   name="Invited By" 
                   required
-                  placeholder="e.g. Ari El, Sarah Connor, Alex Morgan"
+                  placeholder="e.g. Ari El"
                   class="w-full bg-zinc-900/90 text-white border border-zinc-700/80 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors text-sm"
                 />
               </div>
@@ -174,8 +175,8 @@
             </p>
 
             <!-- Final Dare & Submit Button -->
-            <div class="pt-2 space-y-3 text-center">
-              <p class="text-xs font-serif-title text-purple-300 tracking-wide">
+            <div class="pt-3 space-y-4 text-center">
+              <p class="text-sm md:text-base font-serif-title text-purple-300 tracking-wide font-medium leading-relaxed pb-2">
                 "One secret venue, one chance to cross over.<br>Are you brave enough to step in?" 🗝️✨
               </p>
 
@@ -197,16 +198,15 @@
           </form>
           <!-- FORM END -->
 
-          <!-- Direct WhatsApp Contact with Ari -->
+          <!-- Direct WhatsApp Link -->
           <div class="pt-2 border-t border-zinc-800 text-center">
             <a 
               href="https://wa.me/4917681117359?text=Hi%20Ari!%20I%20have%20a%20question%20about%20the%20Halloween%20Guest%20List." 
               target="_blank" 
               rel="noopener noreferrer"
-              class="inline-flex items-center gap-2 text-xs text-zinc-400 hover:text-green-400 transition-colors"
+              class="inline-flex items-center gap-2 text-xs text-zinc-400 hover:text-green-400 transition-colors font-medium py-1"
             >
-              <span>💬 Questions? Contact Ari on WhatsApp:</span>
-              <span class="font-semibold text-zinc-200 underline">+49 176 8111 7359</span>
+              <span>💬 Have questions? Chat with Ari on WhatsApp</span>
             </a>
           </div>
 
@@ -228,23 +228,23 @@
           <div class="bg-purple-950/40 border border-purple-800/50 p-4 rounded-xl text-xs text-zinc-300 space-y-3 text-left">
             <div class="border-b border-purple-900/60 pb-2">
               <span class="text-[10px] uppercase font-bold tracking-widest text-purple-400 block mb-1">Confirmed Registration Details</span>
-              <p class="text-sm font-semibold text-white" id="confirmName">—</p>
+              <p class="text-sm font-semibold text-white" id="confirmName">: </p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-zinc-300">
-              <p>📱 <strong>WhatsApp:</strong> <span id="confirmPhone">—</span></p>
-              <p>📧 <strong>Email:</strong> <span id="confirmEmail">—</span></p>
-              <p class="col-span-1 md:col-span-2">👤 <strong>Invited By:</strong> <span id="confirmInvitedBy">—</span></p>
+              <p>📱 <strong>WhatsApp:</strong> <span id="confirmPhone">: </span></p>
+              <p>📧 <strong>Email:</strong> <span id="confirmEmail">: </span></p>
+              <p class="col-span-1 md:col-span-2">👤 <strong>Invited By:</strong> <span id="confirmInvitedBy">: </span></p>
             </div>
 
             <div class="pt-2 border-t border-purple-900/60 space-y-1 text-zinc-400">
               <p>📍 <strong>Venue:</strong> The Dean Munich (Autograph Collection), Landsberger Str. 68</p>
-              <p>🗓️ <strong>Date & Time:</strong> Saturday 31 Oct • 18:00 – 23:00</p>
-              <p class="text-amber-400/90 font-medium">💵 <strong>Entry Fee:</strong> €20 includes curated Welcome Drink (Cash only at the door)</p>
+              <p>🗓️ <strong>Date & Time:</strong> Saturday 31 Oct • 18:00 to 23:00</p>
+              <p class="text-amber-400/90 font-medium">💵 <strong>Entry Fee:</strong> €20 includes curated Welcome Drink (cash-only at the entrance)</p>
             </div>
           </div>
 
-          <!-- Secret WhatsApp VIP Group Block in Thank You Page -->
+          <!-- WhatsApp VIP Group Block -->
           <div class="bg-gradient-to-r from-emerald-950/90 via-zinc-900 to-emerald-950/90 p-4 rounded-xl border border-emerald-600/50 space-y-2.5 text-center shadow-lg">
             <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">🔒 Exclusive Parties Group</span>
             <p class="text-xs text-zinc-300 leading-relaxed">
@@ -260,7 +260,7 @@
             </a>
           </div>
 
-          <!-- Action Buttons: Add Next Guest or Contact Host -->
+          <!-- Action Buttons -->
           <div class="space-y-3 pt-2">
             <button 
               onclick="resetForNextGuest()" 
@@ -275,7 +275,7 @@
               rel="noopener noreferrer"
               class="inline-block w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-semibold py-3 px-4 rounded-xl border border-zinc-700 text-xs transition-colors"
             >
-              💬 Questions? Chat with Ari
+              💬 Have questions? Chat with Ari on WhatsApp
             </a>
           </div>
 
@@ -308,7 +308,6 @@
     rsvpForm.addEventListener('submit', async function(e) {
       e.preventDefault();
       
-      // Extract form values before sending
       const nameVal = document.getElementById('name').value;
       const emailVal = document.getElementById('email').value;
       const phoneVal = document.getElementById('phone').value;
@@ -330,13 +329,11 @@
         });
 
         if (response.ok) {
-          // Populate summary card on thank you view
           confirmName.textContent = nameVal;
           confirmEmail.textContent = emailVal;
           confirmPhone.textContent = phoneVal;
           confirmInvitedBy.textContent = invitedByVal;
 
-          // Transition view
           formView.classList.add('hidden');
           thankyouView.classList.remove('hidden');
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -356,6 +353,7 @@
       rsvpForm.reset();
       thankyouView.classList.add('hidden');
       formView.classList.remove('hidden');
+      document.getElementById('name').focus();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   </script>
