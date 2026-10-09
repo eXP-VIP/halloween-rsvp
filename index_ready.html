@@ -306,16 +306,18 @@
             </div>
             <div id="errorMessage" role="alert" aria-live="assertive" class="hidden mt-6 p-5 rounded-lg bg-red-950/60 border border-red-400/40 text-center text-red-200 text-sm leading-relaxed"></div>
         </section>
-
+        <div id="whatsapp-contact" class="text-center mt-5 px-2">
+            <a href="https://wa.me/4917681117359" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn"><i class="fa-brands fa-whatsapp"></i> Questions? Chat with Ari</a>
+        </div>
         <!-- Staff-only interface. A client-side PIN is not real security; see deployment note accompanying this file. -->
         <div class="text-center mb-5">
-            <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Staff check-in</button>
+            <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>check-in</button>
         </div>
         <div id="hostessPortal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
             <div class="glass-panel rounded-2xl p-5 sm:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto gold-border-glow">
                 <div class="flex justify-between items-center mb-5 border-b border-gold/20 pb-4">
                     <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Guest Check-in</h3>
-                    <button type="button" onclick="toggleHostessPortal()" aria-label="Close staff check-in" class="text-gray-300 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                    <button type="button" onclick="toggleHostessPortal()" aria-label="Close check-in" class="text-gray-300 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
                 <div id="staffLoginSection" class="space-y-4 py-5">
                     <div class="text-center mb-5">
@@ -350,9 +352,7 @@
         <p class="font-serif tracking-wider">THE DEAN AFTER DARK</p>
         <p class="mt-1">The Dean Munich, Autograph Collection <span class="text-gold">·</span> Landsberger Straße 68, Munich</p>
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> 18:00–23:00 CET</p>
-        <div id="whatsapp-contact" class="text-center mt-5 px-2">
-            <a href="https://wa.me/4917681117359" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn"><i class="fa-brands fa-whatsapp"></i> Questions? Chat with Ari</a>
-        </div>
+
     </footer>
 
     <script>
@@ -373,7 +373,7 @@
         // Restore the exact existing group invite URL from the last working index.html.
         const WHATSAPP_GROUP_INVITE_URL = "REPLACE_WITH_EXCLUSIVE_PARTIES_GROUP_INVITE_URL";
         // One password field is shown to staff; the corresponding Firebase Auth email remains private in the UI.
-        // Restore the verified staff account email from the last working revision / Firebase Authentication.
+        // Restore the verified account email from the last working revision / Firebase Authentication.
         const STAFF_AUTH_EMAIL = "REPLACE_WITH_EXISTING_STAFF_EMAIL";
         let lastSubmittedGuest = null;
 
@@ -569,7 +569,7 @@
             error.classList.add('hidden');
 
             if (!db || !auth || !STAFF_AUTH_EMAIL || STAFF_AUTH_EMAIL.includes('REPLACE_WITH')) {
-                error.textContent = 'Guest check-in is not configured yet. Restore the existing Firebase settings and staff account email before using this page.';
+                error.textContent = 'Guest check-in is not configured yet. Restore the existing Firebase settings and account email before using this page.';
                 error.classList.remove('hidden');
                 document.getElementById('portalConfigWarning').classList.remove('hidden');
                 return;
@@ -584,8 +584,8 @@
                 document.getElementById('staffPassword').value = '';
                 loadLiveGuestlist();
             } catch (loginError) {
-                console.error('Staff sign-in failed:', loginError);
-                error.textContent = 'Could not unlock the guest list. Check the management password and confirm the staff account is enabled in Firebase Authentication.';
+                console.error('sign-in failed:', loginError);
+                error.textContent = 'Could not unlock the guest list. Check the management password and confirm the account is enabled in Firebase Authentication.';
                 error.classList.remove('hidden');
             } finally {
                 loginButton.disabled = false;
@@ -597,7 +597,7 @@
             try {
                 if (auth) await auth.signOut();
             } catch (error) {
-                console.error('Staff sign-out failed:', error);
+                console.error('sign-out failed:', error);
             }
             document.getElementById('guestlistSection').classList.add('hidden');
             document.getElementById('staffLoginSection').classList.remove('hidden');
