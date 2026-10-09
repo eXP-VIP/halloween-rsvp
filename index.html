@@ -135,6 +135,24 @@
                   class="w-full bg-zinc-900/90 text-white border border-zinc-700/80 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors text-sm"
                 />
               </div>
+
+              <!-- Invited By Field (NEW) -->
+              <div>
+                <div class="flex justify-between items-center mb-2">
+                  <label for="invited_by" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                    Invited By
+                  </label>
+                  <span class="text-[10px] text-zinc-500 uppercase tracking-wider">Optional</span>
+                </div>
+                <input 
+                  type="text" 
+                  id="invited_by" 
+                  name="Invited By" 
+                  placeholder="e.g. Ari, Sarah, InterNations Member"
+                  class="w-full bg-zinc-900/90 text-white border border-zinc-700/80 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors text-sm"
+                />
+              </div>
+
             </div>
 
             <!-- Single Registration Note -->
@@ -225,82 +243,4 @@
               ➕ Register Another Guest
             </button>
 
-            <a 
-              href="https://wa.me/4917681117359?text=Hi%20Ari!%20I%20just%20registered%20for%20the%20Halloween%20Party." 
-              target="_blank" 
-              rel="noopener noreferrer"
-              class="inline-block w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-semibold py-3 px-4 rounded-xl border border-zinc-700 text-xs transition-colors"
-            >
-              💬 Direct Questions? Chat with Ari
-            </a>
-          </div>
-
-        </div>
-
-      </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="py-4 text-center text-xs text-zinc-500 border-t border-zinc-900/80 bg-black/60 backdrop-blur-sm">
-      Private Guest List Management • Hosted by Ari
-    </footer>
-
-  </div>
-
-  <!-- JavaScript Handler -->
-  <script>
-    const rsvpForm = document.getElementById('rsvpForm');
-    const formView = document.getElementById('formView');
-    const thankyouView = document.getElementById('thankyouView');
-    const submitBtn = document.getElementById('submitBtn');
-    const btnText = document.getElementById('btnText');
-    const btnSpinner = document.getElementById('btnSpinner');
-
-    // Handle AJAX form submission to prevent redirecting off-site
-    rsvpForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      // UI loading state
-      submitBtn.disabled = true;
-      btnText.textContent = "Registering Guest...";
-      btnSpinner.classList.remove('hidden');
-
-      const formData = new FormData(rsvpForm);
-
-      try {
-        const response = await fetch(rsvpForm.action, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          // Show Thank You View smoothly
-          formView.classList.add('hidden');
-          thankyouView.classList.remove('hidden');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-          alert('Submission failed. Please check your network connection and try again.');
-        }
-      } catch (error) {
-        alert('An error occurred during registration. Please try again.');
-      } finally {
-        submitBtn.disabled = false;
-        btnText.textContent = "Confirm Guest Registration 🕯️";
-        btnSpinner.classList.add('hidden');
-      }
-    });
-
-    // Reset form to register the next guest
-    function resetForNextGuest() {
-      rsvpForm.reset();
-      thankyouView.classList.add('hidden');
-      formView.classList.remove('hidden');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  </script>
-
-</body>
-</html>
+            <a
