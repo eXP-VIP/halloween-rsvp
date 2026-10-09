@@ -299,7 +299,13 @@
                         <div><dt class="text-xs text-gray-400">Invited by</dt><dd id="summaryInvitedBy" class="text-white break-words"></dd></div>
                     </dl>
                 </div>
-                <div class="flex flex-col items-center gap-3 mt-5">
+                <div class="flex flex-col items-center gap-4 mt-6">
+                    <section class="w-full max-w-xl rounded-xl border-2 border-emerald-500/50 bg-emerald-950/40 p-5 sm:p-6 text-center shadow-lg shadow-black/20" aria-labelledby="futurePartyHeading">
+                        <p class="text-emerald-300 text-xs font-bold uppercase tracking-[0.2em] mb-2"><i class="fa-brands fa-whatsapp mr-2"></i>Stay in the loop</p>
+                        <h3 id="futurePartyHeading" class="font-serif text-base sm:text-lg uppercase tracking-wider text-white mb-3">Want invitations to future parties?</h3>
+                        <p class="text-sm text-gray-100 leading-relaxed">If you are not there yet and want to be invited next time, join the Exclusive Parties (eXP-VIP) group.</p>
+                        <p class="text-xs sm:text-sm text-emerald-100 leading-relaxed mt-2">Zero chat, zero noise, private. Members cannot post nor see each other.</p>
+                    </section>
                     <a href="#" id="groupInviteLink" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn hidden inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-whatsapp"></i> Join the Exclusive Parties WhatsApp Group</a>
                     <button type="button" id="registerAnotherBtn" class="text-xs uppercase tracking-wider text-gray-200 underline underline-offset-4 hover:text-gold">Register another guest</button>
                 </div>
@@ -346,11 +352,11 @@
                     <section class="rounded-xl border border-gold/40 bg-amber-950/25 p-4 mb-5" aria-labelledby="welcomeDrinkHeading">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
                             <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Welcome drinks earned</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-gray-300">2 or more registered guest referrals</span>
+                            <span class="text-[10px] uppercase tracking-wider text-gray-300">2 or more invited guests checked in</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-3">This list is independent of check-in status and includes qualifying inviters even if they are not registered as guests themselves.</p>
+                        <p class="text-xs text-gray-300 mb-3">A welcome drink is earned only when at least two guests invited by that person have checked in. This list counts checked-in referrals, even if the inviter is not registered as a guest.</p>
                         <div id="welcomeDrinkList" class="space-y-2 text-sm text-gray-100">
-                            <p class="text-xs text-gray-400">No qualifying referrals yet.</p>
+                            <p class="text-xs text-gray-400">No inviter has two checked-in referrals yet.</p>
                         </div>
                     </section>
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
@@ -589,25 +595,25 @@
                 document.getElementById('checkedInCount').textContent = checkedInTotal;
                 container.replaceChildren();
 
-                // Count each saved guest record as one referral, independent of check-in status.
-                // Normalise inviter names for matching, but keep each Firestore registration distinct.
+                // A welcome drink is earned only after at least two invited guest records have checked in.
+                // Each checked-in Firestore record counts once; inviter names are normalised for matching.
                 const normalizeGuestName = (value) => String(value || '')
                     .normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
-                const referralsByInviter = new Map();
+                const checkedInReferralsByInviter = new Map();
                 snapshot.forEach((guestDoc) => {
                     const referredGuest = guestDoc.data();
+                    if (!referredGuest.checkedIn) return;
                     const inviterName = String(referredGuest.invitedBy || '').trim();
                     const inviterKey = normalizeGuestName(inviterName);
                     if (!inviterKey) return;
-                    if (!referralsByInviter.has(inviterKey)) {
-                        referralsByInviter.set(inviterKey, { name: inviterName, guestIds: new Set() });
+                    if (!checkedInReferralsByInviter.has(inviterKey)) {
+                        checkedInReferralsByInviter.set(inviterKey, { name: inviterName, guestIds: new Set() });
                     }
-                    referralsByInviter.get(inviterKey).guestIds.add(guestDoc.id);
+                    checkedInReferralsByInviter.get(inviterKey).guestIds.add(guestDoc.id);
                 });
 
-                // Render a dedicated reward roster. This catches inviters who earned a drink
-                // but do not themselves have a registration in the guest collection.
-                const qualifiedInviters = Array.from(referralsByInviter.entries())
+                // Include qualifying inviters even when they have no registration of their own.
+                const qualifiedInviters = Array.from(checkedInReferralsByInviter.entries())
                     .map(([key, value]) => ({ key, name: value.name, count: value.guestIds.size }))
                     .filter((inviter) => inviter.count >= 2)
                     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
@@ -617,7 +623,7 @@
                 if (!qualifiedInviters.length) {
                     const empty = document.createElement('p');
                     empty.className = 'text-xs text-gray-400';
-                    empty.textContent = 'No qualifying referrals yet.';
+                    empty.textContent = 'No inviter has two checked-in referrals yet.';
                     rewardList.appendChild(empty);
                 } else {
                     qualifiedInviters.forEach((inviter) => {
@@ -628,7 +634,7 @@
                         inviterName.textContent = inviter.name;
                         const reward = document.createElement('span');
                         reward.className = 'inline-flex self-start sm:self-auto rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[10px] font-semibold tracking-wider text-amber-100';
-                        reward.textContent = `WELCOME DRINK EARNED · ${inviter.count} GUESTS`; 
+                        reward.textContent = `WELCOME DRINK EARNED · ${inviter.count} CHECKED IN`; 
                         row.append(inviterName, reward);
                         rewardList.appendChild(row);
                     });
@@ -638,7 +644,7 @@
                     const data = doc.data();
                     const checkedIn = Boolean(data.checkedIn);
                     const inviterKey = normalizeGuestName(data.name);
-                    const invitedCount = referralsByInviter.get(inviterKey)?.guestIds.size || 0;
+                    const invitedCount = checkedInReferralsByInviter.get(inviterKey)?.guestIds.size || 0;
                     const welcomeDrinkEarned = invitedCount >= 2;
                     const card = document.createElement('div');
                     card.className = `p-3 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${welcomeDrinkEarned ? 'bg-amber-950/50 border-gold/80 border-l-4' : checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'}`;
@@ -655,8 +661,8 @@
                     if (welcomeDrinkEarned) {
                         const rewardBadge = document.createElement('span');
                         rewardBadge.className = 'inline-flex items-center rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[9px] font-semibold tracking-wider text-amber-100';
-                        rewardBadge.textContent = `WELCOME DRINK EARNED · ${invitedCount} GUESTS INVITED`;
-                        rewardBadge.title = `${invitedCount} registered guest records list ${data.name} as their inviter.`;
+                        rewardBadge.textContent = `WELCOME DRINK EARNED · ${invitedCount} INVITED GUESTS CHECKED IN`;
+                        rewardBadge.title = `${invitedCount} guests invited by ${data.name} have checked in.`;
                         titleLine.appendChild(rewardBadge);
                     }
                     const meta = document.createElement('p');
