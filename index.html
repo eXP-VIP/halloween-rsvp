@@ -194,8 +194,8 @@
         }
     </style>
 </head>
-<body class="halloween-bg min-h-screen relative flex flex-col justify-between selection:bg-gold selection:text-black">
-    <main class="relative z-10 container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
+<body class="halloween-bg min-h-screen relative flex flex-col selection:bg-gold selection:text-black">
+    <main class="relative z-10 flex-1 container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
         <header class="hero-copy text-center mb-8 sm:mb-10">
             <p class="font-serif text-gold tracking-[0.28em] uppercase text-xs sm:text-sm mb-3">A Private Halloween Invitation</p>
             <h1 class="hero-title font-serif text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-wider uppercase leading-tight mb-3">The Dean<br class="sm:hidden"> After Dark</h1>
@@ -300,8 +300,7 @@
                     </dl>
                 </div>
                 <div class="flex flex-col items-center gap-3 mt-5">
-                    <a href="#" id="groupInviteLink" target="_blank" rel="noopener noreferrer" class="gold-btn hidden inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-whatsapp"></i> Join the Exclusive Parties WhatsApp Group</a>
-                    <a href="#" id="statusWhatsappLink" data-whatsapp-link data-whatsapp-mode="registration" class="whatsapp-contact-btn"><i class="fa-brands fa-whatsapp"></i> Send details to Ari on WhatsApp</a>
+                    <a href="#" id="groupInviteLink" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn hidden inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-whatsapp"></i> Join the Exclusive Parties WhatsApp Group</a>
                     <button type="button" id="registerAnotherBtn" class="text-xs uppercase tracking-wider text-gray-200 underline underline-offset-4 hover:text-gold">Register another guest</button>
                 </div>
             </div>
@@ -309,8 +308,8 @@
         </section>
 
         <!-- Staff-only interface. A client-side PIN is not real security; see deployment note accompanying this file. -->
-        <div id="hostessPortal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-            <div class="glass-panel rounded-2xl p-5 sm:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto gold-border-glow">
+        <div id="hostessPortal" class="hidden relative z-20 w-full mt-8 mb-8">
+            <div class="glass-panel rounded-2xl p-5 sm:p-8 max-w-3xl w-full mx-auto gold-border-glow">
                 <div class="flex justify-between items-center mb-5 border-b border-gold/20 pb-4">
                     <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Guest Check-in</h3>
                     <button type="button" onclick="toggleHostessPortal()" aria-label="Close staff check-in" class="text-gray-300 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -347,7 +346,7 @@
                     <section class="rounded-xl border border-gold/40 bg-amber-950/25 p-4 mb-5" aria-labelledby="welcomeDrinkHeading">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
                             <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Welcome drinks earned</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-gray-300">2 or more distinct registered referrals</span>
+                            <span class="text-[10px] uppercase tracking-wider text-gray-300">2 or more registered guest referrals</span>
                         </div>
                         <p class="text-xs text-gray-300 mb-3">This list is independent of check-in status and includes qualifying inviters even if they are not registered as guests themselves.</p>
                         <div id="welcomeDrinkList" class="space-y-2 text-sm text-gray-100">
@@ -356,9 +355,8 @@
                     </section>
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
                         <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Guest list</h4>
-                        <div class="flex gap-2">
-                            <input type="search" id="searchInput" oninput="filterGuests()" aria-label="Search guest list" placeholder="Search guest name..." class="form-field sm:max-w-xs text-sm">
-                            <button type="button" onclick="staffSignOut()" class="border border-gold/30 rounded-lg px-3 text-xs text-gray-200 hover:text-gold">Sign out</button>
+                        <div class="flex w-full sm:w-auto">
+                            <input type="search" id="searchInput" oninput="filterGuests()" aria-label="Search guest list" placeholder="Search guest name..." class="form-field w-full sm:max-w-xs text-sm">
                         </div>
                     </div>
                     <p id="guestlistError" class="text-red-300 text-sm hidden mb-3">Could not load the guest list. Check the database connection and access rules.</p>
@@ -392,37 +390,9 @@
             measurementId: "G-B28F50SQWD"
         };
 
-        // WhatsApp number in international format, digits only.
-        const HOST_WHATSAPP_NUMBER = "4917681117359";
-        // Keep the current Exclusive Parties group invite URL here if already configured in your source.
+        // Keep the Exclusive Parties group invitation and original single-password hostess gate.
         const WHATSAPP_GROUP_INVITE_URL = "https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58";
-        // Restore the original single-password hostess gate.
         const HOSTESS_PASSWORD = "1800";
-        let lastSubmittedGuest = null;
-
-        function makeWhatsAppUrl(message) {
-            const number = String(HOST_WHATSAPP_NUMBER || '4917681117359').replace(/\D/g, '');
-            return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
-        }
-
-        function openWhatsApp(message) {
-            window.open(makeWhatsAppUrl(message), '_blank', 'noopener,noreferrer');
-        }
-
-        document.querySelectorAll("[data-whatsapp-link]").forEach((link) => {
-            link.href = "https://wa.me/4917681117359";
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-            link.addEventListener("click", (event) => {
-                event.preventDefault();
-                let message = "Hi Ari, I have a question about The Dean After Dark on 31 October.";
-                if (link.dataset.whatsappMode === "registration" && lastSubmittedGuest) {
-                    const g = lastSubmittedGuest;
-                    message = `Hi Ari, please add my details to The Dean After Dark guest list.\nName: ${g.name}\nPhone: ${g.phone}\nEmail: ${g.email}\nInvited by: ${g.invitedBy}`;
-                }
-                openWhatsApp(message);
-            });
-        });
 
         const firebaseConfigured = Boolean(
             firebaseConfig.apiKey &&
@@ -491,7 +461,6 @@
                 invitedBy: document.getElementById('guestInviter').value.trim(),
                 checkedIn: false
             };
-            lastSubmittedGuest = guest;
 
             const databaseTask = db
                 ? db.collection('halloween_guests').add({
@@ -519,18 +488,16 @@
                 const [savedToDatabase, sentToHost] = await Promise.all([databaseTask, formspreeTask]);
                 showSubmittedGuest(guest);
 
-                const statusWhatsappLink = document.getElementById('statusWhatsappLink');
-                statusWhatsappLink.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Send these details to Ari on WhatsApp';
                 statusMessage.classList.remove('hidden');
 
                 if (savedToDatabase && sentToHost) {
                     statusText.textContent = 'Thank you — your details have been sent to the host and added to the guest list. The hostess will check your name at the entrance, so please use the same full name when you arrive.';
                 } else if (sentToHost && !savedToDatabase) {
-                    statusText.textContent = 'Your details have been sent to the host, but the live check-in list could not be updated. Please use the WhatsApp button below as a backup so your details can be added to the door list.';
+                    statusText.textContent = 'Your details have reached the host by email, but the live check-in list could not be updated. Please contact Ari before the event to make sure your name is on the door list.';
                 } else if (!sentToHost && savedToDatabase) {
-                    statusText.textContent = 'Your details are on the live guest list, but the email notification could not be sent. Please use the WhatsApp button below to notify the host.';
+                    statusText.textContent = 'Your details are on the live guest list, but the host email notification could not be sent. Your registration is saved; please contact Ari if you need confirmation.';
                 } else {
-                    statusText.textContent = 'Neither service confirmed the submission. Your details are shown below; use WhatsApp to send them to the host, then retry once the connection is restored.';
+                    statusText.textContent = 'We could not confirm the registration with either service. Your details are shown below; please retry or contact Ari using the WhatsApp link at the bottom of the invitation.';
                 }
 
                 // The submitted record stays visible in the summary. Clear the form when at least one
@@ -572,6 +539,7 @@
             document.getElementById('guestlistSection').classList.add('hidden');
             document.getElementById('staffPassword').value = '';
             document.getElementById('portalConfigWarning').classList.toggle('hidden', Boolean(db));
+            portal.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         document.getElementById('staffLoginForm').addEventListener('submit', async function (event) {
@@ -606,22 +574,6 @@
             }
         });
 
-        async function staffSignOut() {
-            try {
-                if (auth) await auth.signOut();
-            } catch (error) {
-                console.error('Staff sign-out failed:', error);
-            }
-            document.getElementById('guestlistSection').classList.add('hidden');
-            document.getElementById('staffLoginSection').classList.remove('hidden');
-            document.getElementById('staffPassword').value = '';
-            document.getElementById('guestListContainer').replaceChildren();
-            document.getElementById('totalCount').textContent = '0';
-            document.getElementById('checkedInCount').textContent = '0';
-            document.getElementById('welcomeDrinkCount').textContent = '0';
-            document.getElementById('welcomeDrinkList').innerHTML = '<p class="text-xs text-gray-400">No qualifying referrals yet.</p>';
-        }
-
         function loadLiveGuestlist() {
             const container = document.getElementById('guestListContainer');
             const listError = document.getElementById('guestlistError');
@@ -637,35 +589,26 @@
                 document.getElementById('checkedInCount').textContent = checkedInTotal;
                 container.replaceChildren();
 
-                // Count distinct registered guests by inviter, independent of check-in status.
-                // Name matching is case-insensitive and whitespace-insensitive; duplicate
-                // submissions with the same phone/email count as one referral.
+                // Count each saved guest record as one referral, independent of check-in status.
+                // Normalise inviter names for matching, but keep each Firestore registration distinct.
                 const normalizeGuestName = (value) => String(value || '')
                     .normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
-                const guestIdentity = (data) => {
-                    const phone = String(data.phone || '').replace(/\D/g, '');
-                    if (phone) return `phone:${phone}`;
-                    const email = String(data.email || '').trim().toLocaleLowerCase();
-                    if (email) return `email:${email}`;
-                    return `name:${normalizeGuestName(data.name)}`;
-                };
                 const referralsByInviter = new Map();
                 snapshot.forEach((guestDoc) => {
                     const referredGuest = guestDoc.data();
                     const inviterName = String(referredGuest.invitedBy || '').trim();
                     const inviterKey = normalizeGuestName(inviterName);
-                    const guestNameKey = normalizeGuestName(referredGuest.name);
-                    if (!inviterKey || inviterKey === guestNameKey) return;
+                    if (!inviterKey) return;
                     if (!referralsByInviter.has(inviterKey)) {
-                        referralsByInviter.set(inviterKey, { name: inviterName, guests: new Set() });
+                        referralsByInviter.set(inviterKey, { name: inviterName, guestIds: new Set() });
                     }
-                    referralsByInviter.get(inviterKey).guests.add(guestIdentity(referredGuest));
+                    referralsByInviter.get(inviterKey).guestIds.add(guestDoc.id);
                 });
 
                 // Render a dedicated reward roster. This catches inviters who earned a drink
                 // but do not themselves have a registration in the guest collection.
                 const qualifiedInviters = Array.from(referralsByInviter.entries())
-                    .map(([key, value]) => ({ key, name: value.name, count: value.guests.size }))
+                    .map(([key, value]) => ({ key, name: value.name, count: value.guestIds.size }))
                     .filter((inviter) => inviter.count >= 2)
                     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
                 document.getElementById('welcomeDrinkCount').textContent = qualifiedInviters.length;
@@ -695,10 +638,10 @@
                     const data = doc.data();
                     const checkedIn = Boolean(data.checkedIn);
                     const inviterKey = normalizeGuestName(data.name);
-                    const invitedCount = referralsByInviter.get(inviterKey)?.guests.size || 0;
+                    const invitedCount = referralsByInviter.get(inviterKey)?.guestIds.size || 0;
                     const welcomeDrinkEarned = invitedCount >= 2;
                     const card = document.createElement('div');
-                    card.className = `p-3 rounded border flex justify-between items-center gap-3 ${welcomeDrinkEarned ? 'bg-amber-950/50 border-gold/80 border-l-4' : checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'}`;
+                    card.className = `p-3 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${welcomeDrinkEarned ? 'bg-amber-950/50 border-gold/80 border-l-4' : checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'}`;
                     if (welcomeDrinkEarned) card.style.borderLeftWidth = '5px';
 
                     const details = document.createElement('div');
@@ -713,7 +656,7 @@
                         const rewardBadge = document.createElement('span');
                         rewardBadge.className = 'inline-flex items-center rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[9px] font-semibold tracking-wider text-amber-100';
                         rewardBadge.textContent = `WELCOME DRINK EARNED · ${invitedCount} GUESTS INVITED`;
-                        rewardBadge.title = `${invitedCount} distinct registered guests listed ${data.name} as their inviter.`;
+                        rewardBadge.title = `${invitedCount} registered guest records list ${data.name} as their inviter.`;
                         titleLine.appendChild(rewardBadge);
                     }
                     const meta = document.createElement('p');
@@ -728,7 +671,17 @@
                     checkInButton.setAttribute('aria-pressed', String(checkedIn));
                     checkInButton.addEventListener('click', () => toggleCheckIn(doc.id, checkedIn));
 
-                    card.append(details, checkInButton);
+                    const deleteButton = document.createElement('button');
+                    deleteButton.type = 'button';
+                    deleteButton.className = 'shrink-0 rounded border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200 hover:bg-red-900/70 transition-colors';
+                    deleteButton.innerHTML = '<i class="fa-solid fa-trash-can mr-1" aria-hidden="true"></i>Delete';
+                    deleteButton.setAttribute('aria-label', `Delete guest ${data.name || ''}`);
+                    deleteButton.addEventListener('click', () => deleteGuest(doc.id, data.name));
+
+                    const actions = document.createElement('div');
+                    actions.className = 'flex shrink-0 flex-wrap items-center gap-2 self-end sm:self-auto';
+                    actions.append(checkInButton, deleteButton);
+                    card.append(details, actions);
                     container.appendChild(card);
                 });
                 filterGuests();
@@ -751,6 +704,25 @@
                 console.error('Check-in update failed:', error);
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'Could not save the check-in. Check the database access rules and try again.';
+                listError.classList.remove('hidden');
+            }
+        }
+
+        async function deleteGuest(id, guestName) {
+            if (!db) {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'The guest database is not connected, so this guest could not be deleted.';
+                listError.classList.remove('hidden');
+                return;
+            }
+            const confirmed = window.confirm(`Delete ${guestName || 'this guest'} from the guest list? This cannot be undone.`);
+            if (!confirmed) return;
+            try {
+                await db.collection('halloween_guests').doc(id).delete();
+            } catch (error) {
+                console.error('Guest deletion failed:', error);
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Could not delete this guest. Check that the active Firestore rules permit deletion for halloween_guests.';
                 listError.classList.remove('hidden');
             }
         }
