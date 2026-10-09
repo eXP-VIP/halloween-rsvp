@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exclusive Halloween Party RSVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-gray-100 font-sans antialiased min-h-screen flex flex-col justify-between">
+
+  <!-- Header / Hero Section -->
+  <header class="py-12 px-4 text-center bg-gradient-to-b from-purple-950 via-black to-black border-b border-purple-900/40">
+    <div class="max-w-2xl mx-auto space-y-4">
+      <span class="inline-block px-3 py-1 bg-purple-900/60 text-purple-300 text-xs tracking-widest uppercase font-semibold rounded-full border border-purple-700/50">
+        Strictly Guest List Only
+      </span>
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-white drop-shadow-md">
+        DARK ELEGANCE
+      </h1>
+      <p class="text-lg text-purple-200/90 font-light">
+        An Exclusive Halloween Night • Munich
+      </p>
+    </div>
+  </header>
+
+  <!-- Form Container -->
+  <main class="flex-grow flex items-center justify-center px-4 py-8">
+    <div class="w-full max-w-lg bg-zinc-900/90 p-8 rounded-2xl border border-zinc-800 shadow-2xl shadow-purple-950/50">
+      
+      <!-- Event Highlights -->
+      <div class="mb-6 pb-6 border-b border-zinc-800 text-sm text-zinc-300 space-y-2">
+        <p class="flex items-center gap-2">🗝️ <span>Private venue • Hotel hostesses enforcing list access</span></p>
+        <p class="flex items-center gap-2">🍹 <span>Bring 2 non-member friends &amp; all get a welcome drink</span></p>
+        <p class="flex items-center gap-2">🎧 <span>Top DJs • Secret Party Room &amp; Chill Lounge</span></p>
+      </div>
+
+      <!-- FORM START -->
+      <!-- REPLACE 'YOUR_FORMSPREE_FORM_ID' BELOW WITH YOUR ACTUAL ID -->
+      <form action="https://formspree.io/f/YOUR_FORMSPREE_FORM_ID" method="POST" class="space-y-5">
+        
+        <!-- Full Name -->
+        <div>
+          <label for="name" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+            Full Name *
+          </label>
+          <input 
+            type="text" 
+            id="name" 
+            name="Full Name" 
+            required 
+            placeholder="e.g. Ari El"
+            class="w-full bg-zinc-800 text-white border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+          />
+        </div>
+
+        <!-- Email Address -->
+        <div>
+          <label for="email" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+            Email Address *
+          </label>
+          <input 
+            type="email" 
+            id="email" 
+            name="_replyto" 
+            required 
+            placeholder="name@example.com"
+            class="w-full bg-zinc-800 text-white border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+          />
+        </div>
+
+        <!-- Phone Number -->
+        <div>
+          <label for="phone" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+            Phone Number *
+          </label>
+          <input 
+            type="tel" 
+            id="phone" 
+            name="Phone Number" 
+            required 
+            placeholder="+49 123 4567890"
+            class="w-full bg-zinc-800 text-white border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+          />
+        </div>
+
+        <!-- Additional Guests Count -->
+        <div>
+          <label for="guests" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+            Number of Additional Guests Coming With You
+          </label>
+          <select 
+            id="guests" 
+            name="Additional Guests" 
+            class="w-full bg-zinc-800 text-white border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+          >
+            <option value="0">Just me (+0)</option>
+            <option value="1">1 Guest (+1)</option>
+            <option value="2">2 Guests (+2) — Free Welcome Drinks!</option>
+            <option value="3">3+ Guests</option>
+          </select>
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-3.5 px-6 rounded-lg shadow-lg hover:shadow-purple-700/40 transition-all duration-200 mt-2"
+        >
+          Confirm Guest List Spot 🕯️
+        </button>
+
+      </form>
+      <!-- FORM END -->
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-6 text-center text-xs text-zinc-600 border-t border-zinc-900">
+    InterNations Munich • Guestlist Registration
+  </footer>
+
+</body>
+</html>
