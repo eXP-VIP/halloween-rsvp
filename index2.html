@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#08080a">
+    <meta name="description" content="A private Halloween soirée at The Dean Munich, Autograph Collection. Saturday, 31 October 2026, in Munich Westend.">
+    <title>The Dean After Dark | Private Halloween Soirée</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { gold: '#d4af37', 'gold-light': '#f3e5ab', 'gold-dark': '#aa7c11', obsidian: '#08080a' },
+                    fontFamily: { serif: ['Cinzel', 'serif'], sans: ['Montserrat', 'sans-serif'] }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --gold: #d4af37;
+            --gold-light: #f3e5ab;
+            --obsidian: #08080a;
+        }
+        body {
+            background-color: var(--obsidian);
+            color: #e2e8f0;
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+        }
+        .halloween-bg {
+            background-image:
+                linear-gradient(to bottom,
+                    rgba(8, 8, 10, 0.56) 0%,
+                    rgba(8, 8, 10, 0.38) 36%,
+                    rgba(8, 8, 10, 0.46) 100%),
+                url('https://thumbs.dreamstime.com/b/happy-halloween-banner-template-pumpkin-elements-theme-background-website-spooky-card-design-293255121.jpg');
+            background-size: cover;
+            background-position: center 35%;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        .glass-panel {
+            background: rgba(12, 12, 16, 0.70);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(212, 175, 55, 0.27);
+        }
+        .gold-border {
+            border: 1px solid rgba(212, 175, 55, 0.38);
+            box-shadow: 0 0 24px rgba(212, 175, 55, 0.12);
+        }
+        .gold-border-glow {
+            border: 1px solid rgba(212, 175, 55, 0.62);
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.19);
+        }
+        .gold-text-gradient {
+            background: linear-gradient(135deg, #fff8df 0%, #d4af37 52%, #aa7c11 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* Strong contrast over the bright orange Halloween artwork */
+        .hero-copy {
+            position: relative;
+            isolation: isolate;
+            padding: clamp(14px, 2.7vw, 30px) 10px 22px;
+        }
+        .hero-copy::before {
+            content: "";
+            position: absolute;
+            z-index: -1;
+            inset: 0 -10px;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center,
+                rgba(5, 5, 7, .70) 0%,
+                rgba(5, 5, 7, .46) 58%,
+                rgba(5, 5, 7, 0) 100%);
+        }
+        .hero-title {
+            color: #fff6df !important;
+            background: none !important;
+            -webkit-text-fill-color: #fff6df !important;
+            text-shadow: 0 3px 8px rgba(0,0,0,.98), 0 0 28px rgba(0,0,0,.82);
+        }
+        .hero-kicker, .hero-host {
+            color: #ffe6a1 !important;
+            text-shadow: 0 2px 7px rgba(0,0,0,.98), 0 0 16px rgba(0,0,0,.82);
+        }
+        .hero-meta, .hero-time, .hero-venue {
+            color: #fffdf6 !important;
+            text-shadow: 0 2px 7px rgba(0,0,0,.98);
+        }
+        .whatsapp-contact-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 12px 18px;
+            border: 1px solid rgba(255,255,255,.42);
+            border-radius: 9px;
+            color: #fff;
+            background: rgba(5, 8, 7, .72);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+            text-shadow: 0 1px 3px rgba(0,0,0,.6);
+            transition: background .2s ease, border-color .2s ease, transform .2s ease;
+        }
+        .whatsapp-contact-btn i { color: #4ade80; font-size: 17px; }
+        .whatsapp-contact-btn:hover {
+            background: rgba(5, 8, 7, .9);
+            border-color: rgba(255,255,255,.72);
+            transform: translateY(-1px);
+        }
+        .gold-btn {
+            background: linear-gradient(135deg, #ead080 0%, #d4af37 48%, #aa7c11 100%);
+            color: #090909;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            transition: transform .25s ease, box-shadow .25s ease, filter .25s ease;
+        }
+        .gold-btn:hover:not(:disabled) {
+            box-shadow: 0 0 24px rgba(212, 175, 55, 0.32);
+            transform: translateY(-1px);
+            filter: brightness(1.06);
+        }
+        .gold-btn:disabled { cursor: wait; opacity: .7; }
+        .venue-gallery {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .venue-shot {
+            position: relative;
+            min-width: 0;
+            height: 280px;
+            overflow: hidden;
+            border: 1px solid rgba(212, 175, 55, 0.34);
+            border-radius: 14px;
+            background: #121114;
+        }
+        .venue-shot img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform .45s ease, filter .45s ease;
+        }
+        .venue-shot.room img { object-position: center 57%; filter: brightness(1.16) saturate(.92); }
+        .venue-shot.lobby img { object-position: center 52%; filter: brightness(.91) saturate(.91); }
+        .venue-shot:hover img { transform: scale(1.035); }
+        .venue-shot figcaption {
+            position: absolute;
+            inset: auto 0 0 0;
+            padding: 28px 16px 13px;
+            color: #fff8df;
+            font-family: 'Cinzel', serif;
+            font-size: 11px;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            background: linear-gradient(transparent, rgba(0,0,0,.82));
+        }
+        .form-field {
+            width: 100%;
+            background: rgba(8, 8, 10, .88);
+            border: 1px solid rgba(212, 175, 55, .32);
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: #fff;
+            outline: none;
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+        .form-field:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212,175,55,.10); }
+        .form-field::placeholder { color: #85818a; }
+        .form-label { display: block; margin-bottom: 8px; color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+        @media (max-width: 640px) {
+            .halloween-bg { background-attachment: scroll; background-position: center top; }
+            .venue-gallery { grid-template-columns: 1fr; gap: 12px; }
+            .venue-shot { height: 230px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+        }
+    </style>
+</head>
+<body class="halloween-bg min-h-screen relative flex flex-col justify-between selection:bg-gold selection:text-black">
+    <main class="relative z-10 container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
+        <header class="hero-copy text-center mb-8 sm:mb-10">
+            <p class="font-serif text-gold tracking-[0.28em] uppercase text-xs sm:text-sm mb-3">A Private Halloween Invitation</p>
+            <h1 class="hero-title font-serif text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-wider uppercase leading-tight mb-3">The Dean<br class="sm:hidden"> After Dark</h1>
+            <div class="w-28 h-px bg-gold/70 mx-auto mb-4"></div>
+            <p class="hero-meta font-medium text-xs sm:text-sm tracking-[0.12em] sm:tracking-[0.18em] uppercase leading-relaxed">Halloween Soirée <span class="text-gold px-1">•</span> Saturday, 31 October 2026</p>
+            <p class="hero-time text-sm mt-2">18:00–23:00 CET</p>
+            <p class="hero-host text-xs font-serif tracking-wider uppercase mt-3">Hosted by Ari El</p>
+            <p class="hero-venue text-xs sm:text-sm mt-2">The Dean Munich, Autograph Collection <span class="text-amber-200">·</span> Westend</p>
+            <div class="flex items-center justify-center mt-6">
+                <a href="#rsvp-section" class="gold-btn inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg uppercase font-serif text-xs tracking-[0.14em]">Join the Guest List <i class="fa-solid fa-arrow-down-long"></i></a>
+            </div>
+        </header>
+
+        <section class="glass-panel rounded-2xl p-5 sm:p-9 mb-7 sm:mb-9 gold-border">
+            <p class="font-serif text-xs tracking-[0.2em] uppercase text-gold mb-3">One night. Two moods.</p>
+            <h2 class="font-serif text-xl sm:text-2xl text-white uppercase tracking-wider mb-4">Halloween, after hours</h2>
+            <p class="text-gray-100 text-sm sm:text-base leading-relaxed mb-3 font-light">Step into a different side of Munich Westend for a Halloween gathering set against the bold interiors of The Dean Munich.</p>
+            <p class="text-gray-200 text-sm leading-relaxed mb-6">Move between a private party room with DJ sets and a more relaxed lounge made for conversation. Come for the music, settle into the atmosphere, and make the night your own.</p>
+
+            <div class="venue-gallery mb-7" aria-label="Photos of the event spaces">
+                <figure class="venue-shot room">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTXvb59KqOK1i5JN-wJAtQxiCO_AG8_3C_-TlKQjAGprTtKxnWq_v14WHw&amp;s=10" alt="Warmly lit private lounge and party room" loading="lazy" decoding="async">
+                    <figcaption>The Party Room</figcaption>
+                </figure>
+                <figure class="venue-shot lobby">
+                    <img src="https://www.tageskarte.io/fileadmin/content/user_upload/xxl_153190927.jpg" alt="The hotel's bright lobby lounge and bar" loading="lazy" decoding="async">
+                    <figcaption>The Lobby Lounge</figcaption>
+                </figure>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-5 border-t border-gold/25">
+                <div class="bg-black/35 p-4 rounded-xl border border-gold/20">
+                    <p class="text-xs uppercase text-gold font-serif font-bold tracking-wider mb-2"><i class="fa-solid fa-compact-disc mr-2"></i>The Party Room</p>
+                    <p class="text-sm text-gray-200 leading-relaxed">DJ sets, energetic beats and a dance-floor atmosphere.</p>
+                </div>
+                <div class="bg-black/35 p-4 rounded-xl border border-gold/20">
+                    <p class="text-xs uppercase text-gold font-serif font-bold tracking-wider mb-2"><i class="fa-solid fa-couch mr-2"></i>The Lounge</p>
+                    <p class="text-sm text-gray-200 leading-relaxed">A more laid-back setting for drinks and conversations between sets.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="glass-panel rounded-2xl p-5 sm:p-9 mb-7 sm:mb-9 gold-border">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-7 sm:gap-8">
+                <div>
+                    <h2 class="font-serif text-base text-gold uppercase tracking-wider mb-2"><i class="fa-solid fa-location-dot mr-2"></i>Where</h2>
+                    <p class="text-white font-medium text-base">The Dean Munich, Autograph Collection</p>
+                    <p class="text-gray-300 text-sm mt-1">Landsberger Straße 68, 80339 München</p>
+                </div>
+                <div>
+                    <h2 class="font-serif text-base text-gold uppercase tracking-wider mb-2"><i class="fa-solid fa-ticket mr-2"></i>Entrance</h2>
+                    <p class="text-white font-medium text-base">€20 · cash at the door</p>
+                    <p class="text-gray-300 text-sm mt-1">One welcome drink included.</p>
+                </div>
+            </div>
+            <div class="pt-6 mt-6 border-t border-gold/25">
+                <h2 class="font-serif text-base text-gold uppercase tracking-wider mb-2"><i class="fa-solid fa-mask mr-2"></i>Dress to intrigue</h2>
+                <p class="text-gray-200 text-sm leading-relaxed">Dark glamour, striking costumes, elegant masks or a subtle hint of the uncanny. Go dramatic or keep it understated; make the look your own.</p>
+            </div>
+        </section>
+
+        <section class="glass-panel rounded-2xl p-5 sm:p-9 gold-border-glow mb-7 sm:mb-9" id="rsvp-section">
+            <div class="text-center mb-7">
+                <p class="font-serif text-xs tracking-[0.2em] text-gold uppercase mb-2">Your place starts here</p>
+                <h2 class="font-serif text-2xl sm:text-3xl text-white uppercase tracking-wider mb-3">Join the Guest List</h2>
+                <p class="text-gray-200 text-sm leading-relaxed max-w-2xl mx-auto">Please enter your details carefully, including the full name of the person who invited you. The hostess will welcome you at the entrance and check your name against the guest list, so use the same full name when you arrive.</p>
+            </div>
+            <form id="rsvpForm" action="https://formspree.io/f/mbgdopnl" method="POST" class="space-y-5">
+                <input type="hidden" name="VIP Group Link" value="https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label for="guestName" class="form-label">Full name</label>
+                        <input id="guestName" type="text" name="Full Name" autocomplete="name" required class="form-field" placeholder="Name used at the entrance">
+                    </div>
+                    <div>
+                        <label for="guestPhone" class="form-label">Phone number</label>
+                        <input id="guestPhone" type="tel" name="WhatsApp Number" autocomplete="tel" required class="form-field" placeholder="Your mobile number">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label for="guestEmail" class="form-label">Email address</label>
+                        <input id="guestEmail" type="email" name="_replyto" autocomplete="email" required class="form-field" placeholder="you@example.com">
+                    </div>
+                    <div>
+                        <label for="guestInviter" class="form-label">Invited by · full name</label>
+                        <input id="guestInviter" type="text" name="Invited By" required class="form-field" placeholder="Full name of your inviter">
+                    </div>
+                </div>
+                <button type="submit" id="submitBtn" class="gold-btn w-full py-4 rounded-lg uppercase font-serif text-sm tracking-widest mt-3">Add me to the Guest List</button>
+                <p class="text-gray-400 text-xs text-center leading-relaxed">Your details are used to organise the guest list and check-in for this event.</p>
+            </form>
+            <div id="statusMessage" role="status" aria-live="polite" class="hidden mt-6 p-5 sm:p-6 rounded-lg bg-gold/10 border border-gold/40 text-center">
+                <p id="statusText" class="text-sm sm:text-base text-amber-100 leading-relaxed"></p>
+                <div id="guestSummary" class="hidden text-left mt-5 p-4 rounded-lg bg-black/30 border border-gold/20">
+                    <h3 class="font-serif text-xs uppercase tracking-[0.16em] text-gold mb-3">Details submitted</h3>
+                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 text-sm">
+                        <div><dt class="text-xs text-gray-400">Full name</dt><dd id="summaryName" class="text-white break-words"></dd></div>
+                        <div><dt class="text-xs text-gray-400">Phone</dt><dd id="summaryPhone" class="text-white break-words"></dd></div>
+                        <div><dt class="text-xs text-gray-400">Email</dt><dd id="summaryEmail" class="text-white break-words"></dd></div>
+                        <div><dt class="text-xs text-gray-400">Invited by</dt><dd id="summaryInvitedBy" class="text-white break-words"></dd></div>
+                    </dl>
+                </div>
+                <div class="flex flex-col items-center gap-3 mt-5">
+                    <a href="#" id="groupInviteLink" target="_blank" rel="noopener noreferrer" class="gold-btn hidden inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-whatsapp"></i> Join the Exclusive Parties WhatsApp Group</a>
+                    <a href="#" id="statusWhatsappLink" data-whatsapp-link data-whatsapp-mode="registration" class="whatsapp-contact-btn"><i class="fa-brands fa-whatsapp"></i> Send details to Ari on WhatsApp</a>
+                    <button type="button" id="registerAnotherBtn" class="text-xs uppercase tracking-wider text-gray-200 underline underline-offset-4 hover:text-gold">Register another guest</button>
+                </div>
+            </div>
+            <div id="errorMessage" role="alert" aria-live="assertive" class="hidden mt-6 p-5 rounded-lg bg-red-950/60 border border-red-400/40 text-center text-red-200 text-sm leading-relaxed"></div>
+        </section>
+
+        <!-- Staff-only interface. A client-side PIN is not real security; see deployment note accompanying this file. -->
+        <div id="hostessPortal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="glass-panel rounded-2xl p-5 sm:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto gold-border-glow">
+                <div class="flex justify-between items-center mb-5 border-b border-gold/20 pb-4">
+                    <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Guest Check-in</h3>
+                    <button type="button" onclick="toggleHostessPortal()" aria-label="Close staff check-in" class="text-gray-300 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                </div>
+                <div id="staffLoginSection" class="space-y-4 py-5">
+                    <div class="text-center mb-5">
+                        <p class="text-sm text-gray-200">Enter the management password to view and manage the guest list.</p>
+                    </div>
+                    <form id="staffLoginForm" class="space-y-4 max-w-md mx-auto">
+                        <div>
+                            <label for="staffPassword" class="form-label">Management password</label>
+                            <input type="password" id="staffPassword" autocomplete="current-password" required class="form-field" placeholder="Enter management password">
+                        </div>
+                        <button type="submit" id="staffLoginBtn" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Unlock Guest List</button>
+                    </form>
+                    <p id="staffLoginError" role="alert" class="text-red-300 text-xs text-center hidden"></p>
+                    <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">The live guest list is not connected. Configure the real Firebase settings and Firestore access rules before using check-in.</p>
+                </div>
+                <div id="guestlistSection" class="hidden">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+                        <span class="text-xs uppercase text-gray-300">Total guests: <span id="totalCount" class="text-gold font-bold">0</span></span>
+                        <div class="flex gap-2">
+                            <input type="search" id="searchInput" oninput="filterGuests()" aria-label="Search guest list" placeholder="Search guest name..." class="form-field sm:max-w-xs text-sm">
+                            <button type="button" onclick="staffSignOut()" class="border border-gold/30 rounded-lg px-3 text-xs text-gray-200 hover:text-gold">Sign out</button>
+                        </div>
+                    </div>
+                    <p id="guestlistError" class="text-red-300 text-sm hidden mb-3">Could not load the guest list. Check the database connection and access rules.</p>
+                    <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestListContainer"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="relative z-10 text-center px-4 py-7 border-t border-gold/20 bg-black/45 text-xs text-gray-300">
+        <p class="font-serif tracking-wider">THE DEAN AFTER DARK</p>
+        <p class="mt-1">The Dean Munich, Autograph Collection <span class="text-gold">·</span> Landsberger Straße 68, Munich</p>
+        <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> 18:00–23:00 CET</p>
+        <div id="whatsapp-contact" class="text-center mt-5 px-2">
+            <p class="text-xs text-gray-200 mb-3">Any questions? Message Ari directly.</p>
+            <a href="https://wa.me/4917681117359" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn"><i class="fa-brands fa-whatsapp"></i> Questions? Chat with Ari on WhatsApp</a>
+        </div>
+            <div class="text-center mt-8 pt-6 border-t border-gold/20">
+                <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Staff check-in</button>
+            </div>
+    </footer>
+
+    <script>
+        // Existing Firebase web-app configuration. These values connect to the original project.
+        const firebaseConfig = {
+            apiKey: "AIzaSyBvcXFzc65H5RyVYUsYa7ANUoxASRWPKZ0",
+            authDomain: "the-dean-munich-halloween.firebaseapp.com",
+            projectId: "the-dean-munich-halloween",
+            storageBucket: "the-dean-munich-halloween.firebasestorage.app",
+            messagingSenderId: "142114750141",
+            appId: "1:142114750141:web:6aa9b1154d3582b91d81d4",
+            measurementId: "G-B28F50SQWD"
+        };
+
+        // WhatsApp number in international format, digits only.
+        const HOST_WHATSAPP_NUMBER = "4917681117359";
+        // Keep the current Exclusive Parties group invite URL here if already configured in your source.
+        const WHATSAPP_GROUP_INVITE_URL = "https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58";
+        // Restore the original single-password hostess gate.
+        const HOSTESS_PASSWORD = "1800";
+        let lastSubmittedGuest = null;
+
+        function makeWhatsAppUrl(message) {
+            const number = String(HOST_WHATSAPP_NUMBER || '4917681117359').replace(/\D/g, '');
+            return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+        }
+
+        function openWhatsApp(message) {
+            window.open(makeWhatsAppUrl(message), '_blank', 'noopener,noreferrer');
+        }
+
+        document.querySelectorAll("[data-whatsapp-link]").forEach((link) => {
+            link.href = "https://wa.me/4917681117359";
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.addEventListener("click", (event) => {
+                event.preventDefault();
+                let message = "Hi Ari, I have a question about The Dean After Dark on 31 October.";
+                if (link.dataset.whatsappMode === "registration" && lastSubmittedGuest) {
+                    const g = lastSubmittedGuest;
+                    message = `Hi Ari, please add my details to The Dean After Dark guest list.\nName: ${g.name}\nPhone: ${g.phone}\nEmail: ${g.email}\nInvited by: ${g.invitedBy}`;
+                }
+                openWhatsApp(message);
+            });
+        });
+
+        const firebaseConfigured = Boolean(
+            firebaseConfig.apiKey &&
+            !firebaseConfig.apiKey.toLowerCase().includes('placeholder') &&
+            firebaseConfig.authDomain &&
+            firebaseConfig.projectId &&
+            !firebaseConfig.projectId.toLowerCase().includes('placeholder') &&
+            firebaseConfig.messagingSenderId &&
+            !firebaseConfig.messagingSenderId.includes('1234567890') &&
+            firebaseConfig.appId &&
+            !firebaseConfig.appId.toLowerCase().includes('abcdef')
+        );
+        let db = null;
+        let auth = null;
+        if (firebaseConfigured) {
+            try {
+                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                auth = firebase.auth();
+            } catch (error) {
+                console.error('Firebase initialisation failed:', error);
+            }
+        }
+
+        function configureGroupInviteButton() {
+            const link = document.getElementById('groupInviteLink');
+            const url = String(WHATSAPP_GROUP_INVITE_URL || '').trim();
+            if (/^https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]+(?:\?.*)?$/.test(url) && !url.includes('REPLACE_WITH')) {
+                link.href = url;
+                link.classList.remove('hidden');
+            } else {
+                link.classList.add('hidden');
+            }
+        }
+        configureGroupInviteButton();
+
+        const form = document.getElementById('rsvpForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusMessage = document.getElementById('statusMessage');
+        const statusText = document.getElementById('statusText');
+        const errorMessage = document.getElementById('errorMessage');
+
+        function showSubmittedGuest(guest) {
+            document.getElementById('summaryName').textContent = guest.name;
+            document.getElementById('summaryPhone').textContent = guest.phone;
+            document.getElementById('summaryEmail').textContent = guest.email;
+            document.getElementById('summaryInvitedBy').textContent = guest.invitedBy;
+            document.getElementById('guestSummary').classList.remove('hidden');
+            configureGroupInviteButton();
+        }
+
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            if (!form.reportValidity()) return;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'SENDING DETAILS…';
+            statusMessage.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+
+            const fields = form.elements;
+            const guest = {
+                name: document.getElementById('guestName').value.trim(),
+                phone: document.getElementById('guestPhone').value.trim(),
+                email: document.getElementById('guestEmail').value.trim(),
+                invitedBy: document.getElementById('guestInviter').value.trim(),
+                checkedIn: false
+            };
+            lastSubmittedGuest = guest;
+
+            const databaseTask = db
+                ? db.collection('halloween_guests').add({
+                    ...guest,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => true).catch((error) => {
+                    console.error('Guest-list database save failed:', error);
+                    return false;
+                })
+                : Promise.resolve(false);
+
+            const formspreeTask = fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: { 'Accept': 'application/json' }
+            }).then((response) => {
+                if (!response.ok) throw new Error('Formspree returned an error.');
+                return true;
+            }).catch((error) => {
+                console.error('Formspree submission failed:', error);
+                return false;
+            });
+
+            try {
+                const [savedToDatabase, sentToHost] = await Promise.all([databaseTask, formspreeTask]);
+                showSubmittedGuest(guest);
+
+                const statusWhatsappLink = document.getElementById('statusWhatsappLink');
+                statusWhatsappLink.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Send these details to Ari on WhatsApp';
+                statusMessage.classList.remove('hidden');
+
+                if (savedToDatabase && sentToHost) {
+                    statusText.textContent = 'Thank you — your details have been sent to the host and added to the guest list. The hostess will check your name at the entrance, so please use the same full name when you arrive.';
+                } else if (sentToHost && !savedToDatabase) {
+                    statusText.textContent = 'Your details have been sent to the host, but the live check-in list could not be updated. Please use the WhatsApp button below as a backup so your details can be added to the door list.';
+                } else if (!sentToHost && savedToDatabase) {
+                    statusText.textContent = 'Your details are on the live guest list, but the email notification could not be sent. Please use the WhatsApp button below to notify the host.';
+                } else {
+                    statusText.textContent = 'Neither service confirmed the submission. Your details are shown below; use WhatsApp to send them to the host, then retry once the connection is restored.';
+                }
+
+                // The submitted record stays visible in the summary. Clear the form when at least one
+                // delivery path succeeded so the page is ready to register the next guest.
+                const deliverySucceeded = savedToDatabase || sentToHost;
+                if (deliverySucceeded) {
+                    form.reset();
+                    document.getElementById('registerAnotherBtn').textContent = 'Register another guest';
+                } else {
+                    document.getElementById('registerAnotherBtn').textContent = 'Return to form and retry';
+                }
+            } catch (error) {
+                console.error('Unexpected registration error:', error);
+                errorMessage.textContent = 'The submission could not be completed. Your entries have been kept in the form so you can retry.';
+                errorMessage.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'ADD ME TO THE GUEST LIST';
+            }
+        });
+
+        document.getElementById('registerAnotherBtn').addEventListener('click', function () {
+            statusMessage.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            if (!lastSubmittedGuest || !document.getElementById('guestName').value) form.reset();
+            document.getElementById('guestName').focus({ preventScroll: true });
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
+        function toggleHostessPortal() {
+            const portal = document.getElementById('hostessPortal');
+            const opening = portal.classList.contains('hidden');
+            portal.classList.toggle('hidden');
+            document.getElementById('staffLoginError').classList.add('hidden');
+            document.getElementById('portalConfigWarning').classList.toggle('hidden', Boolean(db && auth));
+            if (!opening) return;
+
+            document.getElementById('staffLoginSection').classList.remove('hidden');
+            document.getElementById('guestlistSection').classList.add('hidden');
+            document.getElementById('staffPassword').value = '';
+            document.getElementById('portalConfigWarning').classList.toggle('hidden', Boolean(db));
+        }
+
+        document.getElementById('staffLoginForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const error = document.getElementById('staffLoginError');
+            const loginButton = document.getElementById('staffLoginBtn');
+            const enteredPassword = document.getElementById('staffPassword').value;
+            error.classList.add('hidden');
+
+            if (enteredPassword !== HOSTESS_PASSWORD) {
+                error.textContent = 'Incorrect management password.';
+                error.classList.remove('hidden');
+                return;
+            }
+
+            loginButton.disabled = true;
+            loginButton.textContent = 'UNLOCKING…';
+            try {
+                document.getElementById('staffLoginSection').classList.add('hidden');
+                document.getElementById('guestlistSection').classList.remove('hidden');
+                document.getElementById('staffPassword').value = '';
+                if (!db) {
+                    const listError = document.getElementById('guestlistError');
+                    listError.textContent = 'Firebase connection failed. Check the Firebase configuration and database rules.';
+                    listError.classList.remove('hidden');
+                } else {
+                    loadLiveGuestlist();
+                }
+            } finally {
+                loginButton.disabled = false;
+                loginButton.textContent = 'UNLOCK GUEST LIST';
+            }
+        });
+
+        async function staffSignOut() {
+            try {
+                if (auth) await auth.signOut();
+            } catch (error) {
+                console.error('Staff sign-out failed:', error);
+            }
+            document.getElementById('guestlistSection').classList.add('hidden');
+            document.getElementById('staffLoginSection').classList.remove('hidden');
+            document.getElementById('staffPassword').value = '';
+            document.getElementById('guestListContainer').replaceChildren();
+            document.getElementById('totalCount').textContent = '0';
+        }
+
+        function loadLiveGuestlist() {
+            const container = document.getElementById('guestListContainer');
+            const listError = document.getElementById('guestlistError');
+            if (!db) {
+                listError.textContent = 'Firebase could not connect. Check the Firebase project configuration and Firestore rules.';
+                listError.classList.remove('hidden');
+                return;
+            }
+            db.collection('halloween_guests').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+                listError.classList.add('hidden');
+                document.getElementById('totalCount').textContent = snapshot.size;
+                container.replaceChildren();
+
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const checkedIn = Boolean(data.checkedIn);
+                    const card = document.createElement('div');
+                    card.className = `p-3 rounded border flex justify-between items-center gap-3 ${checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'}`;
+
+                    const details = document.createElement('div');
+                    details.className = 'min-w-0';
+                    const name = document.createElement('p');
+                    name.className = 'font-medium text-sm text-white break-words';
+                    name.textContent = data.name || '(No name provided)';
+                    const meta = document.createElement('p');
+                    meta.className = 'text-xs text-gray-300 break-words mt-1';
+                    meta.textContent = `Invited by: ${data.invitedBy || 'Not specified'} · ${data.phone || 'No phone'}`;
+                    details.append(name, meta);
+
+                    const checkInButton = document.createElement('button');
+                    checkInButton.type = 'button';
+                    checkInButton.className = `shrink-0 px-3 py-2 text-xs font-serif rounded ${checkedIn ? 'bg-emerald-700 text-white' : 'bg-gold/15 text-gold border border-gold/40'}`;
+                    checkInButton.textContent = checkedIn ? 'Checked In' : 'Check In';
+                    checkInButton.setAttribute('aria-pressed', String(checkedIn));
+                    checkInButton.addEventListener('click', () => toggleCheckIn(doc.id, checkedIn));
+
+                    card.append(details, checkInButton);
+                    container.appendChild(card);
+                });
+                filterGuests();
+            }, (error) => {
+                console.error('Guest list subscription failed:', error);
+                listError.classList.remove('hidden');
+            });
+        }
+
+        async function toggleCheckIn(id, currentState) {
+            if (!db) {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'The guest database is not connected. Please check the Firebase connection.';
+                listError.classList.remove('hidden');
+                return;
+            }
+            try {
+                await db.collection('halloween_guests').doc(id).update({ checkedIn: !currentState });
+            } catch (error) {
+                console.error('Check-in update failed:', error);
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Could not save the check-in. Check the database access rules and try again.';
+                listError.classList.remove('hidden');
+            }
+        }
+
+        function filterGuests() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const cards = document.getElementById('guestListContainer').children;
+            Array.from(cards).forEach((card) => {
+                card.style.display = card.innerText.toLowerCase().includes(query) ? 'flex' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
