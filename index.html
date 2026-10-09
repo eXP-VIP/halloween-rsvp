@@ -62,7 +62,7 @@
         <div id="formView" class="space-y-6">
 
           <!-- Event Story & Teaser Intro -->
-          <div class="bg-purple-950/30 p-4 rounded-xl border border-purple-800/30 text-xs md:text-sm text-purple-100 leading-relaxed space-y-2">
+          <div class="bg-purple-950/30 p-4 rounded-xl border border-purple-800/30 text-xs md:text-sm text-purple-100 leading-relaxed space-y-2 italic">
             <p>
               Something dark, sleek and high-profile is taking over the hidden party space inside Munich’s newest luxury boutique hotel by Marriott's Autograph Collection!
             </p>
@@ -83,11 +83,11 @@
             </p>
             <p class="flex items-start gap-2.5">
               <span class="text-base">🎭</span> 
-              <span><strong>Dress Code (Dark Elegance):</strong> Dress to intrigue with decadent costumes, sharp dark attire or a mysterious mask, or come as yourself if you are naturally spooky! 😎🎭</span>
+              <span><strong>Dress Code (Dark Elegance):</strong> Decadent costumes, sharp dark attire, or a mysterious mask—or come as yourself if you're spooky enough! 😎🎭</span>
             </p>
             <p class="flex items-start gap-2.5 text-amber-400/90 font-medium bg-amber-950/30 p-2.5 rounded-lg border border-amber-800/40">
               <span class="text-base">💵</span> 
-              <span><strong>Entry Fee:</strong> €20 (includes Curated Welcome Drink) — <strong>CASH ONLY</strong> at the door.</span>
+              <span><strong>Entry Fee:</strong> €20 (includes Welcome Drink) — <strong>CASH ONLY</strong> at the door.</span>
             </p>
           </div>
 
@@ -233,32 +233,42 @@
 
         </div>
 
-        <!-- THANK YOU VIEW (Appears after submission) -->
+        <!-- THANK YOU VIEW (Appears immediately after submission) -->
         <div id="thankyouView" class="hidden space-y-6 text-center animate-fade-in">
           
           <div class="w-16 h-16 bg-purple-900/50 border border-purple-500 text-purple-300 rounded-full flex items-center justify-center mx-auto text-2xl shadow-lg shadow-purple-950/80">
-            ✉️
+            🎟️
           </div>
 
           <div class="space-y-1.5">
-            <h2 class="text-2xl font-extrabold text-white font-serif-title">Registration Confirmed!</h2>
+            <h2 class="text-2xl font-extrabold text-white font-serif-title">You're On The List!</h2>
             <p class="text-xs text-purple-300 uppercase tracking-widest font-semibold">Luxury Hotel Halloween Party</p>
           </div>
 
-          <div id="confirmationDetails" class="bg-purple-950/40 border border-purple-800/40 p-4 rounded-xl text-xs text-zinc-300 space-y-2 text-left">
-            <p class="flex items-start gap-2">
-              <span>📧</span>
-              <span>A confirmation email has been sent to your email address! Please check your inbox (and spam folder).</span>
-            </p>
-            <p class="flex items-start gap-2 text-amber-400/90 font-medium">
-              <span>💵</span>
-              <span>Payment (€20, includes welcome drink) is collected in <strong>CASH ONLY</strong> at the entrance door.</span>
-            </p>
-            <p class="flex items-start gap-2 text-zinc-400">
-              <span>📍</span>
-              <span><strong>Venue:</strong> The Dean Munich (Autograph Collection), Landsberger Str. 68, 80339 München (Sat 31 Oct, 18:00 – 23:00).</span>
-            </p>
+          <!-- Dynamic Submitted Guest Summary Card -->
+          <div class="bg-purple-950/40 border border-purple-800/50 p-4 rounded-xl text-xs text-zinc-300 space-y-3 text-left">
+            <div class="border-b border-purple-900/60 pb-2">
+              <span class="text-[10px] uppercase font-bold tracking-widest text-purple-400 block mb-1">Confirmed Registration Details</span>
+              <p class="text-sm font-semibold text-white" id="confirmName">—</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-zinc-300">
+              <p>📱 <strong>WhatsApp:</strong> <span id="confirmPhone">—</span></p>
+              <p>📧 <strong>Email:</strong> <span id="confirmEmail">—</span></p>
+              <p class="col-span-1 md:col-span-2">👤 <strong>Invited By:</strong> <span id="confirmInvitedBy">—</span></p>
+            </div>
+
+            <div class="pt-2 border-t border-purple-900/60 space-y-1 text-zinc-400">
+              <p>📍 <strong>Venue:</strong> The Dean Munich (Autograph Collection), Landsberger Str. 68</p>
+              <p>🗓️ <strong>Date & Time:</strong> Saturday 31 Oct • 18:00 – 23:00</p>
+              <p class="text-amber-400/90 font-medium">💵 <strong>Entry Fee:</strong> €20 (includes Welcome Drink) — <strong>CASH ONLY</strong> at the door.</p>
+            </div>
           </div>
+
+          <!-- Screenshot Hint -->
+          <p class="text-[11px] text-purple-300/80 italic">
+            📸 Take a screenshot of this page for your door check-in!
+          </p>
 
           <!-- Secret WhatsApp VIP Group Block in Thank You Page -->
           <div class="bg-gradient-to-r from-emerald-950/90 via-zinc-900 to-emerald-950/90 p-4 rounded-xl border border-emerald-600/50 space-y-2.5 text-center shadow-lg">
@@ -291,7 +301,7 @@
               rel="noopener noreferrer"
               class="inline-block w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-semibold py-3 px-4 rounded-xl border border-zinc-700 text-xs transition-colors"
             >
-              💬 Direct Questions? Chat with Ari
+              💬 Questions? Chat with Ari
             </a>
           </div>
 
@@ -316,9 +326,21 @@
     const btnText = document.getElementById('btnText');
     const btnSpinner = document.getElementById('btnSpinner');
 
+    // Summary Card Elements
+    const confirmName = document.getElementById('confirmName');
+    const confirmPhone = document.getElementById('confirmPhone');
+    const confirmEmail = document.getElementById('confirmEmail');
+    const confirmInvitedBy = document.getElementById('confirmInvitedBy');
+
     rsvpForm.addEventListener('submit', async function(e) {
       e.preventDefault();
       
+      // Extract form values before sending
+      const nameVal = document.getElementById('name').value;
+      const emailVal = document.getElementById('email').value;
+      const phoneVal = document.getElementById('phone').value;
+      const invitedByVal = document.getElementById('invited_by').value;
+
       submitBtn.disabled = true;
       btnText.textContent = "Registering Guest...";
       btnSpinner.classList.remove('hidden');
@@ -335,6 +357,13 @@
         });
 
         if (response.ok) {
+          // Populate summary card on thank you view
+          confirmName.textContent = nameVal;
+          confirmEmail.textContent = emailVal;
+          confirmPhone.textContent = phoneVal;
+          confirmInvitedBy.textContent = invitedByVal;
+
+          // Transition view
           formView.classList.add('hidden');
           thankyouView.classList.remove('hidden');
           window.scrollTo({ top: 0, behavior: 'smooth' });
