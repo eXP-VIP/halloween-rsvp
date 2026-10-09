@@ -3,21 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Exclusive Halloween Party RSVP</title>
+  <title>Exclusive Halloween Guest List RSVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-black text-gray-100 font-sans antialiased min-h-screen flex flex-col justify-between">
+<body class="bg-black text-zinc-100 font-sans antialiased min-h-screen flex flex-col justify-between">
 
   <!-- Header / Hero Section -->
-  <header class="py-12 px-4 text-center bg-gradient-to-b from-purple-950 via-black to-black border-b border-purple-900/40">
-    <div class="max-w-2xl mx-auto space-y-4">
-      <span class="inline-block px-3 py-1 bg-purple-900/60 text-purple-300 text-xs tracking-widest uppercase font-semibold rounded-full border border-purple-700/50">
-        Strictly Guest List Only
+  <header class="relative bg-zinc-950 border-b border-zinc-800/80">
+    <!-- Event Cover Image -->
+    <div class="w-full h-64 md:h-80 overflow-hidden relative">
+      <img 
+        src="https://assets.in-cdn.net/image/768_576_widen/2026/09/02/749db1ed6916cf9e6204854dd169ca28e76925d1682cd150e0f5ca43a10920b1.jpeg" 
+        alt="Exclusive Halloween Event" 
+        class="w-full h-full object-cover opacity-80"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+    </div>
+
+    <!-- Title Header -->
+    <div class="max-w-xl mx-auto px-4 -mt-20 relative z-10 text-center space-y-3 pb-8">
+      <span class="inline-block px-3 py-1 bg-purple-900/80 text-purple-200 text-xs tracking-widest uppercase font-semibold rounded-full border border-purple-700/60 shadow-lg">
+        Exclusive Parties • Guest List Only
       </span>
-      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-white drop-shadow-md">
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-white drop-shadow-lg">
         DARK ELEGANCE
       </h1>
-      <p class="text-lg text-purple-200/90 font-light">
+      <p class="text-sm md:text-base text-zinc-300 font-light">
         An Exclusive Halloween Night • Munich
       </p>
     </div>
@@ -25,30 +36,31 @@
 
   <!-- Form Container -->
   <main class="flex-grow flex items-center justify-center px-4 py-8">
-    <div class="w-full max-w-lg bg-zinc-900/90 p-8 rounded-2xl border border-zinc-800 shadow-2xl shadow-purple-950/50">
+    <div class="w-full max-w-lg bg-zinc-900/90 p-6 md:p-8 rounded-2xl border border-zinc-800 shadow-2xl shadow-purple-950/30">
       
       <!-- Event Highlights -->
-      <div class="mb-6 pb-6 border-b border-zinc-800 text-sm text-zinc-300 space-y-2">
-        <p class="flex items-center gap-2">🗝️ <span>Private venue • Hotel hostesses enforcing list access</span></p>
-        <p class="flex items-center gap-2">🍹 <span>Bring 2 non-member friends &amp; all get a welcome drink</span></p>
-        <p class="flex items-center gap-2">🎧 <span>Top DJs • Secret Party Room &amp; Chill Lounge</span></p>
+      <div class="mb-6 pb-6 border-b border-zinc-800 text-xs md:text-sm text-zinc-300 space-y-2.5">
+        <p class="flex items-center gap-2">🗝️ <span>Strictly private venue • Door hostesses enforcing guest list access</span></p>
+        <p class="flex items-center gap-2">🍹 <span>Complimentary welcome drink for registered guests</span></p>
+        <p class="flex items-center gap-2">🎧 <span>Top DJs • Secret Party Room &amp; Chill Out Lounge</span></p>
+        <p class="flex items-center gap-2 text-amber-400/90 font-medium">💵 <span>Entry Fee: Cash payment at the entrance</span></p>
       </div>
 
       <!-- FORM START -->
-      <!-- REPLACE 'YOUR_FORMSPREE_FORM_ID' BELOW WITH YOUR ACTUAL ID -->
+      <!-- REPLACE 'YOUR_FORMSPREE_FORM_ID' BELOW WITH YOUR ACTUAL FORMSPREE ID -->
       <form action="https://formspree.io/f/YOUR_FORMSPREE_FORM_ID" method="POST" class="space-y-5">
         
-        <!-- Full Name -->
+        <!-- Primary Guest Full Name -->
         <div>
           <label for="name" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-            Full Name *
+            Your Full Name *
           </label>
           <input 
             type="text" 
             id="name" 
-            name="Full Name" 
+            name="Primary Name" 
             required 
-            placeholder="e.g. Ari El"
+            placeholder="e.g. Alex Morgan"
             class="w-full bg-zinc-800 text-white border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
           />
         </div>
@@ -68,36 +80,34 @@
           />
         </div>
 
-        <!-- Phone Number -->
+        <!-- WhatsApp Phone Number -->
         <div>
           <label for="phone" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-            Phone Number *
+            WhatsApp Phone Number *
           </label>
           <input 
             type="tel" 
             id="phone" 
-            name="Phone Number" 
+            name="WhatsApp Number" 
             required 
-            placeholder="+49 123 4567890"
+            placeholder="+49 176 12345678"
             class="w-full bg-zinc-800 text-white border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
           />
         </div>
 
-        <!-- Additional Guests Count -->
+        <!-- Additional Guests Names -->
         <div>
-          <label for="guests" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-            Number of Additional Guests Coming With You
+          <label for="additional_guests" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">
+            Bringing Additional Guests?
           </label>
-          <select 
-            id="guests" 
-            name="Additional Guests" 
-            class="w-full bg-zinc-800 text-white border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
-          >
-            <option value="0">Just me (+0)</option>
-            <option value="1">1 Guest (+1)</option>
-            <option value="2">2 Guests (+2) — Free Welcome Drinks!</option>
-            <option value="3">3+ Guests</option>
-          </select>
+          <p class="text-xs text-zinc-500 mb-2">Please write the full names of any additional guests you wish to register on the list (one per line or separated by commas):</p>
+          <textarea 
+            id="additional_guests" 
+            name="Additional Guest Names" 
+            rows="3"
+            placeholder="e.g. Maria Rossi, John Smith"
+            class="w-full bg-zinc-800 text-white border border-zinc-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+          ></textarea>
         </div>
 
         <!-- Submit Button -->
@@ -105,18 +115,31 @@
           type="submit" 
           class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-3.5 px-6 rounded-lg shadow-lg hover:shadow-purple-700/40 transition-all duration-200 mt-2"
         >
-          Confirm Guest List Spot 🕯️
+          Confirm Guest List Registration 🕯️
         </button>
 
       </form>
       <!-- FORM END -->
+
+      <!-- WhatsApp Help Link -->
+      <div class="mt-6 pt-5 border-t border-zinc-800 text-center">
+        <a 
+          href="https://wa.me/4917681117359?text=Hi!%20I%20have%20a%20question%20about%20the%20Halloween%20Guest%20List." 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 text-xs text-zinc-400 hover:text-green-400 transition-colors"
+        >
+          <span>💬 Questions? Contact us directly on WhatsApp:</span>
+          <span class="font-semibold text-zinc-200 underline">+49 176 8111 7359</span>
+        </a>
+      </div>
 
     </div>
   </main>
 
   <!-- Footer -->
   <footer class="py-6 text-center text-xs text-zinc-600 border-t border-zinc-900">
-    InterNations Munich • Guestlist Registration
+    Exclusive Parties • Private Guest List Management
   </footer>
 
 </body>
