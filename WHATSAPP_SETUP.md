@@ -42,14 +42,27 @@ firebase functions:secrets:set WHATSAPP_ACCESS_TOKEN --project the-dean-munich-h
 firebase deploy --only functions:notifyAriOnNewGuest --project the-dean-munich-halloween
 ```
 
-When prompted for the secret, paste the Meta access token. On deployment, set the parameters:
-- `WHATSAPP_PHONE_NUMBER_ID`: the sender's Phone Number ID from Meta.
-- `WHATSAPP_NOTIFY_TO`: defaults to `4917681117359` (Ari), international digits only.
+When prompted for the secret, paste the Meta access token. The deployment prompts for `WHATSAPP_PHONE_NUMBER_ID`: enter the sender's **Phone Number ID** from Meta, not its visible phone number.
+
+The other parameters have defaults:
+- `WHATSAPP_NOTIFY_TO`: `4917681117359` (Ari), international digits only.
 - `WHATSAPP_TEMPLATE_NAME`: `new_guest_registration`.
 - `WHATSAPP_TEMPLATE_LANGUAGE`: `en_US`.
-- `WHATSAPP_GRAPH_API_VERSION`: default `v23.0`; use a version currently supported by your Meta app if that version is no longer available.
+- `WHATSAPP_GRAPH_API_VERSION`: `v23.0`.
 
-Firebase Cloud Functions may require the project to use the Blaze billing plan. Review Firebase and Meta pricing before enabling production traffic.
+To set or override parameters, create `functions/.env.the-dean-munich-halloween` locally (it is excluded from Git) with the values, for example:
+
+```dotenv
+WHATSAPP_PHONE_NUMBER_ID=YOUR_META_PHONE_NUMBER_ID
+WHATSAPP_NOTIFY_TO=4917681117359
+WHATSAPP_TEMPLATE_NAME=new_guest_registration
+WHATSAPP_TEMPLATE_LANGUAGE=en_US
+WHATSAPP_GRAPH_API_VERSION=v23.0
+```
+
+For the optional API smoke test, temporarily set `WHATSAPP_TEMPLATE_NAME=hello_world` in that file and redeploy. The built-in template sends a generic message only. Restore `new_guest_registration` after its approval to receive guest details.
+
+Cloud Functions deployment requires the Firebase project to use the Blaze billing plan. The function has low expected usage, but the plan requires a billing account and usage beyond free quotas can incur charges. Set a budget alert before deployment. See [Firebase's Cloud Functions pricing FAQ](https://firebase.google.com/docs/functions/faq-and-troubleshooting?hl=en) and Meta's [WhatsApp Business Policy](https://whatsappbusiness.com/policy/).
 
 ## Test before removing Formspree
 
