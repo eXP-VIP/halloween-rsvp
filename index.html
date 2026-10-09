@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Luxury Hotel Halloween Party — Guest Registration</title>
+  <title>Luxury Hotel Halloween Party — Guest Registration & Check-In</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,12 +16,13 @@
 </head>
 <body class="bg-black text-zinc-100 font-sans antialiased min-h-screen flex flex-col justify-between relative bg-cover bg-center bg-fixed selection:bg-purple-600 selection:text-white" style="background-image: url('https://thumbs.dreamstime.com/b/happy-halloween-banner-template-pumpkin-elements-theme-background-website-spooky-card-design-293255121.jpg');">
 
+  <!-- Dark Vignette Overlay -->
   <div class="fixed inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/70 backdrop-blur-sm z-0"></div>
 
+  <!-- Main Content Wrapper -->
   <div class="relative z-10 flex flex-col min-h-screen justify-between py-6 px-4">
 
-    <!-- Header Section -->
-    <header class="py-6 text-center space-y-4 max-w-2xl mx-auto">
+    <header id="publicHeader" class="py-6 text-center space-y-4 max-w-2xl mx-auto">
       <span class="inline-block px-4 py-1.5 bg-purple-950/90 text-purple-300 text-xs tracking-widest uppercase font-semibold rounded-full border border-purple-600/50 shadow-lg shadow-purple-950/50">
         🗝️ Strict Guest List Only
       </span>
@@ -55,7 +56,7 @@
     <main class="flex-grow flex items-center justify-center py-4">
       <div id="appContainer" class="w-full max-w-lg bg-zinc-950/90 p-6 md:p-8 rounded-2xl border border-purple-900/40 shadow-2xl shadow-purple-950/60 backdrop-blur-md space-y-6 transition-all duration-300">
         
-        <!-- REGISTRATION FORM VIEW -->
+        <!-- ==================== 1. PUBLIC RSVP FORM VIEW ==================== -->
         <div id="formView" class="space-y-6">
 
           <!-- Event Story & Teaser Intro -->
@@ -91,7 +92,6 @@
           <!-- FORM START -->
           <form id="rsvpForm" action="https://formspree.io/f/mbgdopnl" method="POST" class="space-y-5">
             
-            <!-- Hidden Input to pass WhatsApp link into Formspree email receipt -->
             <input 
               type="hidden" 
               name="VIP Group Link" 
@@ -174,9 +174,9 @@
               💡 <strong>Bringing friends?</strong> Submit your details first. You will be able to register additional guests immediately afterwards!
             </p>
 
-            <!-- Final Dare & Submit Button -->
-            <div class="pt-3 space-y-4 text-center">
-              <p class="text-sm md:text-base font-serif-title text-purple-300 tracking-wide font-medium leading-relaxed pb-2">
+            <!-- Call-Out Quote & Submit Button with Added Font Size & Spacing -->
+            <div class="pt-4 space-y-6 text-center">
+              <p class="text-base md:text-lg font-serif-title text-purple-300 tracking-wide font-medium leading-relaxed my-2">
                 "One secret venue, one chance to cross over.<br>Are you brave enough to step in?" 🗝️✨
               </p>
 
@@ -212,7 +212,7 @@
 
         </div>
 
-        <!-- THANK YOU VIEW (Appears immediately after submission) -->
+        <!-- ==================== 2. THANK YOU VIEW ==================== -->
         <div id="thankyouView" class="hidden space-y-6 text-center">
           
           <div class="w-16 h-16 bg-purple-900/50 border border-purple-500 text-purple-300 rounded-full flex items-center justify-center mx-auto text-2xl shadow-lg shadow-purple-950/80">
@@ -228,13 +228,13 @@
           <div class="bg-purple-950/40 border border-purple-800/50 p-4 rounded-xl text-xs text-zinc-300 space-y-3 text-left">
             <div class="border-b border-purple-900/60 pb-2">
               <span class="text-[10px] uppercase font-bold tracking-widest text-purple-400 block mb-1">Confirmed Registration Details</span>
-              <p class="text-sm font-semibold text-white" id="confirmName">: </p>
+              <p class="text-sm font-semibold text-white" id="confirmName">—</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-zinc-300">
-              <p>📱 <strong>WhatsApp:</strong> <span id="confirmPhone">: </span></p>
-              <p>📧 <strong>Email:</strong> <span id="confirmEmail">: </span></p>
-              <p class="col-span-1 md:col-span-2">👤 <strong>Invited By:</strong> <span id="confirmInvitedBy">: </span></p>
+              <p>📱 <strong>WhatsApp:</strong> <span id="confirmPhone">—</span></p>
+              <p>📧 <strong>Email:</strong> <span id="confirmEmail">—</span></p>
+              <p class="col-span-1 md:col-span-2">👤 <strong>Invited By:</strong> <span id="confirmInvitedBy">—</span></p>
             </div>
 
             <div class="pt-2 border-t border-purple-900/60 space-y-1 text-zinc-400">
@@ -281,12 +281,118 @@
 
         </div>
 
+        <!-- ==================== 3. HOSTESS CHECK-IN DASHBOARD VIEW ==================== -->
+        <div id="hostessDashboardView" class="hidden space-y-5">
+          
+          <div class="border-b border-purple-900/60 pb-3 flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-white font-serif-title flex items-center gap-2">
+                <span>📋 Entrance Guest List</span>
+              </h2>
+              <p class="text-[11px] text-purple-300">The Dean Munich • Guest Check-In</p>
+            </div>
+            <button 
+              onclick="renderHostessList()" 
+              class="bg-purple-900/80 hover:bg-purple-800 text-purple-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-purple-600/50"
+            >
+              🔄 Refresh List
+            </button>
+          </div>
+
+          <!-- DEDICATED FREE DRINK REWARDS SUMMARY CARD -->
+          <div id="freeDrinkSection" class="bg-gradient-to-r from-amber-950/80 via-zinc-900 to-amber-950/80 border border-amber-500/40 p-3.5 rounded-xl space-y-2">
+            <div class="flex items-center justify-between border-b border-amber-800/40 pb-1.5">
+              <span class="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🎁</span> Free Drink Qualified Inviters (≥2 Guests)
+              </span>
+              <span id="rewardHostCount" class="text-[10px] bg-amber-900/80 text-amber-200 px-2 py-0.5 rounded-full font-bold">0</span>
+            </div>
+            <div id="freeDrinkHostList" class="text-xs text-zinc-200 space-y-1 max-h-28 overflow-y-auto pr-1">
+              <p class="text-zinc-500 italic text-[11px]">No inviters qualified yet.</p>
+            </div>
+          </div>
+
+          <!-- Search Bar -->
+          <div>
+            <input 
+              type="text" 
+              id="guestSearch" 
+              onkeyup="filterGuests()" 
+              placeholder="🔍 Search guest or inviter name..." 
+              class="w-full bg-zinc-900 text-xs text-white border border-zinc-700 rounded-xl px-3 py-2.5 focus:outline-none focus:border-purple-500 transition-colors"
+            />
+          </div>
+
+          <!-- Live Stats -->
+          <div class="grid grid-cols-2 gap-2 text-center text-xs">
+            <div class="bg-zinc-900/80 p-2 rounded-lg border border-zinc-800">
+              <span class="text-purple-400 block font-bold text-sm" id="totalCount">0</span>
+              <span class="text-zinc-400 text-[10px] uppercase">Registered Guests</span>
+            </div>
+            <div class="bg-zinc-900/80 p-2 rounded-lg border border-zinc-800">
+              <span class="text-emerald-400 block font-bold text-sm" id="checkedInCount">0</span>
+              <span class="text-zinc-400 text-[10px] uppercase">Checked In</span>
+            </div>
+          </div>
+
+          <!-- Alphabetical Guest List Container -->
+          <div id="guestListContainer" class="max-h-96 overflow-y-auto space-y-2 pr-1 text-xs">
+            <!-- Dynamically populated -->
+          </div>
+
+          <!-- Direct Support Link for Hostess at Entrance -->
+          <div class="pt-3 border-t border-zinc-800 text-center">
+            <a 
+              href="https://wa.me/4917681117359?text=Hi%20Ari!%20Hostess%20support%20needed%20at%20the%20entrance." 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 text-xs text-zinc-400 hover:text-green-400 transition-colors"
+            >
+              <span>💬 Need help? Chat with Ari on WhatsApp</span>
+            </a>
+          </div>
+
+        </div>
+
       </div>
     </main>
 
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div id="deleteModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-zinc-950 border border-purple-900/60 p-6 rounded-2xl max-w-xs w-full text-center space-y-4 shadow-2xl">
+        <div class="w-12 h-12 bg-red-950/80 text-red-400 rounded-full flex items-center justify-center mx-auto text-xl border border-red-800/50">
+          ⚠️
+        </div>
+        <div class="space-y-1">
+          <h3 class="text-base font-bold text-white">Delete Guest Entry?</h3>
+          <p class="text-xs text-zinc-400" id="deleteTargetName">This action cannot be undone.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-2">
+          <button 
+            onclick="closeDeleteModal()" 
+            class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-semibold py-2.5 rounded-xl border border-zinc-700"
+          >
+            Cancel
+          </button>
+          <button 
+            id="confirmDeleteBtn" 
+            class="bg-red-700 hover:bg-red-600 text-white text-xs font-bold py-2.5 rounded-xl shadow-lg"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Footer -->
-    <footer class="py-4 text-center text-xs text-zinc-500 border-t border-zinc-900/80 bg-black/60 backdrop-blur-sm">
-      Private Guest List Management • Hosted by Ari El
+    <footer id="publicFooter" class="py-4 text-center text-xs text-zinc-500 border-t border-zinc-900/80 bg-black/60 backdrop-blur-sm flex items-center justify-center gap-4">
+      <span>Private Guest List Management • Hosted by Ari El</span>
+      <button 
+        onclick="promptHostessAccess()" 
+        class="text-zinc-600 hover:text-purple-400 transition-colors text-[11px] underline"
+      >
+        🔒 Entrance Portal
+      </button>
     </footer>
 
   </div>
@@ -295,6 +401,9 @@
     const rsvpForm = document.getElementById('rsvpForm');
     const formView = document.getElementById('formView');
     const thankyouView = document.getElementById('thankyouView');
+    const hostessDashboardView = document.getElementById('hostessDashboardView');
+    const publicHeader = document.getElementById('publicHeader');
+    const publicFooter = document.getElementById('publicFooter');
     const submitBtn = document.getElementById('submitBtn');
     const btnText = document.getElementById('btnText');
     const btnSpinner = document.getElementById('btnSpinner');
@@ -305,13 +414,35 @@
     const confirmEmail = document.getElementById('confirmEmail');
     const confirmInvitedBy = document.getElementById('confirmInvitedBy');
 
+    let guestToDeleteId = null;
+
+    // Persistent Local Storage Access
+    function getStoredGuests() {
+      return JSON.parse(localStorage.getItem('partyGuests') || '[]');
+    }
+
+    function saveStoredGuests(guests) {
+      localStorage.setItem('partyGuests', JSON.stringify(guests));
+    }
+
+    // Initialize Mode Check on Load
+    window.onload = function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isHostessMode = urlParams.get('mode') === 'hostess' || window.location.hash === '#hostess';
+
+      if (isHostessMode) {
+        promptHostessAccess(true);
+      }
+    };
+
+    // Form Submission
     rsvpForm.addEventListener('submit', async function(e) {
       e.preventDefault();
       
-      const nameVal = document.getElementById('name').value;
-      const emailVal = document.getElementById('email').value;
-      const phoneVal = document.getElementById('phone').value;
-      const invitedByVal = document.getElementById('invited_by').value;
+      const nameVal = document.getElementById('name').value.trim();
+      const emailVal = document.getElementById('email').value.trim();
+      const phoneVal = document.getElementById('phone').value.trim();
+      const invitedByVal = document.getElementById('invited_by').value.trim();
 
       submitBtn.disabled = true;
       btnText.textContent = "Registering Guest...";
@@ -320,26 +451,33 @@
       const formData = new FormData(rsvpForm);
 
       try {
-        const response = await fetch(rsvpForm.action, {
+        await fetch(rsvpForm.action, {
           method: 'POST',
           body: formData,
-          headers: {
-            'Accept': 'application/json'
-          }
+          headers: { 'Accept': 'application/json' }
         });
 
-        if (response.ok) {
-          confirmName.textContent = nameVal;
-          confirmEmail.textContent = emailVal;
-          confirmPhone.textContent = phoneVal;
-          confirmInvitedBy.textContent = invitedByVal;
+        // Save into persistent local storage database
+        const currentGuests = getStoredGuests();
+        currentGuests.push({
+          id: Date.now(),
+          name: nameVal,
+          email: emailVal,
+          phone: phoneVal,
+          invitedBy: invitedByVal,
+          checkedIn: false
+        });
+        saveStoredGuests(currentGuests);
 
-          formView.classList.add('hidden');
-          thankyouView.classList.remove('hidden');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-          alert('Submission failed. Please check your network connection and try again.');
-        }
+        confirmName.textContent = nameVal;
+        confirmEmail.textContent = emailVal;
+        confirmPhone.textContent = phoneVal;
+        confirmInvitedBy.textContent = invitedByVal;
+
+        formView.classList.add('hidden');
+        thankyouView.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
       } catch (error) {
         alert('An error occurred during registration. Please try again.');
       } finally {
@@ -355,6 +493,166 @@
       formView.classList.remove('hidden');
       document.getElementById('name').focus();
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Hostess Entrance Portal Access
+    function promptHostessAccess(autoPrompt = false) {
+      const pin = prompt("Enter Entrance Access PIN:");
+      if (pin === "1800") {
+        activateHostessView();
+      } else if (pin !== null) {
+        alert("Incorrect PIN.");
+        if (autoPrompt) {
+          window.location.href = window.location.pathname;
+        }
+      }
+    }
+
+    function activateHostessView() {
+      publicHeader.classList.add('hidden');
+      publicFooter.classList.add('hidden');
+      formView.classList.add('hidden');
+      thankyouView.classList.add('hidden');
+      hostessDashboardView.classList.remove('hidden');
+      renderHostessList();
+    }
+
+    // Render Hostess Check-In Dashboard
+    function renderHostessList() {
+      const guests = getStoredGuests();
+
+      // Calculate Free Drink qualification (Inviters bringing >= 2 guests)
+      const inviterCounts = {};
+      const inviterOriginalNames = {};
+
+      guests.forEach(g => {
+        if (g.invitedBy) {
+          const key = g.invitedBy.toLowerCase().trim();
+          inviterCounts[key] = (inviterCounts[key] || 0) + 1;
+          inviterOriginalNames[key] = g.invitedBy.trim();
+        }
+      });
+
+      // Update Free Drink Summary Card
+      const freeDrinkHostList = document.getElementById('freeDrinkHostList');
+      freeDrinkHostList.innerHTML = '';
+      let qualifiedCount = 0;
+
+      Object.keys(inviterCounts).forEach(key => {
+        if (inviterCounts[key] >= 2) {
+          qualifiedCount++;
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between bg-amber-950/40 p-2 rounded-lg border border-amber-800/40';
+          row.innerHTML = `
+            <span class="font-bold text-amber-200">${inviterOriginalNames[key]}</span>
+            <span class="text-[11px] text-amber-300 font-semibold bg-amber-900/60 px-2 py-0.5 rounded-full">${inviterCounts[key]} Guests Registered</span>
+          `;
+          freeDrinkHostList.appendChild(row);
+        }
+      });
+
+      document.getElementById('rewardHostCount').textContent = qualifiedCount;
+
+      if (qualifiedCount === 0) {
+        freeDrinkHostList.innerHTML = '<p class="text-zinc-500 italic text-[11px]">No inviters qualified yet.</p>';
+      }
+
+      // Alphabetical Sort by Guest Full Name
+      guests.sort((a, b) => a.name.localeCompare(b.name));
+
+      const container = document.getElementById('guestListContainer');
+      container.innerHTML = '';
+
+      let checkedInTotal = 0;
+
+      guests.forEach(guest => {
+        if (guest.checkedIn) checkedInTotal++;
+
+        const isInviterQualified = (inviterCounts[guest.invitedBy.toLowerCase().trim()] || 0) >= 2;
+
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-xl border transition-colors flex items-center justify-between gap-2 ${
+          guest.checkedIn 
+            ? 'bg-emerald-950/40 border-emerald-700/60 text-zinc-300' 
+            : 'bg-zinc-900/80 border-zinc-800 text-white'
+        }`;
+
+        card.innerHTML = `
+          <div class="space-y-1 pr-1 flex-grow">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="font-bold text-sm text-white">${guest.name}</span>
+              ${isInviterQualified ? '<span class="text-[10px] bg-amber-950 text-amber-300 px-2 py-0.5 rounded-full border border-amber-600/50 font-semibold">🎁 FREE DRINK HOST</span>' : ''}
+            </div>
+            <p class="text-[11px] text-purple-300">Invited by: <strong>${guest.invitedBy}</strong></p>
+            <p class="text-[10px] text-zinc-400">📱 ${guest.phone} • 📧 ${guest.email}</p>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <button 
+              onclick="toggleCheckIn(${guest.id})" 
+              class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
+                guest.checkedIn 
+                  ? 'bg-emerald-600 text-white' 
+                  : 'bg-purple-900/80 hover:bg-purple-800 text-purple-200 border border-purple-600/50'
+              }"
+            >
+              ${guest.checkedIn ? '✓ Checked In' : 'Check In'}
+            </button>
+            <button 
+              onclick="openDeleteModal(${guest.id}, '${guest.name}')" 
+              class="p-1.5 bg-zinc-900 hover:bg-red-950 text-zinc-400 hover:text-red-400 border border-zinc-800 rounded-lg transition-colors"
+              title="Delete Entry"
+            >
+              🗑️
+            </button>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+
+      document.getElementById('totalCount').textContent = guests.length;
+      document.getElementById('checkedInCount').textContent = checkedInTotal;
+    }
+
+    function toggleCheckIn(id) {
+      const guests = getStoredGuests();
+      const guest = guests.find(g => g.id === id);
+      if (guest) {
+        guest.checkedIn = !guest.checkedIn;
+        saveStoredGuests(guests);
+        renderHostessList();
+      }
+    }
+
+    function openDeleteModal(id, name) {
+      guestToDeleteId = id;
+      document.getElementById('deleteTargetName').textContent = `Are you sure you want to remove "${name}" from the list?`;
+      document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+      guestToDeleteId = null;
+      document.getElementById('deleteModal').classList.add('hidden');
+    }
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+      if (guestToDeleteId !== null) {
+        let guests = getStoredGuests();
+        guests = guests.filter(g => g.id !== guestToDeleteId);
+        saveStoredGuests(guests);
+        closeDeleteModal();
+        renderHostessList();
+      }
+    });
+
+    function filterGuests() {
+      const query = document.getElementById('guestSearch').value.toLowerCase();
+      const cards = document.getElementById('guestListContainer').children;
+      Array.from(cards).forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(query) ? 'flex' : 'none';
+      });
     }
   </script>
 
