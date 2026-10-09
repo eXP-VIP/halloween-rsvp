@@ -1,682 +1,390 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Luxury Hotel Halloween Party — Guest Registration & Check-In</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <style>
-    .font-serif-title {
-      font-family: 'Cinzel', serif;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Dean Westend Munich • Nocturnal Glamour Halloween RSVP</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Firebase App & Firestore SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gold: '#d4af37',
+                        'gold-light': '#f3e5ab',
+                        'gold-dark': '#aa7c11',
+                        obsidian: '#08080a',
+                    },
+                    fontFamily: {
+                        serif: ['Cinzel', 'serif'],
+                        sans: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #08080a;
+            color: #e2e8f0;
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Specific Dreamstime Pumpkin Theme Halloween Background */
+        .halloween-bg {
+            background-image: linear-gradient(to bottom, rgba(8, 8, 10, 0.55), rgba(8, 8, 10, 0.75)), 
+                              url('https://thumbs.dreamstime.com/b/happy-halloween-banner-template-pumpkin-elements-theme-background-website-spooky-card-design-293255121.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .gold-border {
+            border: 1px solid rgba(212, 175, 55, 0.35);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+        }
+
+        .gold-border-glow {
+            border: 1px solid rgba(212, 175, 55, 0.65);
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.25);
+        }
+
+        .gold-text-gradient {
+            background: linear-gradient(135deg, #ffffff 0%, #d4af37 50%, #aa7c11 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass-panel {
+            background: rgba(12, 12, 16, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+        }
+
+        .gold-btn {
+            background: linear-gradient(135deg, #d4af37 0%, #aa7c11 100%);
+            color: #000;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            transition: all 0.3s ease;
+        }
+
+        .gold-btn:hover {
+            background: linear-gradient(135deg, #f3e5ab 0%, #d4af37 100%);
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .whatsapp-btn {
+            background-color: #25d366;
+            color: #000000;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .whatsapp-btn:hover {
+            background-color: #20ba5a;
+            box-shadow: 0 0 15px rgba(37, 211, 102, 0.4);
+        }
+    </style>
 </head>
-<body class="bg-black text-zinc-100 font-sans antialiased min-h-screen flex flex-col justify-between relative bg-cover bg-center bg-fixed selection:bg-purple-600 selection:text-white" style="background-image: url('https://thumbs.dreamstime.com/b/happy-halloween-banner-template-pumpkin-elements-theme-background-website-spooky-card-design-293255121.jpg');">
+<body class="halloween-bg min-h-screen relative flex flex-col justify-between selection:bg-gold selection:text-black">
 
-  <div class="fixed inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/70 backdrop-blur-sm z-0"></div>
+    <!-- MAIN CONTAINER -->
+    <div class="relative z-10 container mx-auto px-4 py-10 max-w-4xl">
 
-  <!-- Main Content Wrapper -->
-  <div class="relative z-10 flex flex-col min-h-screen justify-between py-6 px-4">
-
-    <header id="publicHeader" class="py-6 text-center space-y-4 max-w-2xl mx-auto">
-      <span class="inline-block px-4 py-1.5 bg-purple-950/90 text-purple-300 text-xs tracking-widest uppercase font-semibold rounded-full border border-purple-600/50 shadow-lg shadow-purple-950/50">
-        🗝️ Strict Guest List Only
-      </span>
-      <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight text-white font-serif-title drop-shadow-[0_4px_20px_rgba(168,85,247,0.4)]">
-        Luxury Hotel Halloween Party
-      </h1>
-      <p class="text-sm md:text-base text-purple-200/90 font-light tracking-wide">
-        Hosted by Ari El • Munich
-      </p>
-
-      <!-- Event Quick Info Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-2 text-left max-w-xl mx-auto text-xs">
-        <div class="bg-zinc-950/80 p-3 rounded-xl border border-purple-900/40 backdrop-blur-md flex items-center gap-3">
-          <span class="text-xl">🗓️</span>
-          <div>
-            <span class="text-purple-400 block font-semibold uppercase text-[10px] tracking-wider">Date & Time</span>
-            <span class="text-zinc-200 font-medium">Saturday 31 Oct • 18:00 to 23:00</span>
-          </div>
-        </div>
-        <div class="bg-zinc-950/80 p-3 rounded-xl border border-purple-900/40 backdrop-blur-md flex items-center gap-3">
-          <span class="text-xl">📍</span>
-          <div>
-            <span class="text-purple-400 block font-semibold uppercase text-[10px] tracking-wider">Venue Location</span>
-            <span class="text-zinc-200 font-medium">The Dean Munich (Autograph Collection)</span>
-            <span class="text-zinc-400 block text-[11px]">Landsberger Str. 68, 80339 München</span>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <main class="flex-grow flex items-center justify-center py-4">
-      <div id="appContainer" class="w-full max-w-lg bg-zinc-950/90 p-6 md:p-8 rounded-2xl border border-purple-900/40 shadow-2xl shadow-purple-950/60 backdrop-blur-md space-y-6 transition-all duration-300">
-        
-        <div id="formView" class="space-y-6">
-
-          <!-- Event Story & Teaser Intro -->
-          <div class="text-sm md:text-base text-zinc-100 leading-relaxed space-y-2.5 font-medium">
-            <p>
-              Something dark, sleek and high-profile is taking over the hidden party space inside Munich's iconic luxury boutique spot in Westend: The Dean Munich by Marriott's Autograph Collection!
+        <!-- HEADER SECTION -->
+        <header class="text-center mb-10">
+            <p class="font-serif text-gold tracking-[0.3em] uppercase text-xs sm:text-sm mb-2">Autograph Collection Presents</p>
+            <h1 class="font-serif text-3xl sm:text-5xl md:text-6xl text-white font-extrabold tracking-wider uppercase mb-4 gold-text-gradient">
+                The Dean Westend Munich
+            </h1>
+            <div class="w-32 h-[1px] bg-gold/60 mx-auto mb-4"></div>
+            <p class="text-gray-200 font-medium text-sm sm:text-base tracking-widest uppercase">
+                Private Halloween Soirée • Saturday 31 Oct • 18:00 to 23:00 CEST
             </p>
-            <p>
-              We are claiming this ultra-premium haven for an unforgettable 🎃 <strong>Halloween</strong> 🎃 night of top DJs, curated drinks and dark elegance.
+            <p class="text-xs text-gold/90 font-serif tracking-wider uppercase mt-2">
+                Hosted by Ari El
             </p>
-          </div>
+        </header>
 
-          <!-- Detailed Event Highlights -->
-          <div class="pb-4 border-b border-zinc-800/80 text-xs md:text-sm text-zinc-300 space-y-3">
-            <p class="flex items-start gap-2.5">
-              <span class="text-base">🗝️</span> 
-              <span><strong>Guest List Access:</strong> Hotel hostesses at the entrance will welcome you and verify your name on the private guest list.</span>
+        <!-- VENUE & ATMOSPHERE -->
+        <section class="glass-panel rounded-2xl p-6 sm:p-10 mb-10 gold-border">
+            <h2 class="font-serif text-xl sm:text-2xl text-gold uppercase tracking-wider mb-4">The Venue & Atmosphere</h2>
+            <p class="text-gray-200 text-sm sm:text-base leading-relaxed mb-6 font-light">
+                Something dark sleek and high profile is taking over a hidden party space inside The Dean Westend Munich. And exclusively for us!
             </p>
-            <p class="flex items-start gap-2.5">
-              <span class="text-base">🎧</span> 
-              <span><strong>2 Party Zones:</strong> Step beyond the secret entrance into the Secret Party Room with top DJs driving a mega sound system or retreat to the cozy Chill Out Lounge. Full restaurant access included.</span>
+            <p class="text-gray-300 text-sm leading-relaxed mb-8">
+                We are claiming this fresh ultra premium haven for an unforgettable Halloween night of top DJs curated drinks and dark elegance. Step beyond the entrance into a stylish atmospheric Secret Party Room where top DJs drive a mega sound system or retreat to the cozy Chill Out Lounge with ambient music for deeper conversations. Guests also enjoy full access to the hotel restaurant.
             </p>
-            <p class="flex items-start gap-2.5">
-              <span class="text-base">🎭</span> 
-              <span><strong>Dress Code:</strong> Shrouded in nocturnal glamour, veiled in mystery or dripping in Halloween allure. Dress to thrill, or simply be yourself if being spooky is your true nature! 😎🎭</span>
-            </p>
-            <p class="flex items-start gap-2.5 text-amber-400/90 font-medium bg-amber-950/30 p-2.5 rounded-lg border border-amber-800/40">
-              <span class="text-base">💵</span> 
-              <span><strong>Entry Fee:</strong> €20 (Cash-Only) includes Welcome Drink.</span>
-            </p>
-          </div>
 
-          <!-- FORM START -->
-          <form id="rsvpForm" action="https://formspree.io/f/mbgdopnl" method="POST" class="space-y-5">
-            
-            <input 
-              type="hidden" 
-              name="VIP Group Link" 
-              value="If you are not there yet and want to be invited next time, join the Exclusive Parties (eXP-VIP) group. Zero chat, zero noise, private. Members cannot post nor see each other. : https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58" 
-            />
+            <!-- 2 PARTY ZONES -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gold/20">
+                <div class="bg-obsidian/60 p-4 rounded-xl border border-gold/20">
+                    <p class="text-xs uppercase text-gold font-serif font-bold tracking-wider mb-1"><i class="fa-solid fa-compact-disc text-amber-400 mr-2"></i> Secret Party Room</p>
+                    <p class="text-xs text-gray-300">Top DJs driving a mega sound system with high energy dance beats.</p>
+                </div>
+                <div class="bg-obsidian/60 p-4 rounded-xl border border-gold/20">
+                    <p class="text-xs uppercase text-gold font-serif font-bold tracking-wider mb-1"><i class="fa-solid fa-couch text-amber-400 mr-2"></i> Chill Out Lounge</p>
+                    <p class="text-xs text-gray-300">Cozy ambient lounge area tailored for deeper conversations and relaxation.</p>
+                </div>
+            </div>
+        </section>
 
-            <div class="space-y-4">
-              <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <h2 class="text-xs font-bold text-purple-400 uppercase tracking-widest">
-                  Guest Details
-                </h2>
-                <span class="text-[10px] text-zinc-500 uppercase tracking-wider">1 Guest Per Registration</span>
-              </div>
+        <!-- PRICING & LOGISTICS -->
+        <section class="glass-panel rounded-2xl p-6 sm:p-10 mb-10 gold-border">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- LOCATION -->
+                <div>
+                    <h2 class="font-serif text-lg text-gold uppercase tracking-wider mb-2"><i class="fa-solid fa-location-dot mr-2"></i> Location</h2>
+                    <p class="text-gray-100 font-medium text-base">The Dean Westend Munich</p>
+                    <p class="text-gray-400 text-xs mt-1">Landsberger Str. 68, 80339 München</p>
+                </div>
 
-              <!-- Guest Name -->
-              <div>
-                <label for="name" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-                  Full Name <span class="text-purple-400">*</span>
-                </label>
-                <input 
-                  type="text" 
-                  id="name" 
-                  name="Full Name" 
-                  required 
-                  autofocus
-                  placeholder="e.g. Alex"
-                  class="w-full bg-zinc-900/90 text-white border border-zinc-700/80 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors text-sm"
-                />
-              </div>
-
-              <!-- Guest Email -->
-              <div>
-                <label for="email" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-                  Email Address <span class="text-purple-400">*</span>
-                </label>
-                <input 
-                  type="email" 
-                  id="email" 
-                  name="_replyto" 
-                  required 
-                  placeholder="name@example.com"
-                  class="w-full bg-zinc-900/90 text-white border border-zinc-700/80 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors text-sm"
-                />
-              </div>
-
-              <!-- Guest WhatsApp Number -->
-              <div>
-                <label for="phone" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-                  WhatsApp Number <span class="text-purple-400">*</span>
-                </label>
-                <input 
-                  type="tel" 
-                  id="phone" 
-                  name="WhatsApp Number" 
-                  required 
-                  placeholder="+49 176 12345678"
-                  class="w-full bg-zinc-900/90 text-white border border-zinc-700/80 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors text-sm"
-                />
-              </div>
-
-              <!-- Mandatory Invited By Field -->
-              <div>
-                <label for="invited_by" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-                  Invited By (Full Name) <span class="text-purple-400">*</span>
-                </label>
-                <input 
-                  type="text" 
-                  id="invited_by" 
-                  name="Invited By" 
-                  required
-                  placeholder="e.g. Ari El"
-                  class="w-full bg-zinc-900/90 text-white border border-zinc-700/80 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors text-sm"
-                />
-              </div>
-
+                <!-- ENTRANCE FEE -->
+                <div>
+                    <h2 class="font-serif text-lg text-gold uppercase tracking-wider mb-2"><i class="fa-solid fa-ticket mr-2"></i> Entrance Fee</h2>
+                    <p class="text-gray-100 font-medium text-base">Entry Fee: €20 (Cash Only) includes Welcome Drink.</p>
+                </div>
             </div>
 
-            <!-- Single Registration Note -->
-            <p class="text-[11px] text-zinc-400 bg-zinc-900/50 p-2.5 rounded-lg border border-zinc-800/80">
-              💡 <strong>Bringing friends?</strong> Submit your details first. You will be able to register additional guests immediately afterwards!
-            </p>
+            <!-- DRESS CODE STATEMENT -->
+            <div class="pt-6 border-t border-gold/20">
+                <h2 class="font-serif text-lg text-gold uppercase tracking-wider mb-2"><i class="fa-solid fa-user-ninja mr-2"></i> Dress Code</h2>
+                <p class="text-gray-300 text-sm leading-relaxed font-normal">
+                    Shrouded in nocturnal glamour, veiled in mystery or dripping in Halloween allure. Dress to thrill, or simply be yourself if being spooky is your true nature! 😎🎭
+                </p>
+            </div>
+        </section>
 
-            <!-- Call-Out Quote & Submit Button -->
-            <div class="pt-2 space-y-3 text-center">
-              <p class="text-xs md:text-sm font-serif-title text-purple-300 tracking-wide font-medium leading-tight pb-1">
-                One secret venue, one chance to cross over.<br>Are you brave enough to step in? 🗝️✨
-              </p>
-
-              <button 
-                type="submit" 
-                id="submitBtn"
-                class="w-full bg-gradient-to-r from-purple-800 via-purple-700 to-indigo-700 hover:from-purple-700 hover:to-indigo-600 text-white font-extrabold py-4 px-6 rounded-xl shadow-xl shadow-purple-950/80 transition-all duration-200 text-sm tracking-wide uppercase border border-purple-500/40 cursor-pointer active:scale-[0.98] flex items-center justify-center gap-2"
-              >
-                <span id="btnText">Confirm Guest Registration 🕯️</span>
-                <span id="btnSpinner" class="hidden">
-                  <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </span>
-              </button>
+        <!-- RSVP REGISTRATION FORM (2 COLUMNS) -->
+        <section class="glass-panel rounded-2xl p-6 sm:p-10 gold-border-glow mb-10" id="rsvp-section">
+            <div class="text-center mb-8">
+                <h2 class="font-serif text-2xl sm:text-4xl text-white uppercase tracking-wider mb-2">Guest List Registration</h2>
+                <p class="text-gray-400 text-xs sm:text-sm">
+                    Exclusive private party strictly for invited guests. Hotel hostesses will control the Guest List at the entrance.
+                </p>
             </div>
 
-          </form>
-          <!-- FORM END -->
+            <form id="rsvpForm" action="https://formspree.io/f/mbgdopnl" method="POST" class="space-y-6">
+                <!-- ROW 1: FULL NAME & PHONE NUMBER -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs uppercase font-serif tracking-wider text-gold mb-2">Full Name</label>
+                        <input type="text" name="name" required class="w-full bg-obsidian/90 border border-gold/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-gold transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase font-serif tracking-wider text-gold mb-2">Phone Number</label>
+                        <input type="tel" name="phone" required class="w-full bg-obsidian/90 border border-gold/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-gold transition-colors">
+                    </div>
+                </div>
 
-          <!-- Direct WhatsApp Link -->
-          <div class="pt-2 border-t border-zinc-800 text-center">
-            <a 
-              href="https://wa.me/4917681117359?text=Hi%20Ari!%20I%20have%20a%20question%20about%20the%20Halloween%20Guest%20List." 
-              target="_blank" 
-              rel="noopener noreferrer"
-              class="inline-flex items-center gap-2 text-xs text-zinc-400 hover:text-green-400 transition-colors font-medium py-1"
-            >
-              <span>💬 Have questions? Chat with Ari on WhatsApp</span>
+                <!-- ROW 2: EMAIL ADDRESS & INVITED BY -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs uppercase font-serif tracking-wider text-gold mb-2">Email Address</label>
+                        <input type="email" name="email" required class="w-full bg-obsidian/90 border border-gold/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-gold transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase font-serif tracking-wider text-gold mb-2">Invited By</label>
+                        <input type="text" name="invitedBy" placeholder="Host name or Ari El" required class="w-full bg-obsidian/90 border border-gold/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-gold transition-colors">
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full gold-btn py-4 rounded-lg uppercase font-serif text-sm tracking-widest mt-6">
+                    Register For Guest List
+                </button>
+            </form>
+
+            <!-- CONFIRMATION MESSAGE WITH WHATSAPP -->
+            <div id="statusMessage" class="hidden text-center mt-6 p-6 rounded-lg bg-gold/10 border border-gold/40 text-gold font-serif">
+                <p class="mb-4 text-base">Your name has been registered for the guest list review.</p>
+                <a href="https://wa.me/" target="_blank" class="inline-flex items-center gap-2 whatsapp-btn px-6 py-3 rounded-lg text-xs uppercase tracking-wider">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> Chat with Ari on WhatsApp
+                </a>
+            </div>
+        </section>
+
+        <!-- DIRECT WHATSAPP ACTION BUTTON -->
+        <div class="text-center mb-10">
+            <a href="https://wa.me/" target="_blank" class="inline-flex items-center gap-2 text-xs font-serif text-gray-300 hover:text-gold uppercase tracking-widest transition-colors border border-gold/30 bg-black/60 px-6 py-3 rounded-full">
+                <i class="fa-brands fa-whatsapp text-emerald-400 text-base"></i> Any questions? Chat with Ari on WhatsApp
             </a>
-          </div>
-
         </div>
 
-        <div id="thankyouView" class="hidden space-y-6 text-center">
-          
-          <div class="w-16 h-16 bg-purple-900/50 border border-purple-500 text-purple-300 rounded-full flex items-center justify-center mx-auto text-2xl shadow-lg shadow-purple-950/80">
-            🎟️
-          </div>
-
-          <div class="space-y-1.5">
-            <h2 class="text-2xl font-extrabold text-white font-serif-title">You're On The List!</h2>
-            <p class="text-xs text-purple-300 uppercase tracking-widest font-semibold">Luxury Hotel Halloween Party</p>
-          </div>
-
-          <!-- Dynamic Submitted Guest Summary Card -->
-          <div class="bg-purple-950/40 border border-purple-800/50 p-4 rounded-xl text-xs text-zinc-300 space-y-3 text-left">
-            <div class="border-b border-purple-900/60 pb-2">
-              <span class="text-[10px] uppercase font-bold tracking-widest text-purple-400 block mb-1">Confirmed Registration Details</span>
-              <p class="text-sm font-semibold text-white" id="confirmName">—</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-zinc-300">
-              <p>📱 <strong>WhatsApp:</strong> <span id="confirmPhone">—</span></p>
-              <p>📧 <strong>Email:</strong> <span id="confirmEmail">—</span></p>
-              <p class="col-span-1 md:col-span-2">👤 <strong>Invited By:</strong> <span id="confirmInvitedBy">—</span></p>
-            </div>
-
-            <div class="pt-2 border-t border-purple-900/60 space-y-1 text-zinc-400">
-              <p>📍 <strong>Venue:</strong> The Dean Munich (Autograph Collection), Landsberger Str. 68</p>
-              <p>🗓️ <strong>Date & Time:</strong> Saturday 31 Oct • 18:00 to 23:00</p>
-              <p class="text-amber-400/90 font-medium">💵 <strong>Entry Fee:</strong> €20 includes curated Welcome Drink (cash-only at the entrance)</p>
-            </div>
-          </div>
-
-          <!-- WhatsApp VIP Group Block -->
-          <div class="bg-gradient-to-r from-emerald-950/90 via-zinc-900 to-emerald-950/90 p-4 rounded-xl border border-emerald-600/50 space-y-2.5 text-center shadow-lg">
-            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">🔒 Exclusive Parties Group</span>
-            <p class="text-xs text-zinc-300 leading-relaxed">
-              If you are not there yet and want to be invited next time, join the Exclusive Parties (eXP-VIP) group. Zero chat, zero noise, private. Members cannot post nor see each other. 
-            </p>
-            <a 
-              href="https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              class="inline-block w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-xs transition-colors shadow-lg active:scale-[0.98]"
-            >
-              💬 Join the WhatsApp Exclusive Parties Group
-            </a>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="space-y-3 pt-2">
-            <button 
-              onclick="resetForNextGuest()" 
-              class="w-full bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white font-extrabold py-3.5 px-4 rounded-xl text-xs tracking-wide uppercase transition-all shadow-lg border border-purple-500/30 cursor-pointer active:scale-[0.98]"
-            >
-              ➕ Register Another Guest
+        <!-- HOSTESS ENTRANCE PORTAL TRIGGER -->
+        <div class="text-center mb-8">
+            <button onclick="toggleHostessPortal()" class="text-xs font-serif text-gray-500 hover:text-gold uppercase tracking-widest transition-colors">
+                <i class="fa-solid fa-key mr-2"></i> Entrance Hostess Check In Portal
             </button>
-
-            <a 
-              href="https://wa.me/4917681117359?text=Hi%20Ari!%20I%20just%20registered%20for%20the%20Halloween%20Party." 
-              target="_blank" 
-              rel="noopener noreferrer"
-              class="inline-block w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-semibold py-3 px-4 rounded-xl border border-zinc-700 text-xs transition-colors"
-            >
-              💬 Have questions? Chat with Ari on WhatsApp
-            </a>
-          </div>
-
         </div>
 
-        <div id="hostessDashboardView" class="hidden space-y-5">
-          
-          <div class="border-b border-purple-900/60 pb-3 flex items-center justify-between">
-            <div>
-              <h2 class="text-lg font-bold text-white font-serif-title flex items-center gap-2">
-                <span>📋 Entrance Guest List</span>
-              </h2>
-              <p class="text-[11px] text-purple-300">The Dean Munich • Live Guest Check-In</p>
+        <!-- HOSTESS PORTAL MODAL -->
+        <div id="hostessPortal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="glass-panel rounded-2xl p-6 sm:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto gold-border-glow">
+                <div class="flex justify-between items-center mb-6 border-b border-gold/20 pb-4">
+                    <h3 class="font-serif text-xl text-gold uppercase tracking-wider">Hostess Entrance Portal</h3>
+                    <button onclick="toggleHostessPortal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                </div>
+
+                <!-- SECURITY PIN FORM -->
+                <div id="pinSection" class="space-y-4 text-center py-6">
+                    <p class="text-sm text-gray-300">Enter Security PIN to unlock live door check in</p>
+                    <input type="password" id="pinInput" maxlength="4" placeholder="••••" class="w-32 text-center text-2xl tracking-widest bg-obsidian border border-gold/40 rounded-lg py-2 text-gold focus:outline-none focus:border-gold">
+                    <div>
+                        <button onclick="verifyPin()" class="gold-btn px-6 py-2 rounded text-xs uppercase tracking-wider mt-2">Unlock Portal</button>
+                    </div>
+                    <p id="pinError" class="text-red-400 text-xs hidden">Invalid Security PIN</p>
+                </div>
+
+                <!-- LIVE GUESTLIST -->
+                <div id="guestlistSection" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xs uppercase text-gray-400">Total Guests: <span id="totalCount" class="text-gold font-bold">0</span></span>
+                        <input type="text" id="searchInput" onkeyup="filterGuests()" placeholder="Search guest name..." class="bg-obsidian border border-gold/30 rounded px-3 py-1 text-xs text-white focus:outline-none">
+                    </div>
+                    <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestListContainer">
+                        <!-- Live Guests Inserted Here -->
+                    </div>
+                </div>
             </div>
-          </div>
-
-          <!-- DEDICATED FREE DRINK REWARDS SUMMARY CARD -->
-          <div id="freeDrinkSection" class="bg-gradient-to-r from-amber-950/80 via-zinc-900 to-amber-950/80 border border-amber-500/40 p-3.5 rounded-xl space-y-2">
-            <div class="flex items-center justify-between border-b border-amber-800/40 pb-1.5">
-              <div>
-                <span class="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <span>🎁</span> Free Drink Rewards (Checked-In Guests)
-                </span>
-                <p class="text-[10px] text-zinc-400 font-normal">Only guests marked as checked-in count toward host drink rewards.</p>
-              </div>
-              <span id="rewardHostCount" class="text-[10px] bg-amber-900/80 text-amber-200 px-2 py-0.5 rounded-full font-bold">0</span>
-            </div>
-            <div id="freeDrinkHostList" class="text-xs text-zinc-200 space-y-1 max-h-28 overflow-y-auto pr-1">
-              <p class="text-zinc-500 italic text-[11px]">No checked-in inviters qualified yet.</p>
-            </div>
-          </div>
-
-          <!-- Search Bar -->
-          <div>
-            <input 
-              type="text" 
-              id="guestSearch" 
-              onkeyup="filterGuests()" 
-              placeholder="🔍 Search guest or inviter name..." 
-              class="w-full bg-zinc-900 text-xs text-white border border-zinc-700 rounded-xl px-3 py-2.5 focus:outline-none focus:border-purple-500 transition-colors"
-            />
-          </div>
-
-          <!-- Live Stats -->
-          <div class="grid grid-cols-2 gap-2 text-center text-xs">
-            <div class="bg-zinc-900/80 p-2 rounded-lg border border-zinc-800">
-              <span class="text-purple-400 block font-bold text-sm" id="totalCount">0</span>
-              <span class="text-zinc-400 text-[10px] uppercase">Registered Guests</span>
-            </div>
-            <div class="bg-zinc-900/80 p-2 rounded-lg border border-zinc-800">
-              <span class="text-emerald-400 block font-bold text-sm" id="checkedInCount">0</span>
-              <span class="text-zinc-400 text-[10px] uppercase">Checked In</span>
-            </div>
-          </div>
-
-          <!-- Alphabetical Guest List Container -->
-          <div id="guestListContainer" class="max-h-96 overflow-y-auto space-y-2 pr-1 text-xs">
-            <!-- Dynamically populated from Firebase Firestore in real-time -->
-          </div>
-
-          <!-- Direct Support Link for Hostess at Entrance -->
-          <div class="pt-3 border-t border-zinc-800 text-center">
-            <a 
-              href="https://wa.me/4917681117359?text=Hi%20Ari!%20Hostess%20support%20needed%20at%20the%20entrance." 
-              target="_blank" 
-              rel="noopener noreferrer"
-              class="inline-flex items-center gap-2 text-xs text-zinc-400 hover:text-green-400 transition-colors"
-            >
-              <span>💬 Need help? Chat with Ari on WhatsApp</span>
-            </a>
-          </div>
-
         </div>
 
-      </div>
-    </main>
-
-    <div id="deleteModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-      <div class="bg-zinc-950 border border-purple-900/60 p-6 rounded-2xl max-w-xs w-full text-center space-y-4 shadow-2xl">
-        <div class="w-12 h-12 bg-red-950/80 text-red-400 rounded-full flex items-center justify-center mx-auto text-xl border border-red-800/50">
-          ⚠️
-        </div>
-        <div class="space-y-1">
-          <h3 class="text-base font-bold text-white">Delete Guest Entry?</h3>
-          <p class="text-xs text-zinc-400" id="deleteTargetName">This action cannot be undone.</p>
-        </div>
-        <div class="grid grid-cols-2 gap-2 pt-2">
-          <button 
-            onclick="closeDeleteModal()" 
-            class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-semibold py-2.5 rounded-xl border border-zinc-700"
-          >
-            Cancel
-          </button>
-          <button 
-            id="confirmDeleteBtn" 
-            class="bg-red-700 hover:bg-red-600 text-white text-xs font-bold py-2.5 rounded-xl shadow-lg"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
     </div>
 
-    <footer id="publicFooter" class="py-4 text-center text-xs text-zinc-500 border-t border-zinc-900/80 bg-black/60 backdrop-blur-sm flex items-center justify-center gap-4">
-      <span>Private Guest List Management • Hosted by Ari El</span>
-      <button 
-        onclick="promptHostessAccess()" 
-        class="text-zinc-600 hover:text-purple-400 transition-colors text-[11px] underline"
-      >
-        🔒 Entrance Portal
-      </button>
+    <!-- FOOTER -->
+    <footer class="relative z-10 text-center py-6 border-t border-gold/10 text-xs text-gray-500">
+        <p>The Dean Westend Munich • Landsberger Str. 68 • Autograph Collection Hotel</p>
     </footer>
 
-  </div>
+    <!-- FIREBASE & SCRIPT LOGIC -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-placeholder",
+            authDomain: "the-dean-halloween.firebaseapp.com",
+            projectId: "the-dean-halloween",
+            storageBucket: "the-dean-halloween.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef123456"
+        };
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { 
-      getFirestore, 
-      collection, 
-      addDoc, 
-      onSnapshot, 
-      doc, 
-      updateDoc, 
-      deleteDoc, 
-      serverTimestamp 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
 
-    // User Provided Firebase Configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyBvcXFzc65H5RyVYUsYa7ANUoxASRWPKZ0",
-      authDomain: "the-dean-munich-halloween.firebaseapp.com",
-      projectId: "the-dean-munich-halloween",
-      storageBucket: "the-dean-munich-halloween.firebasestorage.app",
-      messagingSenderId: "142114750141",
-      appId: "1:142114750141:web:6aa9b1154d3582b91d81d4",
-      measurementId: "G-B28F50SQWD"
-    };
+        // RSVP Submission
+        document.getElementById('rsvpForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            const statusMsg = document.getElementById('statusMessage');
 
-    // Initialize Firebase & Firestore
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const guestsCol = collection(db, "halloween_guests");
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'REGISTERING GUEST...';
 
-    // Global elements
-    const rsvpForm = document.getElementById('rsvpForm');
-    const formView = document.getElementById('formView');
-    const thankyouView = document.getElementById('thankyouView');
-    const hostessDashboardView = document.getElementById('hostessDashboardView');
-    const publicHeader = document.getElementById('publicHeader');
-    const publicFooter = document.getElementById('publicFooter');
-    const submitBtn = document.getElementById('submitBtn');
-    const btnText = document.getElementById('btnText');
-    const btnSpinner = document.getElementById('btnSpinner');
+            const formData = {
+                name: this.name.value,
+                phone: this.phone.value,
+                email: this.email.value,
+                invitedBy: this.invitedBy.value,
+                checkedIn: false,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
 
-    // Summary Card Elements
-    const confirmName = document.getElementById('confirmName');
-    const confirmPhone = document.getElementById('confirmPhone');
-    const confirmEmail = document.getElementById('confirmEmail');
-    const confirmInvitedBy = document.getElementById('confirmInvitedBy');
+            try {
+                await db.collection('halloween_guests').add(formData);
 
-    let currentGuestList = [];
-    let guestToDeleteId = null;
+                fetch(this.action, {
+                    method: 'POST',
+                    body: new FormData(this),
+                    headers: { 'Accept': 'application/json' }
+                });
 
-    window.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const isHostessMode = urlParams.get('mode') === 'hostess' || window.location.hash === '#hostess';
-
-      if (isHostessMode) {
-        promptHostessAccess(true);
-      }
-    });
-
-    onSnapshot(guestsCol, (snapshot) => {
-      currentGuestList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
-      // If hostess view is currently active, re-render automatically
-      if (!hostessDashboardView.classList.contains('hidden')) {
-        renderHostessList();
-      }
-    });
-
-    // Form Submission Handler
-    rsvpForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      const nameVal = document.getElementById('name').value.trim();
-      const emailVal = document.getElementById('email').value.trim();
-      const phoneVal = document.getElementById('phone').value.trim();
-      const invitedByVal = document.getElementById('invited_by').value.trim();
-
-      submitBtn.disabled = true;
-      btnText.textContent = "Registering Guest...";
-      btnSpinner.classList.remove('hidden');
-
-      const formData = new FormData(rsvpForm);
-
-      try {
-        // Send email via Formspree
-        fetch(rsvpForm.action, {
-          method: 'POST',
-          body: formData,
-          headers: { 'Accept': 'application/json' }
-        }).catch(err => console.log("Formspree backup sent"));
-
-        // Save to Firebase Firestore Database in Real-Time
-        await addDoc(guestsCol, {
-          name: nameVal,
-          email: emailVal,
-          phone: phoneVal,
-          invitedBy: invitedByVal,
-          checkedIn: false,
-          createdAt: serverTimestamp()
+                statusMsg.classList.remove('hidden');
+                this.reset();
+            } catch (error) {
+                console.error("Firestore Error:", error);
+                statusMsg.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'REGISTER FOR GUEST LIST';
+            }
         });
 
-        confirmName.textContent = nameVal;
-        confirmEmail.textContent = emailVal;
-        confirmPhone.textContent = phoneVal;
-        confirmInvitedBy.textContent = invitedByVal;
-
-        formView.classList.add('hidden');
-        thankyouView.classList.remove('hidden');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-      } catch (error) {
-        alert('An error occurred during registration. Please try again.');
-        console.error("Firestore Error:", error);
-      } finally {
-        submitBtn.disabled = false;
-        btnText.textContent = "Confirm Guest Registration 🕯️";
-        btnSpinner.classList.add('hidden');
-      }
-    });
-
-    window.resetForNextGuest = function() {
-      rsvpForm.reset();
-      thankyouView.classList.add('hidden');
-      formView.classList.remove('hidden');
-      document.getElementById('name').focus();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    window.promptHostessAccess = function(autoPrompt = false) {
-      const pin = prompt("Enter Entrance Access PIN:");
-      if (pin === "1800") {
-        activateHostessView();
-      } else if (pin !== null) {
-        alert("Incorrect PIN.");
-        if (autoPrompt) {
-          window.location.href = window.location.pathname;
+        function toggleHostessPortal() {
+            document.getElementById('hostessPortal').classList.toggle('hidden');
         }
-      }
-    };
 
-    function activateHostessView() {
-      publicHeader.classList.add('hidden');
-      publicFooter.classList.add('hidden');
-      formView.classList.add('hidden');
-      thankyouView.classList.add('hidden');
-      hostessDashboardView.classList.remove('hidden');
-      renderHostessList();
-    }
-
-    function renderHostessList() {
-      const guests = [...currentGuestList];
-
-      // Calculate Free Drink qualification ONLY FOR CHECKED-IN GUESTS (≥ 2 checked-in guests)
-      const inviterCounts = {};
-      const inviterOriginalNames = {};
-
-      guests.forEach(g => {
-        if (g.checkedIn && g.invitedBy) {
-          const key = g.invitedBy.toLowerCase().trim();
-          inviterCounts[key] = (inviterCounts[key] || 0) + 1;
-          inviterOriginalNames[key] = g.invitedBy.trim();
+        function verifyPin() {
+            const pin = document.getElementById('pinInput').value;
+            const error = document.getElementById('pinError');
+            if (pin === "1800") {
+                document.getElementById('pinSection').classList.add('hidden');
+                document.getElementById('guestlistSection').classList.remove('hidden');
+                loadLiveGuestlist();
+            } else {
+                error.classList.remove('hidden');
+            }
         }
-      });
 
-      // Update Free Drink Summary Card
-      const freeDrinkHostList = document.getElementById('freeDrinkHostList');
-      freeDrinkHostList.innerHTML = '';
-      let qualifiedCount = 0;
+        function loadLiveGuestlist() {
+            db.collection('halloween_guests').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+                const container = document.getElementById('guestListContainer');
+                document.getElementById('totalCount').innerText = snapshot.docs.length;
+                container.innerHTML = '';
 
-      Object.keys(inviterCounts).forEach(key => {
-        if (inviterCounts[key] >= 2) {
-          qualifiedCount++;
-          const row = document.createElement('div');
-          row.className = 'flex items-center justify-between bg-amber-950/40 p-2 rounded-lg border border-amber-800/40';
-          row.innerHTML = `
-            <span class="font-bold text-amber-200">${inviterOriginalNames[key]}</span>
-            <span class="text-[11px] text-amber-300 font-semibold bg-amber-900/60 px-2 py-0.5 rounded-full">${inviterCounts[key]} Checked-In Guests</span>
-          `;
-          freeDrinkHostList.appendChild(row);
+                snapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    const docId = doc.id;
+                    const card = document.createElement('div');
+                    card.className = `p-3 rounded border flex justify-between items-center ${data.checkedIn ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-obsidian border-gold/20'}`;
+                    
+                    card.innerHTML = `
+                        <div>
+                            <p class="font-medium text-sm text-white">${data.name}</p>
+                            <p class="text-xs text-gray-400">Host: ${data.invitedBy} • ${data.phone}</p>
+                        </div>
+                        <button onclick="toggleCheckIn('${docId}', ${data.checkedIn})" class="px-3 py-1 text-xs font-serif rounded ${data.checkedIn ? 'bg-emerald-600 text-white' : 'bg-gold/20 text-gold border border-gold/40'}">
+                            ${data.checkedIn ? 'Checked In' : 'Check In'}
+                        </button>
+                    `;
+                    container.appendChild(card);
+                });
+            });
         }
-      });
 
-      document.getElementById('rewardHostCount').textContent = qualifiedCount;
-
-      if (qualifiedCount === 0) {
-        freeDrinkHostList.innerHTML = '<p class="text-zinc-500 italic text-[11px]">No checked-in inviters qualified yet.</p>';
-      }
-
-      // Alphabetical Sort by Guest Full Name
-      guests.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-      const container = document.getElementById('guestListContainer');
-      container.innerHTML = '';
-
-      let checkedInTotal = 0;
-
-      guests.forEach(guest => {
-        if (guest.checkedIn) checkedInTotal++;
-
-        const isInviterQualified = (inviterCounts[(guest.invitedBy || '').toLowerCase().trim()] || 0) >= 2;
-
-        const card = document.createElement('div');
-        card.className = `p-3 rounded-xl border transition-colors flex items-center justify-between gap-2 ${
-          guest.checkedIn 
-            ? 'bg-emerald-950/40 border-emerald-700/60 text-zinc-300' 
-            : 'bg-zinc-900/80 border-zinc-800 text-white'
-        }`;
-
-        card.innerHTML = `
-          <div class="space-y-1 pr-1 flex-grow">
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="font-bold text-sm text-white">${guest.name}</span>
-              ${isInviterQualified ? '<span class="text-[10px] bg-amber-950 text-amber-300 px-2 py-0.5 rounded-full border border-amber-600/50 font-semibold">🎁 FREE DRINK HOST</span>' : ''}
-            </div>
-            <p class="text-[11px] text-purple-300">Invited by: <strong>${guest.invitedBy}</strong></p>
-            <p class="text-[10px] text-zinc-400">📱 ${guest.phone} • 📧 ${guest.email}</p>
-          </div>
-          
-          <div class="flex items-center gap-2">
-            <button 
-              onclick="toggleCheckIn('${guest.id}', ${!guest.checkedIn})" 
-              class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
-                guest.checkedIn 
-                  ? 'bg-emerald-600 text-white' 
-                  : 'bg-purple-900/80 hover:bg-purple-800 text-purple-200 border border-purple-600/50'
-              }"
-            >
-              ${guest.checkedIn ? '✓ Checked In' : 'Check In'}
-            </button>
-            <button 
-              onclick="openDeleteModal('${guest.id}', '${(guest.name || '').replace(/'/g, "\\'")}')" 
-              class="p-1.5 bg-zinc-900 hover:bg-red-950 text-zinc-400 hover:text-red-400 border border-zinc-800 rounded-lg transition-colors"
-              title="Delete Entry"
-            >
-              🗑️
-            </button>
-          </div>
-        `;
-
-        container.appendChild(card);
-      });
-
-      document.getElementById('totalCount').textContent = guests.length;
-      document.getElementById('checkedInCount').textContent = checkedInTotal;
-    }
-
-    window.toggleCheckIn = async function(docId, newStatus) {
-      try {
-        const docRef = doc(db, "halloween_guests", docId);
-        await updateDoc(docRef, { checkedIn: newStatus });
-      } catch (err) {
-        console.error("Error updating check-in state:", err);
-      }
-    };
-
-    window.openDeleteModal = function(id, name) {
-      guestToDeleteId = id;
-      document.getElementById('deleteTargetName').textContent = `Are you sure you want to remove "${name}" from the list?`;
-      document.getElementById('deleteModal').classList.remove('hidden');
-    };
-
-    window.closeDeleteModal = function() {
-      guestToDeleteId = null;
-      document.getElementById('deleteModal').classList.add('hidden');
-    };
-
-    document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
-      if (guestToDeleteId !== null) {
-        try {
-          const docRef = doc(db, "halloween_guests", guestToDeleteId);
-          await deleteDoc(docRef);
-        } catch (err) {
-          console.error("Error deleting document:", err);
+        async function toggleCheckIn(id, currentState) {
+            await db.collection('halloween_guests').doc(id).update({
+                checkedIn: !currentState
+            });
         }
-        closeDeleteModal();
-      }
-    });
 
-    window.filterGuests = function() {
-      const query = document.getElementById('guestSearch').value.toLowerCase();
-      const cards = document.getElementById('guestListContainer').children;
-      Array.from(cards).forEach(card => {
-        const text = card.textContent.toLowerCase();
-        card.style.display = text.includes(query) ? 'flex' : 'none';
-      });
-    };
-  </script>
-
+        function filterGuests() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.getElementById('guestListContainer').children;
+            Array.from(cards).forEach(card => {
+                const text = card.innerText.toLowerCase();
+                card.style.display = text.includes(query) ? 'flex' : 'none';
+            });
+        }
+    </script>
 </body>
 </html>
