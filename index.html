@@ -29,18 +29,35 @@
 
     <!-- Form Container -->
     <main class="flex-grow flex items-center justify-center px-4 py-4">
-      <div class="w-full max-w-lg bg-zinc-950/90 p-6 md:p-8 rounded-2xl border border-purple-900/40 shadow-2xl shadow-purple-950/60 backdrop-blur-md">
+      <div class="w-full max-w-lg bg-zinc-950/90 p-6 md:p-8 rounded-2xl border border-purple-900/40 shadow-2xl shadow-purple-950/60 backdrop-blur-md space-y-6">
         
         <!-- Event Highlights -->
-        <div class="mb-6 pb-6 border-b border-zinc-800 text-xs md:text-sm text-zinc-300 space-y-2.5">
+        <div class="pb-4 border-b border-zinc-800 text-xs md:text-sm text-zinc-300 space-y-2.5">
           <p class="flex items-center gap-2">🗝️ <span>Strictly private venue • Door hostesses enforcing guest list access</span></p>
           <p class="flex items-center gap-2">🍹 <span>Complimentary welcome drink for registered guests</span></p>
           <p class="flex items-center gap-2">🎧 <span>Top DJs • Secret Party Room &amp; Chill Out Lounge</span></p>
           <p class="flex items-center gap-2 text-amber-400/90 font-medium">💵 <span>Entry Fee: Cash payment at the entrance</span></p>
         </div>
 
+        <!-- Secret WhatsApp VIP Group Banner -->
+        <div class="bg-gradient-to-r from-emerald-950/60 to-zinc-900 p-4 rounded-xl border border-emerald-700/50 flex flex-col items-center text-center space-y-2">
+          <div class="flex items-center gap-1.5 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+            <span>🔒 Secret VIP WhatsApp Group</span>
+          </div>
+          <p class="text-xs text-zinc-300">
+            Join my private group for future exclusive party invitations. It is completely secret—no member sees anyone else!
+          </p>
+          <a 
+            href="https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2.5 px-4 rounded-lg shadow-md transition-colors w-full mt-1"
+          >
+            <span>💬 Join Secret WhatsApp VIP Group</span>
+          </a>
+        </div>
+
         <!-- FORM START -->
-        <!-- REPLACE 'YOUR_FORMSPREE_FORM_ID' BELOW WITH YOUR ACTUAL FORMSPREE ID -->
         <form action="https://formspree.io/f/mbgdopnl" method="POST" class="space-y-6">
           
           <!-- Custom Redirect After Submission -->
@@ -113,59 +130,4 @@
               <div class="p-3 pt-0 space-y-3 border-t border-zinc-800/50 mt-2">
                 <input type="text" name="Guest 2 Name" placeholder="Full Name" class="w-full bg-zinc-900 text-white border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500" />
                 <input type="email" name="Guest 2 Email" placeholder="Email Address" class="w-full bg-zinc-900 text-white border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500" />
-                <input type="tel" name="Guest 2 WhatsApp" placeholder="WhatsApp Number" class="w-full bg-zinc-900 text-white border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500" />
-              </div>
-            </details>
-
-            <!-- Collapsible Guest 3 -->
-            <details class="group bg-zinc-900/70 rounded-xl border border-zinc-800 overflow-hidden">
-              <summary class="flex justify-between items-center p-3 text-xs font-semibold text-zinc-300 cursor-pointer select-none">
-                <span>+ Add Guest #2</span>
-                <span class="group-open:rotate-180 transition-transform">▼</span>
-              </summary>
-              <div class="p-3 pt-0 space-y-3 border-t border-zinc-800/50 mt-2">
-                <input type="text" name="Guest 3 Name" placeholder="Full Name" class="w-full bg-zinc-900 text-white border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500" />
-                <input type="email" name="Guest 3 Email" placeholder="Email Address" class="w-full bg-zinc-900 text-white border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500" />
-                <input type="tel" name="Guest 3 WhatsApp" placeholder="WhatsApp Number" class="w-full bg-zinc-900 text-white border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500" />
-              </div>
-            </details>
-          </div>
-
-          <!-- Prominent Submit Button -->
-          <div class="pt-2">
-            <button 
-              type="submit" 
-              class="w-full bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white font-extrabold py-4 px-6 rounded-xl shadow-xl shadow-purple-950/80 transition-all duration-200 text-sm tracking-wide uppercase border border-purple-500/30"
-            >
-              Confirm Guest List Registration 🕯️
-            </button>
-          </div>
-
-        </form>
-        <!-- FORM END -->
-
-        <!-- WhatsApp Direct Contact -->
-        <div class="mt-6 pt-5 border-t border-zinc-800 text-center">
-          <a 
-            href="https://wa.me/4917681117359?text=Hi%20Ari!%20I%20have%20a%20question%20about%20the%20Halloween%20Guest%20List." 
-            target="_blank" 
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-2 text-xs text-zinc-400 hover:text-green-400 transition-colors"
-          >
-            <span>💬 Questions? Contact Ari on WhatsApp:</span>
-            <span class="font-semibold text-zinc-200 underline">+49 176 8111 7359</span>
-          </a>
-        </div>
-
-      </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="py-6 text-center text-xs text-zinc-500 border-t border-zinc-900/80 bg-black/60">
-      Private Guest List Management • Hosted by Ari
-    </footer>
-
-  </div>
-
-</body>
-</html>
+                <input type="tel" name="Guest 2 WhatsApp" placeholder="WhatsApp Number" class="w-full bg-zinc-900 text-white border border-zinc-700
