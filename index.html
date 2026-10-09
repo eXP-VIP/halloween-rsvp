@@ -16,10 +16,8 @@
 </head>
 <body class="bg-black text-zinc-100 font-sans antialiased min-h-screen flex flex-col justify-between relative bg-cover bg-center bg-fixed selection:bg-purple-600 selection:text-white" style="background-image: url('https://thumbs.dreamstime.com/b/happy-halloween-banner-template-pumpkin-elements-theme-background-website-spooky-card-design-293255121.jpg');">
 
-  <!-- Dark Vignette Overlay -->
   <div class="fixed inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/70 backdrop-blur-sm z-0"></div>
 
-  <!-- Main Content Layer -->
   <div class="relative z-10 flex flex-col min-h-screen justify-between py-6 px-4">
 
     <!-- Header Section -->
@@ -54,7 +52,6 @@
       </div>
     </header>
 
-    <!-- Main View Switcher (Form View vs Thank You View) -->
     <main class="flex-grow flex items-center justify-center py-4">
       <div id="appContainer" class="w-full max-w-lg bg-zinc-950/90 p-6 md:p-8 rounded-2xl border border-purple-900/40 shadow-2xl shadow-purple-950/60 backdrop-blur-md space-y-6 transition-all duration-300">
         
@@ -62,7 +59,7 @@
         <div id="formView" class="space-y-6">
 
           <!-- Event Story & Teaser Intro -->
-          <div class="bg-purple-950/30 p-4 rounded-xl border border-purple-800/30 text-xs md:text-sm text-purple-100 leading-relaxed space-y-2 italic">
+          <div class="text-xs md:text-sm text-zinc-200 leading-relaxed space-y-2">
             <p>
               Something dark, sleek and high-profile is taking over the hidden party space inside Munich’s newest luxury boutique hotel by Marriott's Autograph Collection!
             </p>
@@ -75,7 +72,7 @@
           <div class="pb-4 border-b border-zinc-800/80 text-xs md:text-sm text-zinc-300 space-y-3">
             <p class="flex items-start gap-2.5">
               <span class="text-base">🗝️</span> 
-              <span><strong>Strict Access:</strong> Private event strictly enforced by door hostesses. Only registered guests on the list will be admitted.</span>
+              <span><strong>Guest List Access:</strong> Hotel hostesses at the entrance will welcome you and verify your name on the private guest list.</span>
             </p>
             <p class="flex items-start gap-2.5">
               <span class="text-base">🎧</span> 
@@ -87,26 +84,8 @@
             </p>
             <p class="flex items-start gap-2.5 text-amber-400/90 font-medium bg-amber-950/30 p-2.5 rounded-lg border border-amber-800/40">
               <span class="text-base">💵</span> 
-              <span><strong>Entry Fee:</strong> €20 (includes Welcome Drink) — <strong>CASH ONLY</strong> at the door.</span>
+              <span><strong>Entry Fee:</strong> €20 includes curated Welcome Drink (Cash only at the door).</span>
             </p>
-          </div>
-
-          <!-- Secret WhatsApp VIP Group Banner -->
-          <div class="bg-gradient-to-r from-emerald-950/80 via-zinc-900 to-emerald-950/80 p-4 rounded-xl border border-emerald-600/40 flex flex-col items-center text-center space-y-2.5 shadow-lg">
-            <div class="flex items-center gap-1.5 text-emerald-400 text-xs font-bold uppercase tracking-wider">
-              <span>🔒 Exclusive Parties Group</span>
-            </div>
-            <p class="text-xs text-zinc-300 leading-relaxed">
-              If you are not there yet and want to be invited next time, join the Exclusive Parties (eXP-VIP) group. Zero chat, zero noise, private. Members cannot post nor see each other.
-            </p>
-            <a 
-              href="https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              class="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2.5 px-4 rounded-lg shadow-md hover:shadow-emerald-900/50 transition-all duration-200 w-full active:scale-[0.99]"
-            >
-              <span>💬 Join the WhatsApp Exclusive Parties Group</span>
-            </a>
           </div>
 
           <!-- FORM START -->
@@ -196,7 +175,7 @@
 
             <!-- Final Dare & Submit Button -->
             <div class="pt-2 space-y-3 text-center">
-              <p class="text-xs font-serif-title text-purple-300 italic tracking-wide">
+              <p class="text-xs font-serif-title text-purple-300 tracking-wide">
                 "One secret venue, one chance to cross over.<br>Are you brave enough to step in?" 🗝️✨
               </p>
 
@@ -234,7 +213,7 @@
         </div>
 
         <!-- THANK YOU VIEW (Appears immediately after submission) -->
-        <div id="thankyouView" class="hidden space-y-6 text-center animate-fade-in">
+        <div id="thankyouView" class="hidden space-y-6 text-center">
           
           <div class="w-16 h-16 bg-purple-900/50 border border-purple-500 text-purple-300 rounded-full flex items-center justify-center mx-auto text-2xl shadow-lg shadow-purple-950/80">
             🎟️
@@ -261,14 +240,9 @@
             <div class="pt-2 border-t border-purple-900/60 space-y-1 text-zinc-400">
               <p>📍 <strong>Venue:</strong> The Dean Munich (Autograph Collection), Landsberger Str. 68</p>
               <p>🗓️ <strong>Date & Time:</strong> Saturday 31 Oct • 18:00 – 23:00</p>
-              <p class="text-amber-400/90 font-medium">💵 <strong>Entry Fee:</strong> €20 (includes Welcome Drink) — <strong>CASH ONLY</strong> at the door.</p>
+              <p class="text-amber-400/90 font-medium">💵 <strong>Entry Fee:</strong> €20 includes curated Welcome Drink (Cash only at the door)</p>
             </div>
           </div>
-
-          <!-- Screenshot Hint -->
-          <p class="text-[11px] text-purple-300/80 italic">
-            📸 Take a screenshot of this page for your door check-in!
-          </p>
 
           <!-- Secret WhatsApp VIP Group Block in Thank You Page -->
           <div class="bg-gradient-to-r from-emerald-950/90 via-zinc-900 to-emerald-950/90 p-4 rounded-xl border border-emerald-600/50 space-y-2.5 text-center shadow-lg">
@@ -317,7 +291,6 @@
 
   </div>
 
-  <!-- JavaScript Handler -->
   <script>
     const rsvpForm = document.getElementById('rsvpForm');
     const formView = document.getElementById('formView');
