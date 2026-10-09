@@ -68,7 +68,7 @@
               <span>🔒 Exclusive Parties Group</span>
             </div>
             <p class="text-xs text-zinc-300 leading-relaxed">
-              Want to be invited to the next party? Join the announcement group. Zero chat, zero noise, private. Members cannot post nor see eachother.
+              If you are not there yet, join the Group to get invited next time. Zero chat, members cannot post nor see each other.
             </p>
             <a 
               href="https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58" 
@@ -83,6 +83,13 @@
           <!-- FORM START -->
           <form id="rsvpForm" action="https://formspree.io/f/mbgdopnl" method="POST" class="space-y-5">
             
+            <!-- Hidden Input to pass WhatsApp link into Formspree default email receipt -->
+            <input 
+              type="hidden" 
+              name="VIP Group Link" 
+              value="If you are not there yet, join the Group to get invited next time. Zero chat, members cannot post nor see each other: https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58" 
+            />
+
             <div class="space-y-4">
               <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
                 <h2 class="text-xs font-bold text-purple-400 uppercase tracking-widest">
@@ -136,7 +143,7 @@
                 />
               </div>
 
-              <!-- Invited By Field (NEW) -->
+              <!-- Invited By Field -->
               <div>
                 <div class="flex justify-between items-center mb-2">
                   <label for="invited_by" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider">
@@ -195,7 +202,7 @@
 
         </div>
 
-        <!-- THANK YOU VIEW (Appears after submission or via hashtag) -->
+        <!-- THANK YOU VIEW (Appears after submission) -->
         <div id="thankyouView" class="hidden space-y-6 text-center animate-fade-in">
           
           <div class="w-16 h-16 bg-purple-900/50 border border-purple-500 text-purple-300 rounded-full flex items-center justify-center mx-auto text-2xl shadow-lg shadow-purple-950/80">
@@ -222,7 +229,7 @@
           <div class="bg-gradient-to-r from-emerald-950/90 via-zinc-900 to-emerald-950/90 p-4 rounded-xl border border-emerald-600/50 space-y-2.5 text-center shadow-lg">
             <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">🔒 Exclusive Parties Group</span>
             <p class="text-xs text-zinc-300 leading-relaxed">
-              Want to be invited to the next party? Join the announcement group. Zero chat, zero noise, private. Members cannot post nor see eachother.
+              If you are not there yet, join the Group to get invited next time. Zero chat, members cannot post nor see each other.
             </p>
             <a 
               href="https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58" 
@@ -240,7 +247,7 @@
               onclick="resetForNextGuest()" 
               class="w-full bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white font-extrabold py-3.5 px-4 rounded-xl text-xs tracking-wide uppercase transition-all shadow-lg border border-purple-500/30 cursor-pointer active:scale-[0.98]"
             >
-➕ Register Another Guest
+              ➕ Register Another Guest
             </button>
 
             <a 
