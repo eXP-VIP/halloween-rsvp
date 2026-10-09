@@ -42,15 +42,15 @@ exports.notifyAriOnNewGuest = onDocumentCreated(
     }
 
     const phoneNumberId = WHATSAPP_PHONE_NUMBER_ID.value().trim();
-    const recipient = WHATSAPP_NOTIFY_TO.value().replace(/\\D/g, "");
+    const recipient = WHATSAPP_NOTIFY_TO.value().replace(/\D/g, "");
     const templateName = WHATSAPP_TEMPLATE_NAME.value().trim();
     const templateLanguage = WHATSAPP_TEMPLATE_LANGUAGE.value().trim() || "en_US";
     const graphVersion = WHATSAPP_GRAPH_API_VERSION.value().trim() || "v23.0";
 
     if (!phoneNumberId) throw new Error("WHATSAPP_PHONE_NUMBER_ID is not configured.");
-    if (!/^\\d+$/.test(phoneNumberId)) throw new Error("WHATSAPP_PHONE_NUMBER_ID must contain digits only.");
-    if (!/^\\d{8,15}$/.test(recipient)) throw new Error("WHATSAPP_NOTIFY_TO must be a phone number in international format, digits only.");
-    if (!/^v\\d+\\.\\d+$/.test(graphVersion)) throw new Error("WHATSAPP_GRAPH_API_VERSION must look like v23.0.");
+    if (!/^\d+$/.test(phoneNumberId)) throw new Error("WHATSAPP_PHONE_NUMBER_ID must contain digits only.");
+    if (!/^\d{8,15}$/.test(recipient)) throw new Error("WHATSAPP_NOTIFY_TO must be a phone number in international format, digits only.");
+    if (!/^v\d+\.\d+$/.test(graphVersion)) throw new Error("WHATSAPP_GRAPH_API_VERSION must look like v23.0.");
     if (!/^[a-z0-9_]{1,128}$/.test(templateName)) throw new Error("WHATSAPP_TEMPLATE_NAME is invalid.");
 
     const template = {
