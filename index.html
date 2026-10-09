@@ -330,8 +330,32 @@
                     <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">The live guest list is not connected. Configure the real Firebase settings and Firestore access rules before using check-in.</p>
                 </div>
                 <div id="guestlistSection" class="hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                        <div class="rounded-lg border border-gold/25 bg-black/35 p-3">
+                            <p class="text-[10px] uppercase tracking-wider text-gray-300">Total guests</p>
+                            <p id="totalCount" class="text-2xl font-semibold text-gold tabular-nums">0</p>
+                        </div>
+                        <div class="rounded-lg border border-emerald-500/30 bg-emerald-950/25 p-3">
+                            <p class="text-[10px] uppercase tracking-wider text-gray-300">Checked in</p>
+                            <p id="checkedInCount" class="text-2xl font-semibold text-emerald-300 tabular-nums">0</p>
+                        </div>
+                        <div class="rounded-lg border border-amber-400/40 bg-amber-950/30 p-3">
+                            <p class="text-[10px] uppercase tracking-wider text-gray-300">Welcome drinks earned</p>
+                            <p id="welcomeDrinkCount" class="text-2xl font-semibold text-amber-200 tabular-nums">0</p>
+                        </div>
+                    </div>
+                    <section class="rounded-xl border border-gold/40 bg-amber-950/25 p-4 mb-5" aria-labelledby="welcomeDrinkHeading">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
+                            <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Welcome drinks earned</h4>
+                            <span class="text-[10px] uppercase tracking-wider text-gray-300">2 or more distinct registered referrals</span>
+                        </div>
+                        <p class="text-xs text-gray-300 mb-3">This list is independent of check-in status and includes qualifying inviters even if they are not registered as guests themselves.</p>
+                        <div id="welcomeDrinkList" class="space-y-2 text-sm text-gray-100">
+                            <p class="text-xs text-gray-400">No qualifying referrals yet.</p>
+                        </div>
+                    </section>
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-                        <span class="text-xs uppercase text-gray-300">Total guests: <span id="totalCount" class="text-gold font-bold">0</span></span>
+                        <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Guest list</h4>
                         <div class="flex gap-2">
                             <input type="search" id="searchInput" oninput="filterGuests()" aria-label="Search guest list" placeholder="Search guest name..." class="form-field sm:max-w-xs text-sm">
                             <button type="button" onclick="staffSignOut()" class="border border-gold/30 rounded-lg px-3 text-xs text-gray-200 hover:text-gold">Sign out</button>
@@ -593,6 +617,9 @@
             document.getElementById('staffPassword').value = '';
             document.getElementById('guestListContainer').replaceChildren();
             document.getElementById('totalCount').textContent = '0';
+            document.getElementById('checkedInCount').textContent = '0';
+            document.getElementById('welcomeDrinkCount').textContent = '0';
+            document.getElementById('welcomeDrinkList').innerHTML = '<p class="text-xs text-gray-400">No qualifying referrals yet.</p>';
         }
 
         function loadLiveGuestlist() {
@@ -606,11 +633,13 @@
             db.collection('halloween_guests').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
                 listError.classList.add('hidden');
                 document.getElementById('totalCount').textContent = snapshot.size;
+                const checkedInTotal = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().checkedIn)).length;
+                document.getElementById('checkedInCount').textContent = checkedInTotal;
                 container.replaceChildren();
 
-                // Count distinct registered guests by the inviter's name. Name matching is
-                // case-insensitive and whitespace-insensitive; duplicate submissions from the
-                // same phone/email count as one referred guest, not multiple referrals.
+                // Count distinct registered guests by inviter, independent of check-in status.
+                // Name matching is case-insensitive and whitespace-insensitive; duplicate
+                // submissions with the same phone/email count as one referral.
                 const normalizeGuestName = (value) => String(value || '')
                     .normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
                 const guestIdentity = (data) => {
@@ -623,18 +652,50 @@
                 const referralsByInviter = new Map();
                 snapshot.forEach((guestDoc) => {
                     const referredGuest = guestDoc.data();
-                    const inviterKey = normalizeGuestName(referredGuest.invitedBy);
+                    const inviterName = String(referredGuest.invitedBy || '').trim();
+                    const inviterKey = normalizeGuestName(inviterName);
                     const guestNameKey = normalizeGuestName(referredGuest.name);
                     if (!inviterKey || inviterKey === guestNameKey) return;
-                    if (!referralsByInviter.has(inviterKey)) referralsByInviter.set(inviterKey, new Set());
-                    referralsByInviter.get(inviterKey).add(guestIdentity(referredGuest));
+                    if (!referralsByInviter.has(inviterKey)) {
+                        referralsByInviter.set(inviterKey, { name: inviterName, guests: new Set() });
+                    }
+                    referralsByInviter.get(inviterKey).guests.add(guestIdentity(referredGuest));
                 });
+
+                // Render a dedicated reward roster. This catches inviters who earned a drink
+                // but do not themselves have a registration in the guest collection.
+                const qualifiedInviters = Array.from(referralsByInviter.entries())
+                    .map(([key, value]) => ({ key, name: value.name, count: value.guests.size }))
+                    .filter((inviter) => inviter.count >= 2)
+                    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+                document.getElementById('welcomeDrinkCount').textContent = qualifiedInviters.length;
+                const rewardList = document.getElementById('welcomeDrinkList');
+                rewardList.replaceChildren();
+                if (!qualifiedInviters.length) {
+                    const empty = document.createElement('p');
+                    empty.className = 'text-xs text-gray-400';
+                    empty.textContent = 'No qualifying referrals yet.';
+                    rewardList.appendChild(empty);
+                } else {
+                    qualifiedInviters.forEach((inviter) => {
+                        const row = document.createElement('div');
+                        row.className = 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-gold/30 bg-black/25 px-3 py-2';
+                        const inviterName = document.createElement('span');
+                        inviterName.className = 'font-medium break-words';
+                        inviterName.textContent = inviter.name;
+                        const reward = document.createElement('span');
+                        reward.className = 'inline-flex self-start sm:self-auto rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[10px] font-semibold tracking-wider text-amber-100';
+                        reward.textContent = `WELCOME DRINK EARNED · ${inviter.count} GUESTS`; 
+                        row.append(inviterName, reward);
+                        rewardList.appendChild(row);
+                    });
+                }
 
                 snapshot.forEach((doc) => {
                     const data = doc.data();
                     const checkedIn = Boolean(data.checkedIn);
                     const inviterKey = normalizeGuestName(data.name);
-                    const invitedCount = referralsByInviter.get(inviterKey)?.size || 0;
+                    const invitedCount = referralsByInviter.get(inviterKey)?.guests.size || 0;
                     const welcomeDrinkEarned = invitedCount >= 2;
                     const card = document.createElement('div');
                     card.className = `p-3 rounded border flex justify-between items-center gap-3 ${welcomeDrinkEarned ? 'bg-amber-950/50 border-gold/80 border-l-4' : checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'}`;
