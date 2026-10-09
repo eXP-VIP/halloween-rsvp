@@ -23,16 +23,35 @@
   <div class="relative z-10 flex flex-col min-h-screen justify-between py-6 px-4">
 
     <!-- Header Section -->
-    <header class="py-6 text-center space-y-3 max-w-2xl mx-auto">
+    <header class="py-6 text-center space-y-4 max-w-2xl mx-auto">
       <span class="inline-block px-4 py-1.5 bg-purple-950/90 text-purple-300 text-xs tracking-widest uppercase font-semibold rounded-full border border-purple-600/50 shadow-lg shadow-purple-950/50">
-        Exclusive Guest List Only
+        🗝️ Strict Guest List Only
       </span>
       <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight text-white font-serif-title drop-shadow-[0_4px_20px_rgba(168,85,247,0.4)]">
         Luxury Hotel Halloween Party
       </h1>
       <p class="text-sm md:text-base text-purple-200/90 font-light tracking-wide">
-        Hosted by Ari • Munich
+        Hosted by Ari El • Munich
       </p>
+
+      <!-- Event Quick Info Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-2 text-left max-w-xl mx-auto text-xs">
+        <div class="bg-zinc-950/80 p-3 rounded-xl border border-purple-900/40 backdrop-blur-md flex items-center gap-3">
+          <span class="text-xl">🗓️</span>
+          <div>
+            <span class="text-purple-400 block font-semibold uppercase text-[10px] tracking-wider">Date & Time</span>
+            <span class="text-zinc-200 font-medium">Saturday 31 Oct • 18:00 – 23:00</span>
+          </div>
+        </div>
+        <div class="bg-zinc-950/80 p-3 rounded-xl border border-purple-900/40 backdrop-blur-md flex items-center gap-3">
+          <span class="text-xl">📍</span>
+          <div>
+            <span class="text-purple-400 block font-semibold uppercase text-[10px] tracking-wider">Venue Location</span>
+            <span class="text-zinc-200 font-medium">The Dean Munich (Autograph Collection)</span>
+            <span class="text-zinc-400 block text-[11px]">Landsberger Str. 68, 80339 München</span>
+          </div>
+        </div>
+      </div>
     </header>
 
     <!-- Main View Switcher (Form View vs Thank You View) -->
@@ -42,23 +61,33 @@
         <!-- REGISTRATION FORM VIEW -->
         <div id="formView" class="space-y-6">
 
-          <!-- Event Highlights -->
-          <div class="pb-4 border-b border-zinc-800/80 text-xs md:text-sm text-zinc-300 space-y-2.5">
-            <p class="flex items-center gap-2.5">
-              <span>🗝️</span> 
-              <span>Strictly private venue • Only Registered Guests</span>
+          <!-- Event Story & Teaser Intro -->
+          <div class="bg-purple-950/30 p-4 rounded-xl border border-purple-800/30 text-xs md:text-sm text-purple-100 leading-relaxed space-y-2 italic">
+            <p>
+              Something dark, sleek and high-profile is taking over the hidden party space inside Munich’s newest luxury boutique hotel by Marriott's Autograph Collection!
             </p>
-            <p class="flex items-center gap-2.5">
-              <span>🍹</span> 
-              <span>Complimentary Welcome Drink</span>
+            <p>
+              We are claiming this ultra-premium haven for an unforgettable 🎃 <strong>Halloween</strong> 🎃 night of top DJs, curated drinks, and dark elegance.
             </p>
-            <p class="flex items-center gap-2.5">
-              <span>🎧</span> 
-              <span>Top DJs • Secret Party Room &amp; Chill Out Lounge</span>
+          </div>
+
+          <!-- Detailed Event Highlights -->
+          <div class="pb-4 border-b border-zinc-800/80 text-xs md:text-sm text-zinc-300 space-y-3">
+            <p class="flex items-start gap-2.5">
+              <span class="text-base">🗝️</span> 
+              <span><strong>Strict Access:</strong> Private event strictly enforced by door hostesses. Only registered guests on the list will be admitted.</span>
             </p>
-            <p class="flex items-center gap-2.5 text-amber-400/90 font-medium">
-              <span>💵</span> 
-              <span>Entry Fee: €20 - Cash payment at the entrance</span>
+            <p class="flex items-start gap-2.5">
+              <span class="text-base">🎧</span> 
+              <span><strong>2 Party Zones:</strong> Step beyond the secret entrance into the Secret Party Room with top DJs driving a mega sound system, or retreat to the cozy Chill Out Lounge. Full restaurant access included.</span>
+            </p>
+            <p class="flex items-start gap-2.5">
+              <span class="text-base">🎭</span> 
+              <span><strong>Dress Code (Dark Elegance):</strong> Decadent costumes, sharp dark attire, or a mysterious mask—or come as yourself if you're spooky enough! 😎🎭</span>
+            </p>
+            <p class="flex items-start gap-2.5 text-amber-400/90 font-medium bg-amber-950/30 p-2.5 rounded-lg border border-amber-800/40">
+              <span class="text-base">💵</span> 
+              <span><strong>Entry Fee:</strong> €20 (includes Welcome Drink) — <strong>CASH ONLY</strong> at the door.</span>
             </p>
           </div>
 
@@ -165,8 +194,12 @@
               💡 <strong>Bringing friends?</strong> Submit your details first. You will be able to register additional guests immediately afterwards!
             </p>
 
-            <!-- Submit Button -->
-            <div class="pt-2">
+            <!-- Final Dare & Submit Button -->
+            <div class="pt-2 space-y-3 text-center">
+              <p class="text-xs font-serif-title text-purple-300 italic tracking-wide">
+                "One secret venue, one chance to cross over.<br>Are you brave enough to step in?" 🗝️✨
+              </p>
+
               <button 
                 type="submit" 
                 id="submitBtn"
@@ -217,9 +250,13 @@
               <span>📧</span>
               <span>A confirmation email has been sent to your email address! Please check your inbox (and spam folder).</span>
             </p>
-            <p class="flex items-start gap-2 text-zinc-400">
+            <p class="flex items-start gap-2 text-amber-400/90 font-medium">
               <span>💵</span>
-              <span>Payment is taken in cash at the door entrance.</span>
+              <span>Payment (€20, includes welcome drink) is collected in <strong>CASH ONLY</strong> at the entrance door.</span>
+            </p>
+            <p class="flex items-start gap-2 text-zinc-400">
+              <span>📍</span>
+              <span><strong>Venue:</strong> The Dean Munich (Autograph Collection), Landsberger Str. 68, 80339 München (Sat 31 Oct, 18:00 – 23:00).</span>
             </p>
           </div>
 
@@ -265,7 +302,7 @@
 
     <!-- Footer -->
     <footer class="py-4 text-center text-xs text-zinc-500 border-t border-zinc-900/80 bg-black/60 backdrop-blur-sm">
-      Private Guest List Management • Hosted by Ari
+      Private Guest List Management • Hosted by Ari El
     </footer>
 
   </div>
@@ -279,11 +316,9 @@
     const btnText = document.getElementById('btnText');
     const btnSpinner = document.getElementById('btnSpinner');
 
-    // Handle AJAX form submission to prevent redirecting off-site
     rsvpForm.addEventListener('submit', async function(e) {
       e.preventDefault();
       
-      // UI loading state
       submitBtn.disabled = true;
       btnText.textContent = "Registering Guest...";
       btnSpinner.classList.remove('hidden');
@@ -300,7 +335,6 @@
         });
 
         if (response.ok) {
-          // Show Thank You View smoothly
           formView.classList.add('hidden');
           thankyouView.classList.remove('hidden');
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -316,7 +350,6 @@
       }
     });
 
-    // Reset form to register the next guest
     function resetForNextGuest() {
       rsvpForm.reset();
       thankyouView.classList.add('hidden');
