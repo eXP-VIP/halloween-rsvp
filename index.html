@@ -240,7 +240,85 @@
               onclick="resetForNextGuest()" 
               class="w-full bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white font-extrabold py-3.5 px-4 rounded-xl text-xs tracking-wide uppercase transition-all shadow-lg border border-purple-500/30 cursor-pointer active:scale-[0.98]"
             >
-              ➕ Register Another Guest
+➕ Register Another Guest
             </button>
 
-            <a
+            <a 
+              href="https://wa.me/4917681117359?text=Hi%20Ari!%20I%20just%20registered%20for%20the%20Halloween%20Party." 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="inline-block w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-semibold py-3 px-4 rounded-xl border border-zinc-700 text-xs transition-colors"
+            >
+              💬 Direct Questions? Chat with Ari
+            </a>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4 text-center text-xs text-zinc-500 border-t border-zinc-900/80 bg-black/60 backdrop-blur-sm">
+      Private Guest List Management • Hosted by Ari
+    </footer>
+
+  </div>
+
+  <!-- JavaScript Handler -->
+  <script>
+    const rsvpForm = document.getElementById('rsvpForm');
+    const formView = document.getElementById('formView');
+    const thankyouView = document.getElementById('thankyouView');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+
+    // Handle AJAX form submission to prevent redirecting off-site
+    rsvpForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      // UI loading state
+      submitBtn.disabled = true;
+      btnText.textContent = "Registering Guest...";
+      btnSpinner.classList.remove('hidden');
+
+      const formData = new FormData(rsvpForm);
+
+      try {
+        const response = await fetch(rsvpForm.action, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          // Show Thank You View smoothly
+          formView.classList.add('hidden');
+          thankyouView.classList.remove('hidden');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          alert('Submission failed. Please check your network connection and try again.');
+        }
+      } catch (error) {
+        alert('An error occurred during registration. Please try again.');
+      } finally {
+        submitBtn.disabled = false;
+        btnText.textContent = "Confirm Guest Registration 🕯️";
+        btnSpinner.classList.add('hidden');
+      }
+    });
+
+    // Reset form to register the next guest
+    function resetForNextGuest() {
+      rsvpForm.reset();
+      thankyouView.classList.add('hidden');
+      formView.classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
+
+</body>
+</html>
