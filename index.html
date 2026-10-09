@@ -159,6 +159,8 @@
         }
         .venue-shot.room img { object-position: center 57%; filter: brightness(1.16) saturate(.92); }
         .venue-shot.lobby img { object-position: center 52%; filter: brightness(.91) saturate(.91); }
+        .venue-shot.concept { grid-column: 1 / -1; height: 360px; }
+        .venue-shot.concept img { object-position: center 54%; filter: brightness(1.04) saturate(.96); }
         .venue-shot:hover img { transform: scale(1.035); }
         .venue-shot figcaption {
             position: absolute;
@@ -188,6 +190,7 @@
             .halloween-bg { background-attachment: scroll; background-position: center top; }
             .venue-gallery { grid-template-columns: 1fr; gap: 12px; }
             .venue-shot { height: 230px; }
+            .venue-shot.concept { grid-column: auto; height: 230px; }
         }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
@@ -215,7 +218,7 @@
             <p class="text-gray-100 text-sm sm:text-base leading-relaxed mb-3 font-light">Step into a different side of Munich Westend for a Halloween gathering set against the bold interiors of The Dean Munich.</p>
             <p class="text-gray-200 text-sm leading-relaxed mb-6">Move between a private party room with DJ sets and a more relaxed lounge made for conversation. Come for the music, settle into the atmosphere, and make the night your own.</p>
 
-            <div class="venue-gallery mb-7" aria-label="Photos of the event spaces">
+            <div class="venue-gallery mb-7" aria-label="Photos and atmosphere concept for the event spaces">
                 <figure class="venue-shot room">
                     <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTXvb59KqOK1i5JN-wJAtQxiCO_AG8_3C_-TlKQjAGprTtKxnWq_v14WHw&amp;s=10" alt="Warmly lit private lounge and party room" loading="lazy" decoding="async">
                     <figcaption>The Party Room</figcaption>
@@ -223,6 +226,10 @@
                 <figure class="venue-shot lobby">
                     <img src="https://www.tageskarte.io/fileadmin/content/user_upload/xxl_153190927.jpg" alt="The hotel's bright lobby lounge and bar" loading="lazy" decoding="async">
                     <figcaption>The Lobby Lounge</figcaption>
+                </figure>
+                <figure class="venue-shot concept">
+                    <img src="Gemini_Generated_Image_ang8ctang8ctang8.jpg" alt="AI-generated concept of the party room decorated for Halloween" loading="lazy" decoding="async">
+                    <figcaption>Atmosphere Concept</figcaption>
                 </figure>
             </div>
 
