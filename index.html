@@ -292,13 +292,16 @@
           <!-- DEDICATED FREE DRINK REWARDS SUMMARY CARD -->
           <div id="freeDrinkSection" class="bg-gradient-to-r from-amber-950/80 via-zinc-900 to-amber-950/80 border border-amber-500/40 p-3.5 rounded-xl space-y-2">
             <div class="flex items-center justify-between border-b border-amber-800/40 pb-1.5">
-              <span class="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                <span>🎁</span> Free Drink Qualified Inviters (≥2 Guests)
-              </span>
+              <div>
+                <span class="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>🎁</span> Free Drink Rewards (Checked-In Guests)
+                </span>
+                <p class="text-[10px] text-zinc-400 font-normal">Only guests marked as checked-in count toward host drink rewards.</p>
+              </div>
               <span id="rewardHostCount" class="text-[10px] bg-amber-900/80 text-amber-200 px-2 py-0.5 rounded-full font-bold">0</span>
             </div>
             <div id="freeDrinkHostList" class="text-xs text-zinc-200 space-y-1 max-h-28 overflow-y-auto pr-1">
-              <p class="text-zinc-500 italic text-[11px]">No inviters qualified yet.</p>
+              <p class="text-zinc-500 italic text-[11px]">No checked-in inviters qualified yet.</p>
             </div>
           </div>
 
@@ -373,7 +376,6 @@
       </div>
     </div>
 
-    <!-- Footer -->
     <footer id="publicFooter" class="py-4 text-center text-xs text-zinc-500 border-t border-zinc-900/80 bg-black/60 backdrop-blur-sm flex items-center justify-center gap-4">
       <span>Private Guest List Management • Hosted by Ari El</span>
       <button 
@@ -540,12 +542,12 @@
     function renderHostessList() {
       const guests = [...currentGuestList];
 
-      // Calculate Free Drink qualification (Inviters bringing >= 2 guests)
+      // Calculate Free Drink qualification ONLY FOR CHECKED-IN GUESTS (≥ 2 checked-in guests)
       const inviterCounts = {};
       const inviterOriginalNames = {};
 
       guests.forEach(g => {
-        if (g.invitedBy) {
+        if (g.checkedIn && g.invitedBy) {
           const key = g.invitedBy.toLowerCase().trim();
           inviterCounts[key] = (inviterCounts[key] || 0) + 1;
           inviterOriginalNames[key] = g.invitedBy.trim();
@@ -564,7 +566,7 @@
           row.className = 'flex items-center justify-between bg-amber-950/40 p-2 rounded-lg border border-amber-800/40';
           row.innerHTML = `
             <span class="font-bold text-amber-200">${inviterOriginalNames[key]}</span>
-            <span class="text-[11px] text-amber-300 font-semibold bg-amber-900/60 px-2 py-0.5 rounded-full">${inviterCounts[key]} Guests Registered</span>
+            <span class="text-[11px] text-amber-300 font-semibold bg-amber-900/60 px-2 py-0.5 rounded-full">${inviterCounts[key]} Checked-In Guests</span>
           `;
           freeDrinkHostList.appendChild(row);
         }
@@ -573,7 +575,7 @@
       document.getElementById('rewardHostCount').textContent = qualifiedCount;
 
       if (qualifiedCount === 0) {
-        freeDrinkHostList.innerHTML = '<p class="text-zinc-500 italic text-[11px]">No inviters qualified yet.</p>';
+        freeDrinkHostList.innerHTML = '<p class="text-zinc-500 italic text-[11px]">No checked-in inviters qualified yet.</p>';
       }
 
       // Alphabetical Sort by Guest Full Name
