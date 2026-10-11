@@ -192,6 +192,11 @@
             .venue-shot { height: 230px; }
             .venue-shot.concept { grid-column: auto; height: 230px; }
         }
+        body.staff-mode main > header,
+        body.staff-mode main > section,
+        body.staff-mode footer { display: none !important; }
+        body.staff-mode main { padding-top: 1rem; padding-bottom: 1rem; }
+        body.staff-mode #hostessPortal { margin-top: 0; margin-bottom: 0; }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
         }
@@ -272,25 +277,13 @@
             </div>
             <form id="rsvpForm" action="https://formspree.io/f/mbgdopnl" method="POST" class="space-y-5">
                 <input type="hidden" name="VIP Group Link" value="https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                        <label for="guestName" class="form-label">Full name</label>
-                        <input id="guestName" type="text" name="Full Name" autocomplete="name" required class="form-field" placeholder="Name used at the entrance">
-                    </div>
-                    <div>
-                        <label for="guestPhone" class="form-label">Phone number</label>
-                        <input id="guestPhone" type="tel" name="WhatsApp Number" autocomplete="tel" required class="form-field" placeholder="Your mobile number">
-                    </div>
+                <div>
+                    <label for="guestName" class="form-label">Full name</label>
+                    <input id="guestName" type="text" name="Full Name" autocomplete="name" required class="form-field" placeholder="Name used at the entrance">
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                        <label for="guestEmail" class="form-label">Email address</label>
-                        <input id="guestEmail" type="email" name="_replyto" autocomplete="email" required class="form-field" placeholder="you@example.com">
-                    </div>
-                    <div>
-                        <label for="guestInviter" class="form-label">Invited by · full name</label>
-                        <input id="guestInviter" type="text" name="Invited By" required class="form-field" placeholder="Full name of your inviter">
-                    </div>
+                <div>
+                    <label for="guestInviter" class="form-label">Invited by <span class="normal-case tracking-normal text-gray-400">(optional)</span></label>
+                    <input id="guestInviter" type="text" name="Invited By" class="form-field" placeholder="Name of your inviter (optional)">
                 </div>
                 <button type="submit" id="submitBtn" class="gold-btn w-full py-4 rounded-lg uppercase font-serif text-sm tracking-widest mt-3">Add me to the Guest List</button>
                 <p class="text-gray-400 text-xs text-center leading-relaxed">Your details are used to organise the guest list and check-in for this event.</p>
@@ -301,8 +294,6 @@
                     <h3 class="font-serif text-xs uppercase tracking-[0.16em] text-gold mb-3">Details submitted</h3>
                     <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 text-sm">
                         <div><dt class="text-xs text-gray-400">Full name</dt><dd id="summaryName" class="text-white break-words"></dd></div>
-                        <div><dt class="text-xs text-gray-400">Phone</dt><dd id="summaryPhone" class="text-white break-words"></dd></div>
-                        <div><dt class="text-xs text-gray-400">Email</dt><dd id="summaryEmail" class="text-white break-words"></dd></div>
                         <div><dt class="text-xs text-gray-400">Invited by</dt><dd id="summaryInvitedBy" class="text-white break-words"></dd></div>
                     </dl>
                 </div>
@@ -450,9 +441,7 @@
 
         function showSubmittedGuest(guest) {
             document.getElementById('summaryName').textContent = guest.name;
-            document.getElementById('summaryPhone').textContent = guest.phone;
-            document.getElementById('summaryEmail').textContent = guest.email;
-            document.getElementById('summaryInvitedBy').textContent = guest.invitedBy;
+            document.getElementById('summaryInvitedBy').textContent = guest.invitedBy || 'Not specified';
             document.getElementById('guestSummary').classList.remove('hidden');
             configureGroupInviteButton();
         }
@@ -469,8 +458,6 @@
             const fields = form.elements;
             const guest = {
                 name: document.getElementById('guestName').value.trim(),
-                phone: document.getElementById('guestPhone').value.trim(),
-                email: document.getElementById('guestEmail').value.trim(),
                 invitedBy: document.getElementById('guestInviter').value.trim(),
                 checkedIn: false
             };
@@ -544,6 +531,7 @@
             const portal = document.getElementById('hostessPortal');
             const opening = portal.classList.contains('hidden');
             portal.classList.toggle('hidden');
+            document.body.classList.toggle('staff-mode', opening);
             document.getElementById('staffLoginError').classList.add('hidden');
             document.getElementById('portalConfigWarning').classList.toggle('hidden', Boolean(db && auth));
             if (!opening) return;
@@ -674,7 +662,7 @@
                     }
                     const meta = document.createElement('p');
                     meta.className = 'text-xs text-gray-300 break-words mt-1';
-                    meta.textContent = `Invited by: ${data.invitedBy || 'Not specified'} · ${data.phone || 'No phone'}`;
+                    meta.textContent = `Invited by: ${data.invitedBy || 'Not specified'}`;
                     details.append(titleLine, meta);
 
                     const checkInButton = document.createElement('button');
