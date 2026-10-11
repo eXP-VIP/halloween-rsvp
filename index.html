@@ -123,6 +123,34 @@
             border-color: rgba(255,255,255,.72);
             transform: translateY(-1px);
         }
+        .calendar-option-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            min-width: 235px;
+            min-height: 44px;
+            padding: 12px 18px;
+            border: 1px solid rgba(212, 175, 55, .7);
+            border-radius: 9px;
+            color: #090909;
+            background: linear-gradient(135deg, #ead080 0%, #d4af37 48%, #aa7c11 100%);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+            text-align: center;
+            transition: transform .25s ease, box-shadow .25s ease, filter .25s ease;
+        }
+        .calendar-option-btn i { font-size: 16px; }
+        .calendar-option-btn:hover {
+            box-shadow: 0 0 24px rgba(212, 175, 55, .32);
+            transform: translateY(-1px);
+            filter: brightness(1.06);
+        }
+        @media (max-width: 640px) {
+            .calendar-option-btn { width: 100%; max-width: 320px; }
+        }
         .gold-btn {
             background: linear-gradient(135deg, #ead080 0%, #d4af37 48%, #aa7c11 100%);
             color: #090909;
@@ -301,11 +329,11 @@
                     <section id="postRegistrationActions" class="hidden w-full max-w-xl rounded-xl border-2 border-emerald-500/50 bg-emerald-950/40 p-5 sm:p-6 text-center shadow-lg shadow-black/20" aria-labelledby="futurePartyHeading">
                         <p class="text-emerald-300 text-xs font-bold uppercase tracking-[0.2em] mb-2"><i class="fa-solid fa-calendar-check mr-2"></i>Keep the date</p>
                         <h3 id="futurePartyHeading" class="font-serif text-base sm:text-lg uppercase tracking-wider text-white mb-3">Want a reminder and future invitations?</h3>
-                        <p class="text-sm text-gray-100 leading-relaxed">Join the private Exclusive Parties (eXP-VIP) WhatsApp group for a reminder a few days before this party and invitations to future events. Prefer not to join? Add the event to your calendar for a personal reminder.</p>
+                        <p class="text-sm text-gray-100 leading-relaxed">Join the private, announcement-only Exclusive Parties (eXP-VIP) WhatsApp group for a reminder a few days before this party and occasional invitations to future events. There is no member chat or noise: only occasional party announcements. Members cannot post or see one another. Prefer not to join? Add the event to your calendar for a personal reminder.</p>
                         <div class="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 mt-5">
                             <a href="#" id="groupInviteLink" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn hidden inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-whatsapp"></i> Join WhatsApp Secret Group</a>
-                            <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=The%20Dean%20After%20Dark%20%E2%80%93%20Halloween%20Soir%C3%A9e&amp;dates=20261031T180000/20261101T020000&amp;ctz=Europe%2FBerlin&amp;details=Private%20Halloween%20soir%C3%A9e.%20%E2%82%AC20%20cash%20at%20the%20door%2C%20including%20one%20welcome%20drink.%20Event%20details%20and%20guest%20list%3A%20https%3A%2F%2Fexp-vip.github.io%2Fhalloween-rsvp%2F&amp;location=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" id="googleCalendarLink" target="_blank" rel="noopener noreferrer" class="gold-btn inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-google"></i> Add to Google Calendar</a>
-                            <button type="button" id="calendarDownloadBtn" class="whatsapp-contact-btn inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-solid fa-calendar-plus"></i> Other calendars (.ics)</button>
+                            <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=The%20Dean%20After%20Dark%20%E2%80%93%20Halloween%20Soir%C3%A9e&amp;dates=20261031T180000/20261101T020000&amp;ctz=Europe%2FBerlin&amp;details=Private%20Halloween%20soir%C3%A9e.%20%E2%82%AC20%20cash%20at%20the%20door%2C%20including%20one%20welcome%20drink.%20Event%20details%20and%20guest%20list%3A%20https%3A%2F%2Fexp-vip.github.io/halloween-rsvp%2F&amp;location=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" id="googleCalendarLink" target="_blank" rel="noopener noreferrer" class="calendar-option-btn"><i class="fa-brands fa-google"></i> Add to Google Calendar</a>
+                            <button type="button" id="calendarDownloadBtn" class="calendar-option-btn"><i class="fa-solid fa-calendar-plus"></i> Other calendars (.ics)</button>
                         </div>
                         <p class="text-xs text-emerald-100 leading-relaxed mt-4">The calendar file includes the venue, event details and a reminder three days before the party.</p>
                     </section>
@@ -598,6 +626,7 @@
                 document.getElementById('postRegistrationActions').classList.toggle('hidden', !deliverySucceeded);
                 if (deliverySucceeded) {
                     form.reset();
+                    form.classList.add('hidden');
                     document.getElementById('registerAnotherBtn').textContent = 'Register another guest';
                 } else {
                     document.getElementById('registerAnotherBtn').textContent = 'Return to form and retry';
@@ -615,9 +644,10 @@
         document.getElementById('registerAnotherBtn').addEventListener('click', function () {
             statusMessage.classList.add('hidden');
             errorMessage.classList.add('hidden');
+            form.classList.remove('hidden');
             if (!lastSubmittedGuest || !document.getElementById('guestName').value) form.reset();
+            document.getElementById('rsvp-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
             document.getElementById('guestName').focus({ preventScroll: true });
-            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
 
         function toggleHostessPortal() {
