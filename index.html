@@ -305,7 +305,7 @@
                         <div class="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 mt-5">
                             <a href="#" id="groupInviteLink" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn hidden inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-whatsapp"></i> Join WhatsApp Secret Group</a>
                             <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=The%20Dean%20After%20Dark%20%E2%80%93%20Halloween%20Soir%C3%A9e&amp;dates=20261031T180000/20261101T020000&amp;ctz=Europe%2FBerlin&amp;details=Private%20Halloween%20soir%C3%A9e.%20%E2%82%AC20%20cash%20at%20the%20door%2C%20including%20one%20welcome%20drink.%20Event%20details%20and%20guest%20list%3A%20https%3A%2F%2Fexp-vip.github.io%2Fhalloween-rsvp%2F&amp;location=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" id="googleCalendarLink" target="_blank" rel="noopener noreferrer" class="gold-btn inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-google"></i> Add to Google Calendar</a>
-                            <button type="button" id="calendarDownloadBtn" class="whatsapp-contact-btn inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-solid fa-calendar-arrow-down"></i> Other calendars (.ics)</button>
+                            <button type="button" id="calendarDownloadBtn" class="whatsapp-contact-btn inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-solid fa-calendar-plus"></i> Other calendars (.ics)</button>
                         </div>
                         <p class="text-xs text-emerald-100 leading-relaxed mt-4">The calendar file includes the venue, event details and a reminder three days before the party.</p>
                     </section>
@@ -462,11 +462,11 @@
                 }
             }
             chunks.push(chunk);
-            return chunks.join('\\r\\n');
+            return chunks.join('\r\n');
         }
 
         function downloadCalendarFile() {
-            const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\\.\\d{3}Z$/, 'Z');
+            const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
             const location = escapeIcsText('The Dean Munich, Autograph Collection by Marriott, Landsberger Straße 68, 80339 München, Germany');
             const description = escapeIcsText('Private Halloween soirée. €20 cash at the door, including one welcome drink. Event details and guest list: https://exp-vip.github.io/halloween-rsvp/');
             const lines = [
@@ -511,7 +511,7 @@
                 'END:VEVENT',
                 'END:VCALENDAR'
             ];
-            const calendarText = lines.map(foldIcsLine).join('\\r\\n') + '\\r\\n';
+            const calendarText = lines.map(foldIcsLine).join('\r\n') + '\r\n';
             const calendarBlob = new Blob([calendarText], { type: 'text/calendar;charset=utf-8' });
             const calendarUrl = URL.createObjectURL(calendarBlob);
             const downloadLink = document.createElement('a');
