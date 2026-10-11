@@ -225,6 +225,12 @@
         body.staff-mode footer { display: none !important; }
         body.staff-mode main { padding-top: 1rem; padding-bottom: 1rem; }
         body.staff-mode #hostessPortal { margin-top: 0; margin-bottom: 0; }
+        body.confirmation-mode main > header,
+        body.confirmation-mode main > section:not(#rsvp-section),
+        body.confirmation-mode footer { display: none !important; }
+        body.confirmation-mode main { padding-top: 1rem; padding-bottom: 1rem; }
+        body.confirmation-mode #rsvpIntro { display: none !important; }
+        body.confirmation-mode #rsvp-section { margin-bottom: 1rem; }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
         }
@@ -286,7 +292,7 @@
                     <p class="text-gray-300 text-sm mt-1">Landsberger Straße 68, 80339 München</p>
                 </div>
                 <div>
-                    <h2 class="font-serif text-base text-gold uppercase tracking-wider mb-2"><i class="fa-solid fa-ticket mr-2"></i>Entrance</h2>
+                    <h2 class="font-serif text-base text-gold uppercase tracking-wider mb-2"><i class="fa-solid fa-ticket mr-2"></i>Admission</h2>
                     <p class="text-white font-medium text-base">€20 · cash only</p>
                     <p class="text-gray-300 text-sm mt-1">Includes one welcome drink.</p>
                 </div>
@@ -298,7 +304,7 @@
         </section>
 
         <section class="glass-panel rounded-2xl p-5 sm:p-9 gold-border-glow mb-7 sm:mb-9" id="rsvp-section">
-            <div class="text-center mb-7">
+            <div id="rsvpIntro" class="text-center mb-7">
                 <p class="font-serif text-xs tracking-[0.2em] text-gold uppercase mb-2">Your place starts here</p>
                 <h2 class="font-serif text-2xl sm:text-3xl text-white uppercase tracking-wider mb-3">Join the Guest List</h2>
                 <p class="text-gray-200 text-sm leading-relaxed max-w-2xl mx-auto">This is a private, guest-list-only event, so please register in advance. The hostess will welcome you and check your name at the entrance.</p>
@@ -625,6 +631,7 @@
                 const deliverySucceeded = savedToDatabase || sentToHost;
                 document.getElementById('postRegistrationActions').classList.toggle('hidden', !deliverySucceeded);
                 if (deliverySucceeded) {
+                    document.body.classList.add('confirmation-mode');
                     form.reset();
                     form.classList.add('hidden');
                     document.getElementById('registerAnotherBtn').textContent = 'Register another guest';
@@ -642,6 +649,7 @@
         });
 
         document.getElementById('registerAnotherBtn').addEventListener('click', function () {
+            document.body.classList.remove('confirmation-mode');
             statusMessage.classList.add('hidden');
             errorMessage.classList.add('hidden');
             form.classList.remove('hidden');
