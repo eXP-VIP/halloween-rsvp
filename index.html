@@ -298,13 +298,17 @@
                     </dl>
                 </div>
                 <div class="flex flex-col items-center gap-4 mt-6">
-                    <section class="w-full max-w-xl rounded-xl border-2 border-emerald-500/50 bg-emerald-950/40 p-5 sm:p-6 text-center shadow-lg shadow-black/20" aria-labelledby="futurePartyHeading">
-                        <p class="text-emerald-300 text-xs font-bold uppercase tracking-[0.2em] mb-2"><i class="fa-brands fa-whatsapp mr-2"></i>Stay in the loop</p>
-                        <h3 id="futurePartyHeading" class="font-serif text-base sm:text-lg uppercase tracking-wider text-white mb-3">Want invitations to future parties?</h3>
-                        <p class="text-sm text-gray-100 leading-relaxed">If you are not there yet and want to be invited next time, join the Exclusive Parties (eXP-VIP) group.</p>
-                        <p class="text-xs sm:text-sm text-emerald-100 leading-relaxed mt-2">Zero chat, zero noise, private. Members cannot post nor see each other.</p>
+                    <section id="postRegistrationActions" class="hidden w-full max-w-xl rounded-xl border-2 border-emerald-500/50 bg-emerald-950/40 p-5 sm:p-6 text-center shadow-lg shadow-black/20" aria-labelledby="futurePartyHeading">
+                        <p class="text-emerald-300 text-xs font-bold uppercase tracking-[0.2em] mb-2"><i class="fa-solid fa-calendar-check mr-2"></i>Keep the date</p>
+                        <h3 id="futurePartyHeading" class="font-serif text-base sm:text-lg uppercase tracking-wider text-white mb-3">Want a reminder and future invitations?</h3>
+                        <p class="text-sm text-gray-100 leading-relaxed">Join the private Exclusive Parties (eXP-VIP) WhatsApp group for a reminder a few days before this party and invitations to future events. Prefer not to join? Add the event to your calendar for a personal reminder.</p>
+                        <div class="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 mt-5">
+                            <a href="#" id="groupInviteLink" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn hidden inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-whatsapp"></i> Join WhatsApp Secret Group</a>
+                            <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=The%20Dean%20After%20Dark%20%E2%80%93%20Halloween%20Soir%C3%A9e&amp;dates=20261031T180000/20261101T020000&amp;ctz=Europe%2FBerlin&amp;details=Private%20Halloween%20soir%C3%A9e.%20%E2%82%AC20%20cash%20at%20the%20door%2C%20including%20one%20welcome%20drink.%20Event%20details%20and%20guest%20list%3A%20https%3A%2F%2Fexp-vip.github.io%2Fhalloween-rsvp%2F&amp;location=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" id="googleCalendarLink" target="_blank" rel="noopener noreferrer" class="gold-btn inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-google"></i> Add to Google Calendar</a>
+                            <button type="button" id="calendarDownloadBtn" class="whatsapp-contact-btn inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-solid fa-calendar-arrow-down"></i> Other calendars (.ics)</button>
+                        </div>
+                        <p class="text-xs text-emerald-100 leading-relaxed mt-4">The calendar file includes the venue, event details and a reminder three days before the party.</p>
                     </section>
-                    <a href="#" id="groupInviteLink" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn hidden inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-whatsapp"></i> Join the Exclusive Parties WhatsApp Group</a>
                     <button type="button" id="registerAnotherBtn" class="text-xs uppercase tracking-wider text-gray-200 underline underline-offset-4 hover:text-gold">Register another guest</button>
                 </div>
             </div>
@@ -433,6 +437,94 @@
         }
         configureGroupInviteButton();
 
+        function escapeIcsText(value) {
+            return String(value)
+                .replace(/\\/g, '\\\\')
+                .replace(/\r?\n/g, '\\n')
+                .replace(/,/g, '\\,')
+                .replace(/;/g, '\\;');
+        }
+
+        function foldIcsLine(line) {
+            const encoder = new TextEncoder();
+            const chunks = [];
+            let chunk = '';
+            let byteLength = 0;
+            for (const character of Array.from(line)) {
+                const characterBytes = encoder.encode(character).length;
+                if (byteLength + characterBytes > 73 && chunk) {
+                    chunks.push(chunk);
+                    chunk = ' ' + character;
+                    byteLength = 1 + characterBytes;
+                } else {
+                    chunk += character;
+                    byteLength += characterBytes;
+                }
+            }
+            chunks.push(chunk);
+            return chunks.join('\\r\\n');
+        }
+
+        function downloadCalendarFile() {
+            const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\\.\\d{3}Z$/, 'Z');
+            const location = escapeIcsText('The Dean Munich, Autograph Collection by Marriott, Landsberger Straße 68, 80339 München, Germany');
+            const description = escapeIcsText('Private Halloween soirée. €20 cash at the door, including one welcome drink. Event details and guest list: https://exp-vip.github.io/halloween-rsvp/');
+            const lines = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//eXP-VIP//The Dean After Dark//EN',
+                'CALSCALE:GREGORIAN',
+                'METHOD:PUBLISH',
+                'BEGIN:VTIMEZONE',
+                'TZID:Europe/Berlin',
+                'X-LIC-LOCATION:Europe/Berlin',
+                'BEGIN:DAYLIGHT',
+                'TZOFFSETFROM:+0100',
+                'TZOFFSETTO:+0200',
+                'TZNAME:CEST',
+                'DTSTART:19700329T020000',
+                'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU',
+                'END:DAYLIGHT',
+                'BEGIN:STANDARD',
+                'TZOFFSETFROM:+0200',
+                'TZOFFSETTO:+0100',
+                'TZNAME:CET',
+                'DTSTART:19701025T030000',
+                'RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU',
+                'END:STANDARD',
+                'END:VTIMEZONE',
+                'BEGIN:VEVENT',
+                'UID:the-dean-after-dark-20261031@exp-vip.github.io',
+                'DTSTAMP:' + timestamp,
+                'DTSTART;TZID=Europe/Berlin:20261031T180000',
+                'DTEND;TZID=Europe/Berlin:20261101T020000',
+                'SUMMARY:The Dean After Dark - Halloween Soiree',
+                'LOCATION:' + location,
+                'DESCRIPTION:' + description,
+                'URL:https://exp-vip.github.io/halloween-rsvp/',
+                'STATUS:CONFIRMED',
+                'BEGIN:VALARM',
+                'ACTION:DISPLAY',
+                'DESCRIPTION:The Dean After Dark is in three days.',
+                'TRIGGER:-P3D',
+                'END:VALARM',
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ];
+            const calendarText = lines.map(foldIcsLine).join('\\r\\n') + '\\r\\n';
+            const calendarBlob = new Blob([calendarText], { type: 'text/calendar;charset=utf-8' });
+            const calendarUrl = URL.createObjectURL(calendarBlob);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = calendarUrl;
+            downloadLink.download = 'the-dean-after-dark-2026.ics';
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            downloadLink.remove();
+            window.setTimeout(() => URL.revokeObjectURL(calendarUrl), 1000);
+        }
+
+        document.getElementById('calendarDownloadBtn').addEventListener('click', downloadCalendarFile);
+
         const form = document.getElementById('rsvpForm');
         const submitBtn = document.getElementById('submitBtn');
         const statusMessage = document.getElementById('statusMessage');
@@ -503,6 +595,7 @@
                 // The submitted record stays visible in the summary. Clear the form when at least one
                 // delivery path succeeded so the page is ready to register the next guest.
                 const deliverySucceeded = savedToDatabase || sentToHost;
+                document.getElementById('postRegistrationActions').classList.toggle('hidden', !deliverySucceeded);
                 if (deliverySucceeded) {
                     form.reset();
                     document.getElementById('registerAnotherBtn').textContent = 'Register another guest';
