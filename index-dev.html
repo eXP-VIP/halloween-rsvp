@@ -443,19 +443,19 @@
                     </div>
                     <section id="internationsPaymentPanel" class="rounded-xl border border-sky-400/40 bg-sky-950/20 p-4 mt-6">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
-                            <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">InterNations payment desk</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-sky-200">Checked-in imported members</span>
+                            <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">Payment desk</h4>
+                            <span class="text-[10px] uppercase tracking-wider text-sky-200">All checked-in guests · all must pay</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-3">Unpaid guests stay in hotel check-in order. Once marked paid, they move to the bottom in alphabetical order. Paid guests have a Mark Unpaid button if a correction is needed.</p>
+                        <p class="text-xs text-gray-300 mb-3">Every checked-in guest appears here, whether an InterNations member or a friend registered on the website. Unpaid guests stay in hotel check-in order. Once marked paid, they move to the bottom in alphabetical order. Paid guests have a Mark Unpaid button for corrections.</p>
                         <div class="mb-4">
                             <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Awaiting payment <span id="internationsUnpaidCount" class="text-amber-200"></span></p>
                             <div class="space-y-2 max-h-80 overflow-y-auto pr-1" id="internationsUnpaidContainer"></div>
-                            <p id="noInternationsUnpaid" class="text-xs text-gray-500 py-2 hidden">No checked-in InterNations members are awaiting payment.</p>
+                            <p id="noInternationsUnpaid" class="text-xs text-gray-500 py-2 hidden">No checked-in guests are awaiting payment.</p>
                         </div>
                         <div>
                             <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Paid · alphabetical <span id="internationsPaidCount" class="text-emerald-200"></span></p>
                             <div class="space-y-2 max-h-80 overflow-y-auto pr-1" id="internationsPaidContainer"></div>
-                            <p id="noInternationsPaid" class="text-xs text-gray-500 py-2 hidden">No checked-in InterNations members have been marked paid yet.</p>
+                            <p id="noInternationsPaid" class="text-xs text-gray-500 py-2 hidden">No checked-in guests have been marked paid yet.</p>
                         </div>
                     </section>
                 </div>
@@ -1141,23 +1141,21 @@
                 document.getElementById('noUncheckGuests').classList.toggle('hidden', notCheckedIn.length > 0);
                 document.getElementById('noCheckedGuests').classList.toggle('hidden', checkedIn.length > 0);
 
-                const checkedInInterNations = guestDocs.filter((item) =>
-                    (item.data.guestType === 'internations_member' || item.data.source === 'internations_import') && Boolean(item.data.checkedIn)
-                );
-                const unpaidMembers = checkedInInterNations.filter((item) => !item.data.paid).sort((a, b) => {
+                const checkedInGuests = guestDocs.filter((item) => Boolean(item.data.checkedIn));
+                const unpaidGuests = checkedInGuests.filter((item) => !item.data.paid).sort((a, b) => {
                     const timeA = checkInTime(a), timeB = checkInTime(b);
                     if (timeA == null && timeB != null) return 1;
                     if (timeA != null && timeB == null) return -1;
                     if (timeA != null && timeB != null && timeA !== timeB) return timeA - timeB;
                     return compareNames(a, b);
                 });
-                const paidMembers = checkedInInterNations.filter((item) => Boolean(item.data.paid)).sort(compareNames);
-                unpaidMembers.forEach((item) => unpaidContainer.appendChild(makeGuestCard(item, 'payment')));
-                paidMembers.forEach((item) => paidContainer.appendChild(makeGuestCard(item, 'payment')));
-                document.getElementById('internationsUnpaidCount').textContent = '(' + unpaidMembers.length + ')';
-                document.getElementById('internationsPaidCount').textContent = '(' + paidMembers.length + ')';
-                document.getElementById('noInternationsUnpaid').classList.toggle('hidden', unpaidMembers.length > 0);
-                document.getElementById('noInternationsPaid').classList.toggle('hidden', paidMembers.length > 0);
+                const paidGuests = checkedInGuests.filter((item) => Boolean(item.data.paid)).sort(compareNames);
+                unpaidGuests.forEach((item) => unpaidContainer.appendChild(makeGuestCard(item, 'payment')));
+                paidGuests.forEach((item) => paidContainer.appendChild(makeGuestCard(item, 'payment')));
+                document.getElementById('internationsUnpaidCount').textContent = '(' + unpaidGuests.length + ')';
+                document.getElementById('internationsPaidCount').textContent = '(' + paidGuests.length + ')';
+                document.getElementById('noInternationsUnpaid').classList.toggle('hidden', unpaidGuests.length > 0);
+                document.getElementById('noInternationsPaid').classList.toggle('hidden', paidGuests.length > 0);
                 renderInternationsImportPreview();
                 filterGuests();
 
