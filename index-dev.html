@@ -508,13 +508,13 @@
         let cachedGuestDocs = [];
 
         function normalizeGuestName(value) {
-            return String(value || '').normalize('NFKC').trim().replace(/\\s+/g, ' ').toLocaleLowerCase();
+            return String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
         }
 
         function readImportedGuestName(row) {
             if (pendingInternationsNameColumn === '__combined_first_last__') {
-                const first = pendingInternationsHeaders.find((h) => /^(first|given)\\s*name$/i.test(String(h).trim()));
-                const last = pendingInternationsHeaders.find((h) => /^(last|family|sur)\\s*name$/i.test(String(h).trim()));
+                const first = pendingInternationsHeaders.find((h) => /^(first|given)\s*name$/i.test(String(h).trim()));
+                const last = pendingInternationsHeaders.find((h) => /^(last|family|sur)\s*name$/i.test(String(h).trim()));
                 return [first ? row[first] : '', last ? row[last] : ''].map(v => String(v || '').trim()).filter(Boolean).join(' ');
             }
             return String(row[pendingInternationsNameColumn] || '').trim();
@@ -523,11 +523,17 @@
         function getUniqueImportedNames() {
             const seen = new Map();
             let blankRows = 0;
+            const statusHeader = pendingInternationsHeaders.find((header) => /^(status|membership status|member status)$/i.test(String(header).replace(/^\\uFEFF/, '').trim()));
             pendingInternationsRows.forEach((row) => {
-                const name = readImportedGuestName(row).replace(/\\s+/g, ' ').trim();
+                const name = readImportedGuestName(row).replace(/\s+/g, ' ').trim();
                 const key = normalizeGuestName(name);
                 if (!key) { blankRows++; return; }
-                if (!seen.has(key)) seen.set(key, { name, key });
+                const membershipStatus = statusHeader ? String(row[statusHeader] || '').trim() : '';
+                if (!seen.has(key)) {
+                    seen.set(key, { name, key, membershipStatus });
+                } else if (!seen.get(key).membershipStatus && membershipStatus) {
+                    seen.get(key).membershipStatus = membershipStatus;
+                }
             });
             return { entries: Array.from(seen.values()), blankRows, duplicateRows: pendingInternationsRows.length - seen.size - blankRows };
         }
@@ -554,14 +560,7 @@
             note.textContent = 'Matching names will be labelled InterNations member. Their existing check-in and welcome-drink chip status will be preserved.';
             preview.appendChild(note);
             const previewNames = document.createElement('p');
-            previewNames.className = 'text-gray-400 break-words';
-            previewNames.textContent = 'New names: ' + (newNames.slice(0, 8).map(item => item.name).join(', ') || 'none') + (newNames.length > 8 ? ' …' : '');
-            preview.appendChild(previewNames);
-            confirm.disabled = result.entries.length === 0;
-            confirm.textContent = newNames.length ? 'Import ' + newNames.length + ' new name(s) and update matches' : 'Update matching InterNations names';
-        }
-
-        document.getElementById('internationsFileInput').addEventListener('change', async (event) => {
+            pr        document.getElementById('internationsFileInput').addEventListener('change', async (event) => {
             const status = document.getElementById('internationsImportStatus');
             const options = document.getElementById('internationsImportOptions');
             const file = event.target.files && event.target.files[0];
@@ -575,11 +574,29 @@
                 if (!window.XLSX) throw new Error('Spreadsheet reader could not be loaded. Check the network connection and reload this page.');
                 const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: '', raw: false });
-                if (!rows.length) throw new Error('No data rows were found in the first worksheet.');
-                pendingInternationsRows = rows;
-                pendingInternationsHeaders = Object.keys(rows[0] || {});
-                if (!pendingInternationsHeaders.length) throw new Error('No column headers were found. Export the spreadsheet with a header row.');
+                const grid = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '', raw: false, blankrows: false });
+                if (!grid.length) throw new Error('No data rows were found in the first worksheet.');
+
+                const normaliseHeader = (value) => String(value || '').replace(/^\\uFEFF/, '').trim().toLocaleLowerCase().replace(/[\\s_-]+/g, ' ');
+                const headerIndex = grid.slice(0, 15).findIndex((row) => {
+                    const headers = row.map(normaliseHeader);
+                    const hasFirstAndLast = headers.some((h) => /^(first|given) name$/.test(h)) && headers.some((h) => /^(last|family|sur) name$/.test(h));
+                    const hasSingleName = headers.some((h) => /^(name|full name|guest name|attendee|participant)$/.test(h));
+                    return hasFirstAndLast || hasSingleName;
+                });
+                if (headerIndex < 0) throw new Error('Could not find a name header. Expected First Name + Last Name or a single Name / Full Name column in the first 15 rows.');
+
+                pendingInternationsHeaders = grid[headerIndex].map((value, index) => String(value || '').replace(/^\\uFEFF/, '').trim() || ('Column ' + (index + 1)));
+                if (!pendingInternationsHeaders.length) throw new Error('No column headers were found.');
+                pendingInternationsRows = grid.slice(headerIndex + 1)
+                    .filter((row) => row.some((cell) => String(cell == null ? '' : cell).trim() !== ''))
+                    .map((cells) => {
+                        const record = {};
+                        pendingInternationsHeaders.forEach((header, index) => { record[header] = cells[index] == null ? '' : cells[index]; });
+                        return record;
+                    });
+                if (!pendingInternationsRows.length) throw new Error('The header row was found, but no guest rows followed it.');
+
                 const first = pendingInternationsHeaders.find((h) => /^(first|given)\\s*name$/i.test(String(h).trim()));
                 const last = pendingInternationsHeaders.find((h) => /^(last|family|sur)\\s*name$/i.test(String(h).trim()));
                 const detected = pendingInternationsHeaders.find((h) => /(full.?name|guest.?name|attendee|participant|^name$)/i.test(String(h).trim()) && !/invited by/i.test(String(h).trim()));
@@ -601,6 +618,15 @@
                 select.value = pendingInternationsNameColumn;
                 select.onchange = () => { pendingInternationsNameColumn = select.value; renderInternationsImportPreview(); };
                 options.classList.remove('hidden');
+                renderInternationsImportPreview();
+                status.textContent = 'Loaded ' + pendingInternationsRows.length + ' guest row(s) from ' + file.name + '. Detected headers on row ' + (headerIndex + 1) + '. Review the preview before importing.';
+            } catch (error) {
+                console.error('InterNations spreadsheet import preparation failed:', error);
+                status.textContent = error.message || 'Could not read this spreadsheet.';
+            }
+        });
+
+         options.classList.remove('hidden');
                 renderInternationsImportPreview();
                 status.textContent = 'Loaded ' + rows.length + ' spreadsheet row(s) from ' + file.name + '. Review the preview before importing.';
             } catch (error) {
@@ -634,12 +660,14 @@
                     const existing = byName.get(entry.key);
                     if (existing) {
                         matched++;
-                        operations.push({ type: 'update', ref: existing.ref, data: {
+                        const updateData = {
                             guestType: 'internations_member',
                             source: 'internations_import',
                             importNameKey: entry.key,
                             importedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        }});
+                        };
+                        if (entry.membershipStatus) updateData.interNationsStatus = entry.membershipStatus;
+                        operations.push({ type: 'update', ref: existing.ref, data: updateData });
                     } else {
                         added++;
                         const ref = db.collection('halloween_guests').doc();
@@ -652,7 +680,8 @@
                             importNameKey: entry.key,
                             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                             importedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            welcomeDrinkChipIssued: false
+                            welcomeDrinkChipIssued: false,
+                            ...(entry.membershipStatus ? { interNationsStatus: entry.membershipStatus } : {})
                         }});
                     }
                 });
@@ -1011,7 +1040,10 @@
                     const isInterNationsMember = data.guestType === 'internations_member' || data.source === 'internations_import';
                     const typeBadge = document.createElement('span');
                     typeBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' + (isInterNationsMember ? 'border-sky-400/50 bg-sky-950/50 text-sky-100' : 'border-gray-500/50 bg-gray-800/60 text-gray-200');
-                    typeBadge.textContent = isInterNationsMember ? 'INTERNATIONS MEMBER · IMPORTED' : 'FRIEND · WEBSITE RSVP';
+                    const membershipStatus = String(data.interNationsStatus || '').trim();
+                    typeBadge.textContent = isInterNationsMember
+                        ? (membershipStatus ? 'INTERNATIONS MEMBER · ' + membershipStatus.toLocaleUpperCase() : 'INTERNATIONS MEMBER · IMPORTED')
+                        : 'FRIEND · WEBSITE RSVP';
                     titleLine.appendChild(typeBadge);
                     if (welcomeDrinkEarned) {
                         const rewardBadge = document.createElement('span');
