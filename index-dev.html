@@ -408,10 +408,7 @@
                         <label for="internationsFileInput" class="form-label">Guest-list spreadsheet</label>
                         <input id="internationsFileInput" type="file" accept=".xlsx,.xls,.csv,.ods" class="form-field text-sm mb-3">
                         <div id="internationsImportOptions" class="hidden space-y-3">
-                            <div>
-                                <label for="internationsNameColumn" class="form-label">Column containing the guest name</label>
-                                <select id="internationsNameColumn" class="form-field text-sm"></select>
-                            </div>
+                            <p class="text-xs text-sky-100">Names are combined automatically from First Name + Last Name. The Status field is imported as the member type/status.</p>
                             <div id="internationsImportPreview" class="rounded-lg border border-sky-400/20 bg-black/30 p-3 text-xs text-gray-200"></div>
                             <button type="button" id="confirmInternationsImport" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Import / Update InterNations Names</button>
                         </div>
@@ -428,13 +425,39 @@
                         </div>
                     </section>
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-                        <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Guest list</h4>
+                        <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Hotel check-in</h4>
                         <div class="flex w-full sm:w-auto">
                             <input type="search" id="searchInput" oninput="filterGuests()" aria-label="Search guest list" placeholder="Search guest name..." class="form-field w-full sm:max-w-xs text-sm">
                         </div>
                     </div>
                     <p id="guestlistError" class="text-red-300 text-sm hidden mb-3">Could not load the guest list. Check the database connection and access rules.</p>
-                    <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestListContainer"></div>
+                    <div class="mb-4">
+                        <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Not checked in · alphabetical</p>
+                        <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestNotCheckedInContainer"></div>
+                        <p id="noUncheckGuests" class="text-xs text-gray-500 py-2 hidden">Everyone is checked in.</p>
+                    </div>
+                    <div class="mb-6">
+                        <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Checked in · alphabetical</p>
+                        <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestCheckedInContainer"></div>
+                        <p id="noCheckedGuests" class="text-xs text-gray-500 py-2 hidden">No guests checked in yet.</p>
+                    </div>
+                    <section id="internationsPaymentPanel" class="rounded-xl border border-sky-400/40 bg-sky-950/20 p-4 mt-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
+                            <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">InterNations payment desk</h4>
+                            <span class="text-[10px] uppercase tracking-wider text-sky-200">Checked-in imported members</span>
+                        </div>
+                        <p class="text-xs text-gray-300 mb-3">Unpaid guests stay in hotel check-in order. Once marked paid, they move to the bottom in alphabetical order. Paid guests have a Mark Unpaid button if a correction is needed.</p>
+                        <div class="mb-4">
+                            <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Awaiting payment <span id="internationsUnpaidCount" class="text-amber-200"></span></p>
+                            <div class="space-y-2 max-h-80 overflow-y-auto pr-1" id="internationsUnpaidContainer"></div>
+                            <p id="noInternationsUnpaid" class="text-xs text-gray-500 py-2 hidden">No checked-in InterNations members are awaiting payment.</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Paid · alphabetical <span id="internationsPaidCount" class="text-emerald-200"></span></p>
+                            <div class="space-y-2 max-h-80 overflow-y-auto pr-1" id="internationsPaidContainer"></div>
+                            <p id="noInternationsPaid" class="text-xs text-gray-500 py-2 hidden">No checked-in InterNations members have been marked paid yet.</p>
+                        </div>
+                    </section>
                 </div>
             </div>
         </div>
@@ -591,10 +614,17 @@
                     const hasSingleName = headers.some((h) => /^(name|full name|guest name|attendee|participant)$/.test(h));
                     return hasFirstAndLast || hasSingleName;
                 });
-                if (headerIndex < 0) throw new Error('Could not find a name header. Expected First Name + Last Name or a single Name / Full Name column in the first 15 rows.');
+                if (headerIndex < 0) throw new Error('Could not find name headers. Expected First Name + Last Name or a single Name / Full Name column in the first 15 rows.');
 
                 pendingInternationsHeaders = grid[headerIndex].map((value, index) => String(value || '').replace(/^\uFEFF/, '').trim() || ('Column ' + (index + 1)));
-                if (!pendingInternationsHeaders.length) throw new Error('No column headers were found.');
+                const normalizedHeaders = pendingInternationsHeaders.map(normaliseHeader);
+                const firstIndex = normalizedHeaders.findIndex((h) => /^(first|given) name$/.test(h));
+                const lastIndex = normalizedHeaders.findIndex((h) => /^(last|family|sur) name$/.test(h));
+                const singleNameIndex = normalizedHeaders.findIndex((h) => /^(name|full name|guest name|attendee|participant)$/.test(h));
+                if (firstIndex >= 0 && lastIndex >= 0) pendingInternationsNameColumn = '__combined_first_last__';
+                else if (singleNameIndex >= 0) pendingInternationsNameColumn = pendingInternationsHeaders[singleNameIndex];
+                else throw new Error('The name columns were found inconsistently. Please check the spreadsheet header row.');
+
                 pendingInternationsRows = grid.slice(headerIndex + 1)
                     .filter((row) => row.some((cell) => String(cell == null ? '' : cell).trim() !== ''))
                     .map((cells) => {
@@ -604,29 +634,9 @@
                     });
                 if (!pendingInternationsRows.length) throw new Error('The header row was found, but no guest rows followed it.');
 
-                const first = pendingInternationsHeaders.find((h) => /^(first|given)\s*name$/i.test(String(h).replace(/^\uFEFF/, '').trim()));
-                const last = pendingInternationsHeaders.find((h) => /^(last|family|sur)\s*name$/i.test(String(h).replace(/^\uFEFF/, '').trim()));
-                const detected = pendingInternationsHeaders.find((h) => /(full.?name|guest.?name|attendee|participant|^name$)/i.test(String(h).replace(/^\uFEFF/, '').trim()) && !/invited by/i.test(String(h).trim()));
-                const select = document.getElementById('internationsNameColumn');
-                select.replaceChildren();
-                if (first && last) {
-                    const option = document.createElement('option');
-                    option.value = '__combined_first_last__';
-                    option.textContent = first + ' + ' + last;
-                    select.appendChild(option);
-                }
-                pendingInternationsHeaders.forEach((header) => {
-                    const option = document.createElement('option');
-                    option.value = header;
-                    option.textContent = header;
-                    select.appendChild(option);
-                });
-                pendingInternationsNameColumn = first && last && !detected ? '__combined_first_last__' : (detected || (first && last ? '__combined_first_last__' : pendingInternationsHeaders[0]));
-                select.value = pendingInternationsNameColumn;
-                select.onchange = () => { pendingInternationsNameColumn = select.value; renderInternationsImportPreview(); };
                 options.classList.remove('hidden');
                 renderInternationsImportPreview();
-                status.textContent = 'Loaded ' + pendingInternationsRows.length + ' guest row(s) from ' + file.name + '. Detected headers on row ' + (headerIndex + 1) + '. Review the preview before importing.';
+                status.textContent = 'Loaded ' + pendingInternationsRows.length + ' guest row(s) from ' + file.name + '. Names and member status will be detected automatically.';
             } catch (error) {
                 console.error('InterNations spreadsheet import preparation failed:', error);
                 status.textContent = error.message || 'Could not read this spreadsheet.';
@@ -1017,15 +1027,41 @@
                     });
                 }
 
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
+                const hotelOpenContainer = document.getElementById('guestNotCheckedInContainer');
+                const hotelCheckedContainer = document.getElementById('guestCheckedInContainer');
+                const unpaidContainer = document.getElementById('internationsUnpaidContainer');
+                const paidContainer = document.getElementById('internationsPaidContainer');
+                hotelOpenContainer.replaceChildren();
+                hotelCheckedContainer.replaceChildren();
+                unpaidContainer.replaceChildren();
+                paidContainer.replaceChildren();
+
+                const guestDocs = snapshot.docs.map((doc) => ({ doc, data: doc.data() }));
+                const compareNames = (a, b) => String(a.data.name || '').localeCompare(String(b.data.name || ''), undefined, { sensitivity: 'base' });
+                const timestampMillis = (value) => {
+                    if (!value) return null;
+                    if (typeof value.toMillis === 'function') return value.toMillis();
+                    if (value instanceof Date) return value.getTime();
+                    const parsed = Date.parse(value);
+                    return Number.isFinite(parsed) ? parsed : null;
+                };
+                const checkInTime = (item) => timestampMillis(item.data.checkedInAt);
+
+                function makeGuestCard(item, mode) {
+                    const doc = item.doc;
+                    const data = item.data;
                     const checkedIn = Boolean(data.checkedIn);
                     const inviterKey = normalizeGuestName(data.name);
                     const invitedCount = checkedInReferralsByInviter.get(inviterKey)?.guestIds.size || 0;
                     const welcomeDrinkEarned = invitedCount >= 2;
+                    const isInterNationsMember = data.guestType === 'internations_member' || data.source === 'internations_import';
+                    const isPaymentCard = mode === 'payment';
+                    const isPaid = Boolean(data.paid);
                     const card = document.createElement('div');
-                    card.className = `p-3 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${welcomeDrinkEarned ? 'bg-amber-950/50 border-gold/80 border-l-4' : checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'}`;
-                    if (welcomeDrinkEarned) card.style.borderLeftWidth = '5px';
+                    card.className = 'guest-card p-3 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ' +
+                        (isPaymentCard ? (isPaid ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-sky-950/30 border-sky-400/40') :
+                        (welcomeDrinkEarned ? 'bg-amber-950/50 border-gold/80 border-l-4' : checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'));
+                    card.dataset.guestId = doc.id;
 
                     const details = document.createElement('div');
                     details.className = 'min-w-0';
@@ -1035,53 +1071,98 @@
                     name.className = 'font-medium text-sm text-white break-words';
                     name.textContent = data.name || '(No name provided)';
                     titleLine.appendChild(name);
-                    const isInterNationsMember = data.guestType === 'internations_member' || data.source === 'internations_import';
+
                     const typeBadge = document.createElement('span');
-                    typeBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' + (isInterNationsMember ? 'border-sky-400/50 bg-sky-950/50 text-sky-100' : 'border-gray-500/50 bg-gray-800/60 text-gray-200');
+                    typeBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
+                        (isInterNationsMember ? 'border-sky-400/50 bg-sky-950/50 text-sky-100' : 'border-gray-500/50 bg-gray-800/60 text-gray-200');
                     const membershipStatus = String(data.interNationsStatus || '').trim();
                     typeBadge.textContent = isInterNationsMember
-                        ? (membershipStatus ? 'INTERNATIONS MEMBER · ' + membershipStatus.toLocaleUpperCase() : 'INTERNATIONS MEMBER · IMPORTED')
+                        ? (membershipStatus ? 'INTERNATIONS · ' + membershipStatus.toLocaleUpperCase() : 'INTERNATIONS · STATUS NOT LISTED')
                         : 'FRIEND · WEBSITE RSVP';
                     titleLine.appendChild(typeBadge);
-                    if (welcomeDrinkEarned) {
+
+                    if (!isPaymentCard && welcomeDrinkEarned) {
                         const rewardBadge = document.createElement('span');
                         rewardBadge.className = 'inline-flex items-center rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[9px] font-semibold tracking-wider text-amber-100';
-                        rewardBadge.textContent = `WELCOME DRINK EARNED · ${invitedCount} INVITED GUESTS CHECKED IN`;
-                        rewardBadge.title = `${invitedCount} guests invited by ${data.name} have checked in.`;
+                        rewardBadge.textContent = 'WELCOME DRINK EARNED · ' + invitedCount + ' INVITED GUESTS CHECKED IN';
+                        rewardBadge.title = invitedCount + ' guests invited by ' + (data.name || 'this person') + ' have checked in.';
                         titleLine.appendChild(rewardBadge);
                     }
+                    details.appendChild(titleLine);
+
                     const meta = document.createElement('p');
                     meta.className = 'text-xs text-gray-300 break-words mt-1';
-                    meta.textContent = `Invited by: ${data.invitedBy || 'Not specified'}`;
-                    if (welcomeDrinkEarned && data.welcomeDrinkChipIssued) {
+                    meta.textContent = isPaymentCard
+                        ? ('Hotel check-in: ' + (checkInTime(item) == null ? 'time not recorded for this earlier check-in' : new Date(checkInTime(item)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })))
+                        : ('Invited by: ' + (data.invitedBy || 'Not specified'));
+                    details.appendChild(meta);
+                    if (!isPaymentCard && welcomeDrinkEarned && data.welcomeDrinkChipIssued) {
                         const chipState = document.createElement('p');
                         chipState.className = 'text-[10px] uppercase tracking-wider text-emerald-300 mt-2';
                         chipState.textContent = 'Welcome-drink chip already issued';
-                        meta.after(chipState);
+                        details.appendChild(chipState);
                     }
-                    details.append(titleLine, meta);
-
-                    const checkInButton = document.createElement('button');
-                    checkInButton.type = 'button';
-                    checkInButton.className = `shrink-0 px-3 py-2 text-xs font-serif rounded ${checkedIn ? 'bg-emerald-700 text-white' : 'bg-gold/15 text-gold border border-gold/40'}`;
-                    checkInButton.textContent = checkedIn ? 'Checked In' : 'Check In';
-                    checkInButton.setAttribute('aria-pressed', String(checkedIn));
-                    checkInButton.addEventListener('click', () => toggleCheckIn(doc.id, checkedIn));
-
-                    const deleteButton = document.createElement('button');
-                    deleteButton.type = 'button';
-                    deleteButton.className = 'shrink-0 rounded border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200 hover:bg-red-900/70 transition-colors';
-                    deleteButton.innerHTML = '<i class="fa-solid fa-trash-can mr-1" aria-hidden="true"></i>Delete';
-                    deleteButton.setAttribute('aria-label', `Delete guest ${data.name || ''}`);
-                    deleteButton.addEventListener('click', () => deleteGuest(doc.id, data.name));
+                    card.appendChild(details);
 
                     const actions = document.createElement('div');
                     actions.className = 'flex shrink-0 flex-wrap items-center gap-2 self-end sm:self-auto';
-                    actions.append(checkInButton, deleteButton);
-                    card.append(details, actions);
-                    container.appendChild(card);
+                    if (isPaymentCard) {
+                        const paymentButton = document.createElement('button');
+                        paymentButton.type = 'button';
+                        paymentButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
+                            (isPaid ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : 'border-gold/50 bg-gold/15 text-amber-100 hover:bg-gold/25');
+                        paymentButton.textContent = isPaid ? 'MARK UNPAID' : 'MARK PAID';
+                        paymentButton.setAttribute('aria-pressed', String(isPaid));
+                        paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid));
+                        actions.appendChild(paymentButton);
+                    } else {
+                        const checkInButton = document.createElement('button');
+                        checkInButton.type = 'button';
+                        checkInButton.className = 'shrink-0 px-3 py-2 text-xs font-serif rounded ' + (checkedIn ? 'bg-emerald-700 text-white' : 'bg-gold/15 text-gold border border-gold/40');
+                        checkInButton.textContent = checkedIn ? 'CHECKED IN' : 'CHECK IN';
+                        checkInButton.setAttribute('aria-pressed', String(checkedIn));
+                        checkInButton.addEventListener('click', () => toggleCheckIn(doc.id, checkedIn));
+                        actions.appendChild(checkInButton);
+
+                        const deleteButton = document.createElement('button');
+                        deleteButton.type = 'button';
+                        deleteButton.className = 'shrink-0 rounded border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200 hover:bg-red-900/70 transition-colors';
+                        deleteButton.innerHTML = '<i class="fa-solid fa-trash-can mr-1" aria-hidden="true"></i>Delete';
+                        deleteButton.setAttribute('aria-label', 'Delete guest ' + (data.name || ''));
+                        deleteButton.addEventListener('click', () => deleteGuest(doc.id, data.name));
+                        actions.appendChild(deleteButton);
+                    }
+                    card.appendChild(actions);
+                    return card;
+                }
+
+                const notCheckedIn = guestDocs.filter((item) => !item.data.checkedIn).sort(compareNames);
+                const checkedIn = guestDocs.filter((item) => Boolean(item.data.checkedIn)).sort(compareNames);
+                notCheckedIn.forEach((item) => hotelOpenContainer.appendChild(makeGuestCard(item, 'hotel')));
+                checkedIn.forEach((item) => hotelCheckedContainer.appendChild(makeGuestCard(item, 'hotel')));
+                document.getElementById('noUncheckGuests').classList.toggle('hidden', notCheckedIn.length > 0);
+                document.getElementById('noCheckedGuests').classList.toggle('hidden', checkedIn.length > 0);
+
+                const checkedInInterNations = guestDocs.filter((item) =>
+                    (item.data.guestType === 'internations_member' || item.data.source === 'internations_import') && Boolean(item.data.checkedIn)
+                );
+                const unpaidMembers = checkedInInterNations.filter((item) => !item.data.paid).sort((a, b) => {
+                    const timeA = checkInTime(a), timeB = checkInTime(b);
+                    if (timeA == null && timeB != null) return 1;
+                    if (timeA != null && timeB == null) return -1;
+                    if (timeA != null && timeB != null && timeA !== timeB) return timeA - timeB;
+                    return compareNames(a, b);
                 });
+                const paidMembers = checkedInInterNations.filter((item) => Boolean(item.data.paid)).sort(compareNames);
+                unpaidMembers.forEach((item) => unpaidContainer.appendChild(makeGuestCard(item, 'payment')));
+                paidMembers.forEach((item) => paidContainer.appendChild(makeGuestCard(item, 'payment')));
+                document.getElementById('internationsUnpaidCount').textContent = '(' + unpaidMembers.length + ')';
+                document.getElementById('internationsPaidCount').textContent = '(' + paidMembers.length + ')';
+                document.getElementById('noInternationsUnpaid').classList.toggle('hidden', unpaidMembers.length > 0);
+                document.getElementById('noInternationsPaid').classList.toggle('hidden', paidMembers.length > 0);
+                renderInternationsImportPreview();
                 filterGuests();
+
             }, (error) => {
                 console.error('Guest list subscription failed:', error);
                 listError.classList.remove('hidden');
@@ -1119,11 +1200,39 @@
                 return;
             }
             try {
-                await db.collection('halloween_guests').doc(id).update({ checkedIn: !currentState });
+                const update = {
+                    checkedIn: !currentState,
+                    checkedInAt: currentState ? null : firebase.firestore.FieldValue.serverTimestamp()
+                };
+                await db.collection('halloween_guests').doc(id).update(update);
             } catch (error) {
                 console.error('Check-in update failed:', error);
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'Could not save the check-in. Check the database access rules and try again.';
+                listError.classList.remove('hidden');
+            }
+        }
+
+        async function toggleGuestPayment(id, guestName, currentlyPaid) {
+            if (!db) {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'The payment update cannot be saved because the guest database is not connected.';
+                listError.classList.remove('hidden');
+                return;
+            }
+            const nextPaid = !currentlyPaid;
+            const confirmed = window.confirm('Mark ' + (guestName || 'this guest') + ' as ' + (nextPaid ? 'PAID' : 'UNPAID') + '?');
+            if (!confirmed) return;
+            try {
+                await db.collection('halloween_guests').doc(id).update({
+                    paid: nextPaid,
+                    paidAt: nextPaid ? firebase.firestore.FieldValue.serverTimestamp() : null,
+                    paymentStatusUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                console.error('Guest payment status update failed:', error);
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Could not save the payment status. Check the database access rules and try again.';
                 listError.classList.remove('hidden');
             }
         }
@@ -1148,10 +1257,9 @@
         }
 
         function filterGuests() {
-            const query = document.getElementById('searchInput').value.trim().toLowerCase();
-            const cards = document.getElementById('guestListContainer').children;
-            Array.from(cards).forEach((card) => {
-                card.style.display = card.innerText.toLowerCase().includes(query) ? 'flex' : 'none';
+            const query = document.getElementById('searchInput').value.trim().toLocaleLowerCase();
+            document.querySelectorAll('.guest-card').forEach((card) => {
+                card.style.display = card.innerText.toLocaleLowerCase().includes(query) ? 'flex' : 'none';
             });
         }
     </script>
