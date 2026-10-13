@@ -513,9 +513,9 @@
 
         function readImportedGuestName(row) {
             if (pendingInternationsNameColumn === '__combined_first_last__') {
-                const first = pendingInternationsHeaders.find((h) => /^(first|given)\s*name$/i.test(String(h).trim()));
-                const last = pendingInternationsHeaders.find((h) => /^(last|family|sur)\s*name$/i.test(String(h).trim()));
-                return [first ? row[first] : '', last ? row[last] : ''].map(v => String(v || '').trim()).filter(Boolean).join(' ');
+                const first = pendingInternationsHeaders.find((h) => /^(first|given)\s*name$/i.test(String(h).replace(/^\uFEFF/, '').trim()));
+                const last = pendingInternationsHeaders.find((h) => /^(last|family|sur)\s*name$/i.test(String(h).replace(/^\uFEFF/, '').trim()));
+                return [first ? row[first] : '', last ? row[last] : ''].map((v) => String(v || '').trim()).filter(Boolean).join(' ');
             }
             return String(row[pendingInternationsNameColumn] || '').trim();
         }
@@ -547,8 +547,8 @@
                 return;
             }
             const result = getUniqueImportedNames();
-            const existingKeys = new Set(cachedGuestDocs.map(doc => normalizeGuestName(doc.data().name)).filter(Boolean));
-            const newNames = result.entries.filter(item => !existingKeys.has(item.key));
+            const existingKeys = new Set(cachedGuestDocs.map((doc) => normalizeGuestName(doc.data().name)).filter(Boolean));
+            const newNames = result.entries.filter((item) => !existingKeys.has(item.key));
             const matchingNames = result.entries.length - newNames.length;
             preview.replaceChildren();
             const summary = document.createElement('p');
@@ -560,7 +560,14 @@
             note.textContent = 'Matching names will be labelled InterNations member. Their existing check-in and welcome-drink chip status will be preserved.';
             preview.appendChild(note);
             const previewNames = document.createElement('p');
-            pr        document.getElementById('internationsFileInput').addEventListener('change', async (event) => {
+            previewNames.className = 'text-gray-400 break-words';
+            previewNames.textContent = 'New names: ' + (newNames.slice(0, 8).map((item) => item.name).join(', ') || 'none') + (newNames.length > 8 ? ' …' : '');
+            preview.appendChild(previewNames);
+            confirm.disabled = result.entries.length === 0;
+            confirm.textContent = newNames.length ? 'Import ' + newNames.length + ' new name(s) and update matches' : 'Update matching InterNations names';
+        }
+
+        document.getElementById('internationsFileInput').addEventListener('change', async (event) => {
             const status = document.getElementById('internationsImportStatus');
             const options = document.getElementById('internationsImportOptions');
             const file = event.target.files && event.target.files[0];
@@ -597,9 +604,9 @@
                     });
                 if (!pendingInternationsRows.length) throw new Error('The header row was found, but no guest rows followed it.');
 
-                const first = pendingInternationsHeaders.find((h) => /^(first|given)\s*name$/i.test(String(h).trim()));
-                const last = pendingInternationsHeaders.find((h) => /^(last|family|sur)\s*name$/i.test(String(h).trim()));
-                const detected = pendingInternationsHeaders.find((h) => /(full.?name|guest.?name|attendee|participant|^name$)/i.test(String(h).trim()) && !/invited by/i.test(String(h).trim()));
+                const first = pendingInternationsHeaders.find((h) => /^(first|given)\s*name$/i.test(String(h).replace(/^\uFEFF/, '').trim()));
+                const last = pendingInternationsHeaders.find((h) => /^(last|family|sur)\s*name$/i.test(String(h).replace(/^\uFEFF/, '').trim()));
+                const detected = pendingInternationsHeaders.find((h) => /(full.?name|guest.?name|attendee|participant|^name$)/i.test(String(h).replace(/^\uFEFF/, '').trim()) && !/invited by/i.test(String(h).trim()));
                 const select = document.getElementById('internationsNameColumn');
                 select.replaceChildren();
                 if (first && last) {
