@@ -404,7 +404,7 @@
                             <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">Import InterNations guest list</h4>
                             <span class="text-[10px] uppercase tracking-wider text-sky-200">CSV / Excel · repeatable import</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-3">Choose the latest InterNations export. Existing names are matched without resetting check-in or chip status; only new names are added. The imported list marks matching names as InterNations members.</p>
+                        <p class="text-xs text-gray-300 mb-3">Choose the latest InterNations export. First and last names are combined automatically; the Status field is saved as the InterNations member type/status. Existing check-in, payment and chip status are preserved.</p>
                         <label for="internationsFileInput" class="form-label">Guest-list spreadsheet</label>
                         <input id="internationsFileInput" type="file" accept=".xlsx,.xls,.csv,.ods" class="form-field text-sm mb-3">
                         <div id="internationsImportOptions" class="hidden space-y-3">
@@ -955,7 +955,6 @@
         });
 
         function loadLiveGuestlist() {
-            const container = document.getElementById('guestListContainer');
             const listError = document.getElementById('guestlistError');
             if (!db) {
                 listError.textContent = 'Firebase could not connect. Check the Firebase project configuration and Firestore rules.';
@@ -968,7 +967,6 @@
                 document.getElementById('totalCount').textContent = snapshot.size;
                 const checkedInTotal = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().checkedIn)).length;
                 document.getElementById('checkedInCount').textContent = checkedInTotal;
-                container.replaceChildren();
 
                 // A welcome drink is earned only after at least two invited guest records have checked in.
                 // Each checked-in Firestore record counts once; inviter names are normalised for matching.
