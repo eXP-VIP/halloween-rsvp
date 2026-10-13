@@ -523,7 +523,7 @@
         function getUniqueImportedNames() {
             const seen = new Map();
             let blankRows = 0;
-            const statusHeader = pendingInternationsHeaders.find((header) => /^(status|membership status|member status)$/i.test(String(header).replace(/^\\uFEFF/, '').trim()));
+            const statusHeader = pendingInternationsHeaders.find((header) => /^(status|membership status|member status)$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
             pendingInternationsRows.forEach((row) => {
                 const name = readImportedGuestName(row).replace(/\s+/g, ' ').trim();
                 const key = normalizeGuestName(name);
@@ -577,7 +577,7 @@
                 const grid = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '', raw: false, blankrows: false });
                 if (!grid.length) throw new Error('No data rows were found in the first worksheet.');
 
-                const normaliseHeader = (value) => String(value || '').replace(/^\\uFEFF/, '').trim().toLocaleLowerCase().replace(/[\\s_-]+/g, ' ');
+                const normaliseHeader = (value) => String(value || '').replace(/^\uFEFF/, '').trim().toLocaleLowerCase().replace(/[\s_-]+/g, ' ');
                 const headerIndex = grid.slice(0, 15).findIndex((row) => {
                     const headers = row.map(normaliseHeader);
                     const hasFirstAndLast = headers.some((h) => /^(first|given) name$/.test(h)) && headers.some((h) => /^(last|family|sur) name$/.test(h));
@@ -586,7 +586,7 @@
                 });
                 if (headerIndex < 0) throw new Error('Could not find a name header. Expected First Name + Last Name or a single Name / Full Name column in the first 15 rows.');
 
-                pendingInternationsHeaders = grid[headerIndex].map((value, index) => String(value || '').replace(/^\\uFEFF/, '').trim() || ('Column ' + (index + 1)));
+                pendingInternationsHeaders = grid[headerIndex].map((value, index) => String(value || '').replace(/^\uFEFF/, '').trim() || ('Column ' + (index + 1)));
                 if (!pendingInternationsHeaders.length) throw new Error('No column headers were found.');
                 pendingInternationsRows = grid.slice(headerIndex + 1)
                     .filter((row) => row.some((cell) => String(cell == null ? '' : cell).trim() !== ''))
@@ -597,8 +597,8 @@
                     });
                 if (!pendingInternationsRows.length) throw new Error('The header row was found, but no guest rows followed it.');
 
-                const first = pendingInternationsHeaders.find((h) => /^(first|given)\\s*name$/i.test(String(h).trim()));
-                const last = pendingInternationsHeaders.find((h) => /^(last|family|sur)\\s*name$/i.test(String(h).trim()));
+                const first = pendingInternationsHeaders.find((h) => /^(first|given)\s*name$/i.test(String(h).trim()));
+                const last = pendingInternationsHeaders.find((h) => /^(last|family|sur)\s*name$/i.test(String(h).trim()));
                 const detected = pendingInternationsHeaders.find((h) => /(full.?name|guest.?name|attendee|participant|^name$)/i.test(String(h).trim()) && !/invited by/i.test(String(h).trim()));
                 const select = document.getElementById('internationsNameColumn');
                 select.replaceChildren();
@@ -620,15 +620,6 @@
                 options.classList.remove('hidden');
                 renderInternationsImportPreview();
                 status.textContent = 'Loaded ' + pendingInternationsRows.length + ' guest row(s) from ' + file.name + '. Detected headers on row ' + (headerIndex + 1) + '. Review the preview before importing.';
-            } catch (error) {
-                console.error('InterNations spreadsheet import preparation failed:', error);
-                status.textContent = error.message || 'Could not read this spreadsheet.';
-            }
-        });
-
-         options.classList.remove('hidden');
-                renderInternationsImportPreview();
-                status.textContent = 'Loaded ' + rows.length + ' spreadsheet row(s) from ' + file.name + '. Review the preview before importing.';
             } catch (error) {
                 console.error('InterNations spreadsheet import preparation failed:', error);
                 status.textContent = error.message || 'Could not read this spreadsheet.';
