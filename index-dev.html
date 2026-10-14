@@ -1080,8 +1080,8 @@
             statusMessage.classList.add('hidden');
             errorMessage.classList.add('hidden');
 
-            const fullName = document.getElementById('guestName').value.trim().replace(/s+/g, ' ');
-            const nameParts = fullName.split(/s+/).filter(Boolean);
+            const fullName = document.getElementById('guestName').value.trim().replace(/\s+/g, ' ');
+            const nameParts = fullName.split(/\s+/).filter(Boolean);
             const guest = {
                 name: fullName,
                 firstName: nameParts.shift() || '',
@@ -1342,7 +1342,7 @@
                 document.getElementById('totalCount').textContent = snapshot.size;
                 const checkedInTotal = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().checkedIn)).length;
                 document.getElementById('checkedInCount').textContent = checkedInTotal;
-                document.getElementById('paidCount').textContent = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().paid)).length;
+                document.getElementById('paidCount').textContent = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().checkedIn) && Boolean(guestDoc.data().paid)).length;
                 document.getElementById('welcomeDrinkChipCount').textContent = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).length + Array.from(unrecognizedDrinkChipStatus.values()).filter((record) => Boolean(record.welcomeDrinkChipIssued)).length;
 
                 // A welcome drink is earned only after at least two invited guest records have checked in.
@@ -1399,21 +1399,26 @@
                     const isInterNationsMember = data.guestType === 'internations_member' || data.source === 'internations_import';
                     const isPaymentCard = mode === 'payment';
                     const isPaid = Boolean(data.paid);
+                    const tier = getGuestTier(data);
+                    const charge = calculateGuestCharge(data, welcomeDrinkEarned);
+                    const drinkIncluded = charge.drinkMode === 'included';
+                    const upgradeCanBeSelected = charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !data.welcomeDrinkChipIssued;
+                    const drinkEntitled = welcomeDrinkEarned || drinkIncluded || charge.upgradeSelected || Boolean(data.welcomeDrinkChipIssued);
                     const card = document.createElement('div');
                     card.className = 'guest-card p-3 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ' +
                         (isPaymentCard ? (isPaid ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-sky-950/30 border-sky-400/40') :
                         (welcomeDrinkEarned ? 'bg-amber-950/50 border-gold/80 border-l-4' : checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'));
                     card.dataset.guestId = doc.id;
                     card.dataset.listType = isPaymentCard ? 'payment' : 'hotel';
-                    const cardNameParts = String(data.name || '').trim().split(/s+/).filter(Boolean);
-                    card.dataset.sortFirstName = String(data.firstName || cardNameParts[0] || '').toLocaleLowerCase();
-                    card.dataset.sortLastName = String(data.lastName || cardNameParts.slice(1).join(' ') || '').toLocaleLowerCase();
+                    const nameParts = String(data.name || '').trim().split(/\s+/).filter(Boolean);
+                    card.dataset.sortFirstName = String(data.firstName || nameParts[0] || '').toLocaleLowerCase();
+                    card.dataset.sortLastName = String(data.lastName || nameParts.slice(1).join(' ') || '').toLocaleLowerCase();
                     const signupMillis = timestampMillis(data.createdAt);
-                    const checkedInMillis = checkInTime(item);
-                    const paidMillis = timestampMillis(data.paidAt);
+                    const checkInMillis = timestampMillis(data.checkedInAt);
+                    const paymentMillis = timestampMillis(data.paidAt);
                     card.dataset.sortSignupOrder = signupMillis == null ? '' : String(signupMillis);
-                    card.dataset.sortCheckInOrder = checkedInMillis == null ? '' : String(checkedInMillis);
-                    card.dataset.sortPaymentOrder = paidMillis == null ? '' : String(paidMillis);
+                    card.dataset.sortCheckInOrder = checkInMillis == null ? '' : String(checkInMillis);
+                    card.dataset.sortPaymentOrder = paymentMillis == null ? '' : String(paymentMillis);
 
                     const details = document.createElement('div');
                     details.className = 'min-w-0';
@@ -1427,52 +1432,110 @@
                     const typeBadge = document.createElement('span');
                     typeBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
                         (isInterNationsMember ? 'border-sky-400/50 bg-sky-950/50 text-sky-100' : 'border-gray-500/50 bg-gray-800/60 text-gray-200');
-                    const membershipStatus = String(data.interNationsStatus || '').trim();
+                    const memberStatus = String(data.interNationsStatus || '').trim();
                     typeBadge.textContent = isInterNationsMember
-                        ? (membershipStatus ? 'INTERNATIONS · ' + membershipStatus.toLocaleUpperCase() : 'INTERNATIONS · STATUS NOT LISTED')
+                        ? (memberStatus ? 'INTERNATIONS · ' + memberStatus.toLocaleUpperCase() : 'INTERNATIONS · STATUS NOT LISTED')
                         : 'FRIEND · WEBSITE RSVP';
                     titleLine.appendChild(typeBadge);
-                    if (data.welcomeDrinkChipIssued) {
+
+                    if (welcomeDrinkEarned) {
+                        const rewardBadge = document.createElement('span');
+                        rewardBadge.className = 'inline-flex items-center rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[9px] font-semibold tracking-wider text-amber-100';
+                        rewardBadge.textContent = 'WELCOME DRINK EARNED';
+                        rewardBadge.title = invitedCount + ' invited guests have checked in.';
+                        titleLine.appendChild(rewardBadge);
+                    } else if (drinkIncluded) {
+                        const includedBadge = document.createElement('span');
+                        includedBadge.className = 'inline-flex items-center rounded-full border border-sky-400/40 bg-sky-950/40 px-2 py-1 text-[9px] font-semibold tracking-wider text-sky-100';
+                        includedBadge.textContent = 'WELCOME DRINK INCLUDED';
+                        titleLine.appendChild(includedBadge);
+                    } else if (charge.upgradeSelected) {
+                        const upgradeBadge = document.createElement('span');
+                        upgradeBadge.className = 'inline-flex items-center rounded-full border border-sky-400/40 bg-sky-950/40 px-2 py-1 text-[9px] font-semibold tracking-wider text-sky-100';
+                        upgradeBadge.textContent = 'DRINK UPGRADE SELECTED';
+                        titleLine.appendChild(upgradeBadge);
+                    }
+
+                    if (drinkEntitled) {
                         const chipBadge = document.createElement('span');
-                        chipBadge.className = 'inline-flex items-center rounded-full border border-emerald-500/50 bg-emerald-950/40 px-2 py-1 text-[9px] font-semibold tracking-wider text-emerald-200';
-                        chipBadge.textContent = 'DRINK CHIP ISSUED';
+                        chipBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
+                            (data.welcomeDrinkChipIssued ? 'border-emerald-500/50 bg-emerald-950/40 text-emerald-200' : 'border-amber-500/50 bg-amber-950/40 text-amber-100');
+                        chipBadge.textContent = data.welcomeDrinkChipIssued ? 'DRINK CHIP ISSUED' : 'DRINK CHIP NOT ISSUED';
                         titleLine.appendChild(chipBadge);
                     }
-                    if (isPaymentCard && data.paid) {
+                    if (isPaymentCard && isPaid) {
                         const paidBadge = document.createElement('span');
                         paidBadge.className = 'inline-flex items-center rounded-full border border-emerald-500/50 bg-emerald-950/40 px-2 py-1 text-[9px] font-semibold tracking-wider text-emerald-200';
                         paidBadge.textContent = 'PAID';
                         titleLine.appendChild(paidBadge);
                     }
-
-                    if (!isPaymentCard && welcomeDrinkEarned) {
-                        const rewardBadge = document.createElement('span');
-                        rewardBadge.className = 'inline-flex items-center rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[9px] font-semibold tracking-wider text-amber-100';
-                        rewardBadge.textContent = 'WELCOME DRINK EARNED · ' + invitedCount + ' INVITED GUESTS CHECKED IN';
-                        rewardBadge.title = invitedCount + ' guests invited by ' + (data.name || 'this person') + ' have checked in.';
-                        titleLine.appendChild(rewardBadge);
-                    }
                     details.appendChild(titleLine);
 
                     const meta = document.createElement('p');
                     meta.className = 'text-xs text-gray-300 break-words mt-1';
-                    meta.textContent = isPaymentCard
-                        ? ('Checked in: ' + (checkInTime(item) == null ? 'time not recorded for this earlier check-in' : new Date(checkInTime(item)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })))
-                        : ('Invited by: ' + (data.invitedBy || 'Not specified'));
+                    if (isPaymentCard) {
+                        meta.textContent = 'Admission tier: ' + (tier === 'basics' ? 'Basics' : tier === 'paidMembers' ? 'Paid Members' : 'Friends');
+                    } else {
+                        meta.textContent = 'Invited by: ' + (data.invitedBy || 'Not specified');
+                    }
                     details.appendChild(meta);
-                    card.appendChild(details);
+
+                    if (isPaymentCard) {
+                        const amountLine = document.createElement('p');
+                        amountLine.className = 'text-sm font-semibold text-white mt-2';
+                        amountLine.textContent = 'Total charge: ' + formatEuro(charge.total) + (isPaid ? ' · PAID' : ' · DUE');
+                        details.appendChild(amountLine);
+
+                        const drinkInfo = document.createElement('p');
+                        drinkInfo.className = 'text-xs text-gray-300 mt-1';
+                        if (welcomeDrinkEarned) {
+                            drinkInfo.textContent = 'Welcome drink earned through referrals · no extra charge';
+                        } else if (drinkIncluded) {
+                            drinkInfo.textContent = 'One welcome drink included in admission';
+                        } else if (charge.drinkMode === 'upgrade') {
+                            drinkInfo.textContent = charge.upgradeSelected
+                                ? 'One welcome-drink upgrade added: ' + formatEuro(charge.upgradePrice)
+                                : 'Optional welcome-drink upgrade: ' + formatEuro(charge.upgradePrice);
+                        } else {
+                            drinkInfo.textContent = 'No paid welcome-drink upgrade allowed for this tier';
+                        }
+                        details.appendChild(drinkInfo);
+                    }
 
                     const actions = document.createElement('div');
                     actions.className = 'flex shrink-0 flex-wrap items-center gap-2 self-end sm:self-auto';
                     if (isPaymentCard) {
+                        if (upgradeCanBeSelected || (charge.upgradeSelected && !data.welcomeDrinkChipIssued && !welcomeDrinkEarned)) {
+                            const upgradeButton = document.createElement('button');
+                            upgradeButton.type = 'button';
+                            upgradeButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
+                                (charge.upgradeSelected ? 'border-sky-400/50 bg-sky-900/40 text-sky-100' : 'border-sky-400/40 bg-sky-950/30 text-sky-100 hover:bg-sky-900/50');
+                            upgradeButton.textContent = charge.upgradeSelected
+                                ? 'REMOVE UPGRADE'
+                                : 'ADD DRINK UPGRADE · +' + formatEuro(charge.upgradePrice);
+                            upgradeButton.title = 'Toggle one welcome-drink upgrade; adding an upgrade after payment resets the bill to unpaid.';
+                            upgradeButton.addEventListener('click', () => toggleGuestDrinkUpgrade(doc.id, data, welcomeDrinkEarned));
+                            actions.appendChild(upgradeButton);
+                        }
+
                         const paymentButton = document.createElement('button');
                         paymentButton.type = 'button';
                         paymentButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
                             (isPaid ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : 'border-gold/50 bg-gold/15 text-amber-100 hover:bg-gold/25');
-                        paymentButton.textContent = isPaid ? 'MARK UNPAID' : 'MARK PAID';
+                        paymentButton.textContent = isPaid ? 'MARK UNPAID' : 'MARK PAID · ' + formatEuro(charge.total);
                         paymentButton.setAttribute('aria-pressed', String(isPaid));
-                        paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid));
+                        paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned));
                         actions.appendChild(paymentButton);
+
+                        if (drinkEntitled && welcomeDrinkEarned) {
+                            const chipButton = document.createElement('button');
+                            chipButton.type = 'button';
+                            chipButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
+                                (data.welcomeDrinkChipIssued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : 'border-amber-500/50 bg-amber-950/40 text-amber-100');
+                            chipButton.textContent = data.welcomeDrinkChipIssued ? 'UNDO CHIP ISSUED' : 'MARK CHIP ISSUED';
+                            chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, Boolean(data.welcomeDrinkChipIssued)));
+                            actions.appendChild(chipButton);
+                        }
                     } else {
                         const checkInButton = document.createElement('button');
                         checkInButton.type = 'button';
@@ -1480,7 +1543,6 @@
                         checkInButton.textContent = checkedIn ? 'CHECKED IN' : 'CHECK IN';
                         checkInButton.setAttribute('aria-pressed', String(checkedIn));
                         checkInButton.addEventListener('click', () => toggleCheckIn(doc.id, checkedIn));
-                        actions.appendChild(checkInButton);
 
                         const deleteButton = document.createElement('button');
                         deleteButton.type = 'button';
@@ -1488,8 +1550,9 @@
                         deleteButton.innerHTML = '<i class="fa-solid fa-trash-can mr-1" aria-hidden="true"></i>Delete';
                         deleteButton.setAttribute('aria-label', 'Delete guest ' + (data.name || ''));
                         deleteButton.addEventListener('click', () => deleteGuest(doc.id, data.name));
-                        actions.appendChild(deleteButton);
+                        actions.append(checkInButton, deleteButton);
                     }
+                    card.appendChild(details);
                     card.appendChild(actions);
                     return card;
                 }
@@ -1502,6 +1565,14 @@
                 document.getElementById('noCheckedGuests').classList.toggle('hidden', checkedIn.length > 0);
 
                 const checkedInGuests = guestDocs.filter((item) => Boolean(item.data.checkedIn));
+                const unpaidOutstanding = checkedInGuests.filter((item) => !item.data.paid);
+                const totalOutstanding = unpaidOutstanding.reduce((sum, item) => {
+                    const key = normalizeGuestName(item.data.name);
+                    const referrals = checkedInReferralsByInviter.get(key)?.guestIds.size || 0;
+                    return sum + calculateGuestCharge(item.data, referrals >= 2).total;
+                }, 0);
+                document.getElementById('unpaidCount').textContent = unpaidOutstanding.length;
+                document.getElementById('outstandingAmount').textContent = formatEuro(totalOutstanding);
                 const unpaidGuests = checkedInGuests.filter((item) => !item.data.paid).sort((a, b) => {
                     const timeA = checkInTime(a), timeB = checkInTime(b);
                     if (timeA == null && timeB != null) return 1;
@@ -1570,7 +1641,7 @@
             }
         }
 
-        async function toggleGuestPayment(id, guestName, currentlyPaid) {
+        async function toggleGuestPayment(id, guestName, currentlyPaid, data, welcomeDrinkEarned) {
             if (!db) {
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'The payment update cannot be saved because the guest database is not connected.';
@@ -1579,11 +1650,22 @@
             }
             const nextPaid = !currentlyPaid;
             try {
-                await db.collection('halloween_guests').doc(id).update({
+                const update = {
                     paid: nextPaid,
                     paidAt: nextPaid ? firebase.firestore.FieldValue.serverTimestamp() : null,
                     paymentStatusUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                };
+                const tier = getGuestTier(data);
+                const rule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+                const paidUpgrade = rule.mode === 'upgrade' && Boolean(data.welcomeDrinkUpgradeSelected) && !welcomeDrinkEarned;
+                // One chip is issued at payment for an included drink or paid upgrade.
+                // Referral-earned drinks stay manually controlled by staff.
+                if (nextPaid && (rule.mode === 'included' || paidUpgrade) && !data.welcomeDrinkChipIssued) {
+                    update.welcomeDrinkChipIssued = true;
+                    update.welcomeDrinkChipIssuedAt = firebase.firestore.FieldValue.serverTimestamp();
+                    update.welcomeDrinkChipIssuedBy = 'payment';
+                }
+                await db.collection('halloween_guests').doc(id).update(update);
             } catch (error) {
                 console.error('Guest payment status update failed:', error);
                 const listError = document.getElementById('guestlistError');
