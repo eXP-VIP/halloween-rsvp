@@ -576,28 +576,49 @@
             return String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
         }
 
-        function readImportedGuestName(row) {
-            if (pendingInternationsNameColumn === '__combined_first_last__') {
-                const first = pendingInternationsHeaders.find((h) => /^(first|given)\s*name$/i.test(String(h).replace(/^\uFEFF/, '').trim()));
-                const last = pendingInternationsHeaders.find((h) => /^(last|family|sur)\s*name$/i.test(String(h).replace(/^\uFEFF/, '').trim()));
-                return [first ? row[first] : '', last ? row[last] : ''].map((v) => String(v || '').trim()).filter(Boolean).join(' ');
+        function readImportedNameParts(row) {
+            const firstHeader = pendingInternationsHeaders.find((header) => /^(first|given)\s*name$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
+            const lastHeader = pendingInternationsHeaders.find((header) => /^(last|family|sur)\s*name$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
+            const statusHeader = pendingInternationsHeaders.find((header) => /^(status|membership status|member status)$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
+
+            let firstName = '';
+            let lastName = '';
+            let fullName = '';
+            if (firstHeader && lastHeader) {
+                firstName = String(row[firstHeader] || '').trim();
+                lastName = String(row[lastHeader] || '').trim();
+                fullName = [firstName, lastName].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+            } else {
+                const singleNameHeader = pendingInternationsHeaders.find((header) => /^(name|full name|guest name|attendee|participant)$/i.test(String(header).trim()));
+                fullName = String(row[singleNameHeader || pendingInternationsNameColumn] || '').replace(/\s+/g, ' ').trim();
+                const parts = fullName.split(/\s+/).filter(Boolean);
+                firstName = parts.shift() || '';
+                lastName = parts.join(' ');
             }
-            return String(row[pendingInternationsNameColumn] || '').trim();
+            return {
+                name: fullName,
+                firstName,
+                lastName,
+                membershipStatus: statusHeader ? String(row[statusHeader] || '').trim() : ''
+            };
+        }
+
+        function readImportedGuestName(row) {
+            return readImportedNameParts(row).name;
         }
 
         function getUniqueImportedNames() {
             const seen = new Map();
             let blankRows = 0;
-            const statusHeader = pendingInternationsHeaders.find((header) => /^(status|membership status|member status)$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
             pendingInternationsRows.forEach((row) => {
-                const name = readImportedGuestName(row).replace(/\s+/g, ' ').trim();
+                const parts = readImportedNameParts(row);
+                const name = parts.name;
                 const key = normalizeGuestName(name);
                 if (!key) { blankRows++; return; }
-                const membershipStatus = statusHeader ? String(row[statusHeader] || '').trim() : '';
                 if (!seen.has(key)) {
-                    seen.set(key, { name, key, membershipStatus });
-                } else if (!seen.get(key).membershipStatus && membershipStatus) {
-                    seen.get(key).membershipStatus = membershipStatus;
+                    seen.set(key, { ...parts, key });
+                } else if (!seen.get(key).membershipStatus && parts.membershipStatus) {
+                    seen.get(key).membershipStatus = parts.membershipStatus;
                 }
             });
             return { entries: Array.from(seen.values()), blankRows, duplicateRows: pendingInternationsRows.length - seen.size - blankRows };
@@ -691,8 +712,6 @@
             if (!db) { status.textContent = 'The guest database is not connected.'; return; }
             const result = getUniqueImportedNames();
             if (!result.entries.length) { status.textContent = 'No valid guest names found.'; return; }
-            const proceed = window.confirm('Import ' + result.entries.length + ' unique InterNations names? Existing check-in and chip status will be preserved.');
-            if (!proceed) return;
             button.disabled = true;
             const oldText = button.textContent;
             button.textContent = 'IMPORTING…';
@@ -714,7 +733,9 @@
                             guestType: 'internations_member',
                             source: 'internations_import',
                             importNameKey: entry.key,
-                            importedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            importedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            firstName: entry.firstName,
+                            lastName: entry.lastName
                         };
                         if (entry.membershipStatus) updateData.interNationsStatus = entry.membershipStatus;
                         operations.push({ type: 'update', ref: existing.ref, data: updateData });
@@ -723,8 +744,13 @@
                         const ref = db.collection('halloween_guests').doc();
                         operations.push({ type: 'set', ref, data: {
                             name: entry.name,
+                            firstName: entry.firstName,
+                            lastName: entry.lastName,
                             invitedBy: '',
                             checkedIn: false,
+                            checkedInAt: null,
+                            paid: false,
+                            paidAt: null,
                             guestType: 'internations_member',
                             source: 'internations_import',
                             importNameKey: entry.key,
@@ -743,7 +769,7 @@
                     });
                     await batch.commit();
                 }
-                status.textContent = 'Import complete: ' + added + ' new guest(s) added, ' + matched + ' existing name(s) matched and labelled as InterNations members. Existing check-in and chip status were not reset.';
+                status.textContent = 'Import complete: ' + added + ' new guest(s) added, ' + matched + ' existing name(s) matched. Member status was updated where provided; existing check-in, payment and chip status were preserved.';
                 pendingInternationsRows = [];
                 pendingInternationsHeaders = [];
                 pendingInternationsNameColumn = '';
@@ -870,8 +896,12 @@
             statusMessage.classList.add('hidden');
             errorMessage.classList.add('hidden');
 
+            const fullName = document.getElementById('guestName').value.trim().replace(/s+/g, ' ');
+            const nameParts = fullName.split(/s+/).filter(Boolean);
             const guest = {
-                name: document.getElementById('guestName').value.trim(),
+                name: fullName,
+                firstName: nameParts.shift() || '',
+                lastName: nameParts.join(' '),
                 invitedBy: document.getElementById('guestInviter').value.trim(),
                 checkedIn: false,
                 checkedInAt: null,
@@ -1113,6 +1143,16 @@
                         (isPaymentCard ? (isPaid ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-sky-950/30 border-sky-400/40') :
                         (welcomeDrinkEarned ? 'bg-amber-950/50 border-gold/80 border-l-4' : checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'));
                     card.dataset.guestId = doc.id;
+                    card.dataset.listType = isPaymentCard ? 'payment' : 'hotel';
+                    const cardNameParts = String(data.name || '').trim().split(/s+/).filter(Boolean);
+                    card.dataset.sortFirstName = String(data.firstName || cardNameParts[0] || '').toLocaleLowerCase();
+                    card.dataset.sortLastName = String(data.lastName || cardNameParts.slice(1).join(' ') || '').toLocaleLowerCase();
+                    const signupMillis = timestampMillis(data.createdAt);
+                    const checkedInMillis = checkInTime(item);
+                    const paidMillis = timestampMillis(data.paidAt);
+                    card.dataset.sortSignupOrder = signupMillis == null ? '' : String(signupMillis);
+                    card.dataset.sortCheckInOrder = checkedInMillis == null ? '' : String(checkedInMillis);
+                    card.dataset.sortPaymentOrder = paidMillis == null ? '' : String(paidMillis);
 
                     const details = document.createElement('div');
                     details.className = 'min-w-0';
@@ -1216,7 +1256,9 @@
                 document.getElementById('noInternationsUnpaid').classList.toggle('hidden', unpaidGuests.length > 0);
                 document.getElementById('noInternationsPaid').classList.toggle('hidden', paidGuests.length > 0);
                 renderInternationsImportPreview();
-                filterGuests();
+                applyGuestSorts();
+                filterHotelGuests();
+                filterPaymentGuests();
 
             }, (error) => {
                 console.error('Guest list subscription failed:', error);
@@ -1308,12 +1350,60 @@
             }
         }
 
-        function filterGuests() {
-            const query = document.getElementById('searchInput').value.trim().toLocaleLowerCase();
-            document.querySelectorAll('.guest-card').forEach((card) => {
-                card.style.display = card.innerText.toLocaleLowerCase().includes(query) ? 'flex' : 'none';
+        function applySortToContainer(containerId, selectId) {
+            const container = document.getElementById(containerId);
+            const select = document.getElementById(selectId);
+            if (!container || !select) return;
+            const sortBy = select.value;
+            const cards = Array.from(container.children).filter((card) => card.classList.contains('guest-card'));
+            const compareAlpha = (a, b, key) => (a.dataset[key] || '').localeCompare(b.dataset[key] || '', undefined, { numeric: true, sensitivity: 'base' });
+            const compareTime = (a, b, key) => {
+                const rawA = a.dataset[key], rawB = b.dataset[key];
+                const timeA = rawA === '' || rawA == null ? Number.MAX_SAFE_INTEGER : Number(rawA);
+                const timeB = rawB === '' || rawB == null ? Number.MAX_SAFE_INTEGER : Number(rawB);
+                return timeA - timeB;
+            };
+            cards.sort((a, b) => {
+                if (sortBy === 'firstName') return compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
+                if (sortBy === 'lastName') return compareAlpha(a, b, 'sortLastName') || compareAlpha(a, b, 'sortFirstName');
+                const timeKey = {
+                    signupOrder: 'sortSignupOrder',
+                    checkInOrder: 'sortCheckInOrder',
+                    paymentOrder: 'sortPaymentOrder'
+                }[sortBy];
+                return (timeKey ? compareTime(a, b, timeKey) : 0) || compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
+            });
+            cards.forEach((card) => container.appendChild(card));
+        }
+
+        function applyGuestSorts() {
+            applySortToContainer('guestNotCheckedInContainer', 'hotelOpenSort');
+            applySortToContainer('guestCheckedInContainer', 'hotelCheckedSort');
+            applySortToContainer('internationsUnpaidContainer', 'paymentUnpaidSort');
+            applySortToContainer('internationsPaidContainer', 'paymentPaidSort');
+        }
+
+        function filterContainerCards(containerIds, query) {
+            containerIds.forEach((containerId) => {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                Array.from(container.children).forEach((card) => {
+                    if (!card.classList.contains('guest-card')) return;
+                    card.style.display = card.innerText.toLocaleLowerCase().includes(query) ? 'flex' : 'none';
+                });
             });
         }
+
+        function filterHotelGuests() {
+            const input = document.getElementById('hotelSearchInput');
+            filterContainerCards(['guestNotCheckedInContainer', 'guestCheckedInContainer'], (input ? input.value : '').trim().toLocaleLowerCase());
+        }
+
+        function filterPaymentGuests() {
+            const input = document.getElementById('paymentSearchInput');
+            filterContainerCards(['internationsUnpaidContainer', 'internationsPaidContainer'], (input ? input.value : '').trim().toLocaleLowerCase());
+        }
+
         // Restore the staff screen after reload for this browser tab. Closing with X clears this session.
         try {
             if (sessionStorage.getItem(STAFF_SESSION_KEY) === '1') {
