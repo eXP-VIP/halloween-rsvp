@@ -378,13 +378,22 @@
                             <label for="staffPassword" class="form-label">Management password</label>
                             <input type="password" id="staffPassword" autocomplete="current-password" required class="form-field" placeholder="Enter management password">
                         </div>
+                        <div>
+                            <label for="staffRole" class="form-label">Preview role (development only)</label>
+                            <select id="staffRole" class="form-field">
+                                <option value="admin">Admin</option>
+                                <option value="hotel">Hotel</option>
+                                <option value="internations">InterNations</option>
+                            </select>
+                        </div>
+                        <p class="text-[11px] text-amber-200">Role selection is for previewing the interface only. The shared PIN does not securely enforce roles.</p>
                         <button type="submit" id="staffLoginBtn" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Unlock Guest List</button>
                     </form>
                     <p id="staffLoginError" role="alert" class="text-red-300 text-xs text-center hidden"></p>
                     <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">The live guest list is not connected. Configure the real Firebase settings and Firestore access rules before using check-in.</p>
                 </div>
                 <div id="guestlistSection" class="hidden">
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                    <div id="staffSummaryStats" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                         <div class="rounded-lg border border-gold/25 bg-black/35 p-3 flex flex-col">
                             <p class="h-8 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Total guests</p>
                             <p id="totalCount" class="mt-2 text-2xl font-semibold text-gold tabular-nums">0</p>
@@ -431,9 +440,9 @@
                                 <input id="basePriceBasics" type="number" min="0" step="1" class="form-field mb-3" value="15">
                                 <label for="drinkModeBasics" class="form-label">Welcome-drink rule</label>
                                 <select id="drinkModeBasics" class="form-field mb-3">
-                                    <option value="included">Included in admission</option>
+                                    <option value="included">Included</option>
                                     <option value="upgrade">Paid upgrade</option>
-                                    <option value="not_allowed" selected>No upgrade allowed</option>
+                                    <option value="not_allowed" selected>Unavailable</option>
                                 </select>
                                 <label for="drinkPriceBasics" class="form-label">Upgrade price (€)</label>
                                 <input id="drinkPriceBasics" type="number" min="0" step="1" class="form-field" value="0" disabled>
@@ -444,9 +453,9 @@
                                 <input id="basePricePaidMembers" type="number" min="0" step="1" class="form-field mb-3" value="5">
                                 <label for="drinkModePaidMembers" class="form-label">Welcome-drink rule</label>
                                 <select id="drinkModePaidMembers" class="form-field mb-3">
-                                    <option value="included">Included in admission</option>
+                                    <option value="included">Included</option>
                                     <option value="upgrade">Paid upgrade</option>
-                                    <option value="not_allowed" selected>No upgrade allowed</option>
+                                    <option value="not_allowed" selected>Unavailable</option>
                                 </select>
                                 <label for="drinkPricePaidMembers" class="form-label">Upgrade price (€)</label>
                                 <input id="drinkPricePaidMembers" type="number" min="0" step="1" class="form-field" value="0" disabled>
@@ -459,7 +468,7 @@
                                 <select id="drinkModeFriends" class="form-field mb-3">
                                     <option value="included" selected>Included in admission</option>
                                     <option value="upgrade">Paid upgrade</option>
-                                    <option value="not_allowed">No upgrade allowed</option>
+                                    <option value="not_allowed">Unavailable</option>
                                 </select>
                                 <label for="drinkPriceFriends" class="form-label">Upgrade price (€)</label>
                                 <input id="drinkPriceFriends" type="number" min="0" step="1" class="form-field" value="0" disabled>
@@ -483,16 +492,8 @@
                         </div>
                         <p id="internationsImportStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-3"></p>
                     </section>
-                    <section class="rounded-xl border border-gold/40 bg-amber-950/25 p-4 mb-5" aria-labelledby="welcomeDrinkHeading">
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
-                            <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Welcome drinks earned</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-gray-300">2 or more invited guests checked in</span>
-                        </div>
-                        <p class="text-xs text-gray-300 mb-3">A welcome drink is earned when at least two invited guests have checked in. This section shows only inviters who do not have their own guest-list entry; registered inviters see their reward next to their name.</p>
-                        <div id="welcomeDrinkList" class="space-y-2 text-sm text-gray-100">
-                            <p class="text-xs text-gray-400">No inviter has two checked-in referrals yet.</p>
-                        </div>
-                    </section>
+                    
+                    <section id="hotelCheckInPanel">
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
                         <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Check-in</h4>
                         <div class="flex w-full sm:w-auto">
@@ -524,6 +525,7 @@
                         <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestCheckedInContainer"></div>
                         <p id="noCheckedGuests" class="text-xs text-gray-500 py-2 hidden">No guests checked in yet.</p>
                     </div>
+                    </section>
                     <section id="internationsPaymentPanel" class="rounded-xl border border-sky-400/40 bg-sky-950/20 p-4 mt-6">
                         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
                             <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">Checked-in guests · Payment status</h4>
@@ -557,6 +559,16 @@
                             <div class="space-y-2 max-h-80 overflow-y-auto pr-1" id="internationsPaidContainer"></div>
                             <p id="noInternationsPaid" class="text-xs text-gray-500 py-2 hidden">No checked-in guests have been marked paid yet.</p>
                         </div>
+                    
+                        <section id="unrecognizedWelcomeDrinkSection" class="hidden rounded-xl border border-gold/40 bg-amber-950/25 p-4 mt-5" aria-labelledby="welcomeDrinkHeading">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
+                            <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Welcome drinks earned</h4>
+                            <span class="text-[10px] uppercase tracking-wider text-gray-300">2 or more invited guests checked in</span>
+                        </div>
+                        
+                        <div id="welcomeDrinkList" class="space-y-2 text-sm text-gray-100">
+                        </div>
+                    </section>
                     </section>
                 </div>
             </div>
