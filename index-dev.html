@@ -493,6 +493,7 @@
                         <p id="internationsImportStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-3"></p>
                     </section>
                     
+                    <p id="guestlistError" class="text-red-300 text-sm hidden mb-3">Could not load the guest list. Check the database connection and access rules.</p>
                     <section id="hotelCheckInPanel">
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
                         <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Check-in</h4>
@@ -500,7 +501,6 @@
                             <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:max-w-xs text-sm">
                         </div>
                     </div>
-                    <p id="guestlistError" class="text-red-300 text-sm hidden mb-3">Could not load the guest list. Check the database connection and access rules.</p>
                     <div class="mb-4">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                             <p class="text-[10px] uppercase tracking-widest text-amber-100">Not checked in</p>
@@ -603,6 +603,8 @@
         const WHATSAPP_GROUP_INVITE_URL = "https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58";
         const HOSTESS_PASSWORD = "1800";
         const STAFF_SESSION_KEY = "halloweenStaffPortalSession";
+        const STAFF_ROLE_SESSION_KEY = "halloweenStaffPortalRole";
+        let currentStaffRole = "admin";
         let guestlistUnsubscribe = null;
         let cachedGuestSnapshot = null;
 
@@ -1169,6 +1171,21 @@
             document.getElementById('guestName').focus({ preventScroll: true });
         });
 
+        function applyStaffRole(role) {
+            currentStaffRole = ['admin', 'hotel', 'internations'].includes(role) ? role : 'admin';
+            const show = (id, visible) => {
+                const element = document.getElementById(id);
+                if (element) element.classList.toggle('hidden', !visible);
+            };
+            show('staffSummaryStats', currentStaffRole !== 'hotel');
+            show('adminPricingPanel', currentStaffRole === 'admin');
+            show('internationsImportPanel', currentStaffRole === 'admin');
+            show('hotelCheckInPanel', currentStaffRole !== 'internations');
+            show('internationsPaymentPanel', currentStaffRole !== 'hotel');
+            const selector = document.getElementById('staffRole');
+            if (selector) selector.value = currentStaffRole;
+        }
+
         function toggleHostessPortal() {
             const portal = document.getElementById('hostessPortal');
             const opening = portal.classList.contains('hidden');
@@ -1178,6 +1195,8 @@
             if (!opening) {
                 // The X button logs out and returns to the public entry page.
                 try { sessionStorage.removeItem(STAFF_SESSION_KEY); } catch (error) {}
+                try { sessionStorage.removeItem(STAFF_ROLE_SESSION_KEY); } catch (error) {}
+                currentStaffRole = "admin";
                 if (guestlistUnsubscribe) {
                     guestlistUnsubscribe();
                     guestlistUnsubscribe = null;
@@ -1210,6 +1229,8 @@
             let activeSession = false;
             try { activeSession = sessionStorage.getItem(STAFF_SESSION_KEY) === '1'; } catch (error) {}
             if (activeSession) {
+                try { currentStaffRole = sessionStorage.getItem(STAFF_ROLE_SESSION_KEY) || 'admin'; } catch (error) { currentStaffRole = 'admin'; }
+                applyStaffRole(currentStaffRole);
                 loginSection.classList.add('hidden');
                 guestlistSection.classList.remove('hidden');
                 loadLiveGuestlist();
@@ -1238,7 +1259,12 @@
             loginButton.disabled = true;
             loginButton.textContent = 'UNLOCKING…';
             try {
-                try { sessionStorage.setItem(STAFF_SESSION_KEY, '1'); } catch (storageError) {}
+                currentStaffRole = document.getElementById('staffRole').value || 'admin';
+                try {
+                    sessionStorage.setItem(STAFF_SESSION_KEY, '1');
+                    sessionStorage.setItem(STAFF_ROLE_SESSION_KEY, currentStaffRole);
+                } catch (storageError) {}
+                applyStaffRole(currentStaffRole);
                 document.getElementById('staffLoginSection').classList.add('hidden');
                 document.getElementById('guestlistSection').classList.remove('hidden');
                 document.getElementById('staffPassword').value = '';
@@ -1783,8 +1809,10 @@
         // Restore the staff screen after reload for this browser tab. Closing with X clears this session.
         try {
             if (sessionStorage.getItem(STAFF_SESSION_KEY) === '1') {
+                currentStaffRole = sessionStorage.getItem(STAFF_ROLE_SESSION_KEY) || 'admin';
                 document.getElementById('hostessPortal').classList.remove('hidden');
                 document.body.classList.add('staff-mode');
+                applyStaffRole(currentStaffRole);
                 document.getElementById('staffLoginSection').classList.add('hidden');
                 document.getElementById('guestlistSection').classList.remove('hidden');
                 loadLiveGuestlist();
