@@ -580,23 +580,10 @@
             const firstHeader = pendingInternationsHeaders.find((header) => /^(first|given)\s*name$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
             const lastHeader = pendingInternationsHeaders.find((header) => /^(last|family|sur)\s*name$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
             const statusHeader = pendingInternationsHeaders.find((header) => /^(status|membership status|member status)$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
-
-            let firstName = '';
-            let lastName = '';
-            let fullName = '';
-            if (firstHeader && lastHeader) {
-                firstName = String(row[firstHeader] || '').trim();
-                lastName = String(row[lastHeader] || '').trim();
-                fullName = [firstName, lastName].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
-            } else {
-                const singleNameHeader = pendingInternationsHeaders.find((header) => /^(name|full name|guest name|attendee|participant)$/i.test(String(header).trim()));
-                fullName = String(row[singleNameHeader || pendingInternationsNameColumn] || '').replace(/\s+/g, ' ').trim();
-                const parts = fullName.split(/\s+/).filter(Boolean);
-                firstName = parts.shift() || '';
-                lastName = parts.join(' ');
-            }
+            const firstName = firstHeader ? String(row[firstHeader] || '').replace(/\s+/g, ' ').trim() : '';
+            const lastName = lastHeader ? String(row[lastHeader] || '').replace(/\s+/g, ' ').trim() : '';
             return {
-                name: fullName,
+                name: [firstName, lastName].filter(Boolean).join(' ').trim(),
                 firstName,
                 lastName,
                 membershipStatus: statusHeader ? String(row[statusHeader] || '').trim() : ''
@@ -612,8 +599,7 @@
             let blankRows = 0;
             pendingInternationsRows.forEach((row) => {
                 const parts = readImportedNameParts(row);
-                const name = parts.name;
-                const key = normalizeGuestName(name);
+                const key = normalizeGuestName(parts.name);
                 if (!key) { blankRows++; return; }
                 if (!seen.has(key)) {
                     seen.set(key, { ...parts, key });
@@ -673,20 +659,16 @@
                 const normaliseHeader = (value) => String(value || '').replace(/^\uFEFF/, '').trim().toLocaleLowerCase().replace(/[\s_-]+/g, ' ');
                 const headerIndex = grid.slice(0, 15).findIndex((row) => {
                     const headers = row.map(normaliseHeader);
-                    const hasFirstAndLast = headers.some((h) => /^(first|given) name$/.test(h)) && headers.some((h) => /^(last|family|sur) name$/.test(h));
-                    const hasSingleName = headers.some((h) => /^(name|full name|guest name|attendee|participant)$/.test(h));
-                    return hasFirstAndLast || hasSingleName;
+                    return headers.some((h) => /^(first|given) name$/.test(h)) && headers.some((h) => /^(last|family|sur) name$/.test(h));
                 });
-                if (headerIndex < 0) throw new Error('Could not find name headers. Expected First Name + Last Name or a single Name / Full Name column in the first 15 rows.');
+                if (headerIndex < 0) throw new Error('Could not find both First Name and Last Name columns in the first 15 rows.');
 
                 pendingInternationsHeaders = grid[headerIndex].map((value, index) => String(value || '').replace(/^\uFEFF/, '').trim() || ('Column ' + (index + 1)));
                 const normalizedHeaders = pendingInternationsHeaders.map(normaliseHeader);
                 const firstIndex = normalizedHeaders.findIndex((h) => /^(first|given) name$/.test(h));
                 const lastIndex = normalizedHeaders.findIndex((h) => /^(last|family|sur) name$/.test(h));
-                const singleNameIndex = normalizedHeaders.findIndex((h) => /^(name|full name|guest name|attendee|participant)$/.test(h));
-                if (firstIndex >= 0 && lastIndex >= 0) pendingInternationsNameColumn = '__combined_first_last__';
-                else if (singleNameIndex >= 0) pendingInternationsNameColumn = pendingInternationsHeaders[singleNameIndex];
-                else throw new Error('The name columns were found inconsistently. Please check the spreadsheet header row.');
+                if (firstIndex < 0 || lastIndex < 0) throw new Error('Both First Name and Last Name columns are required.');
+                pendingInternationsNameColumn = '__combined_first_last__';
 
                 pendingInternationsRows = grid.slice(headerIndex + 1)
                     .filter((row) => row.some((cell) => String(cell == null ? '' : cell).trim() !== ''))
