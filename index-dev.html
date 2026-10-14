@@ -1645,13 +1645,6 @@
                     ' · Included ' + drinkForecastCounts.included +
                     ' · Upgrades ' + drinkForecastCounts.upgrades;
 
-                const issuedNameKeys = new Set(
-                    guestDocs.filter((item) => Boolean(item.data.welcomeDrinkChipIssued))
-                        .map((item) => normalizeGuestName(item.data.name)).filter(Boolean)
-                );
-                unrecognizedDrinkChipStatus.forEach((record, nameKey) => {
-                    if (record.welcomeDrinkChipIssued) issuedNameKeys.add(nameKey);
-                });
                 document.getElementById('welcomeDrinkChipCount').textContent = issuedNameKeys.size + ' / ' + estimatedDrinkTotal;
 
                 const totalCollected = guestDocs.filter((item) => Boolean(item.data.paid)).reduce((sum, item) => {
