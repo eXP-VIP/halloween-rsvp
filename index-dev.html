@@ -466,7 +466,7 @@
                                 <input id="basePriceFriends" type="number" min="0" step="1" class="form-field mb-3" value="20">
                                 <label for="drinkModeFriends" class="form-label">Welcome-drink rule</label>
                                 <select id="drinkModeFriends" class="form-field mb-3">
-                                    <option value="included" selected>Included in admission</option>
+                                    <option value="included" selected>Included</option>
                                     <option value="upgrade">Paid upgrade</option>
                                     <option value="not_allowed">Unavailable</option>
                                 </select>
@@ -1283,18 +1283,16 @@
 
         function renderUnrecognizedWelcomeDrinkList() {
             const rewardList = document.getElementById('welcomeDrinkList');
-            if (!rewardList) return;
+            const section = document.getElementById('unrecognizedWelcomeDrinkSection');
+            if (!rewardList || !section) return;
             rewardList.replaceChildren();
+
             const unrecognized = cachedQualifiedInviters.filter((inviter) =>
                 !cachedGuestDocs.some((doc) => normalizeGuestName(doc.data().name) === inviter.key)
             );
-            if (!unrecognized.length) {
-                const empty = document.createElement('p');
-                empty.className = 'text-xs text-gray-400';
-                empty.textContent = 'No unregistered inviter currently qualifies for a welcome drink.';
-                rewardList.appendChild(empty);
-                return;
-            }
+            section.classList.toggle('hidden', unrecognized.length === 0);
+            if (!unrecognized.length) return;
+
             unrecognized.forEach((inviter) => {
                 const row = document.createElement('div');
                 row.className = 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-gold/30 bg-black/25 px-3 py-2';
@@ -1305,14 +1303,14 @@
                 rightSide.className = 'flex flex-wrap items-center gap-2';
                 const reward = document.createElement('span');
                 reward.className = 'inline-flex self-start sm:self-auto rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[10px] font-semibold tracking-wider text-amber-100';
-                reward.textContent = 'WELCOME DRINK EARNED · ' + inviter.count + ' CHECKED IN';
+                reward.textContent = 'EARNED · ' + inviter.count + ' CHECKED IN';
                 rightSide.appendChild(reward);
                 const state = unrecognizedDrinkChipStatus.get(inviter.key) || {};
                 const issued = Boolean(state.welcomeDrinkChipIssued);
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.className = 'rounded border px-3 py-2 text-[10px] font-semibold tracking-wider ' + (issued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-200' : 'border-gold/50 bg-gold/10 text-amber-100 hover:bg-gold/20');
-                button.textContent = issued ? 'UNDO CHIP ISSUED' : 'MARK CHIP ISSUED';
+                button.textContent = issued ? 'UNDO CHIP' : 'ISSUE CHIP';
                 button.addEventListener('click', () => toggleUnrecognizedDrinkChip(inviter, issued));
                 rightSide.appendChild(button);
                 row.append(inviterName, rightSide);
@@ -1474,13 +1472,13 @@
                     const charge = calculateGuestCharge(data, welcomeDrinkEarned);
                     const chipAlreadyIssued = isGuestDrinkChipIssued(data);
                     const drinkIncluded = charge.drinkMode === 'included';
-                    const upgradeCanBeSelected = charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued;
                     const drinkEntitled = welcomeDrinkEarned || drinkIncluded || charge.upgradeSelected || chipAlreadyIssued;
+                    const upgradeCanBeSelected = charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued;
 
                     const card = document.createElement('div');
                     card.className = 'guest-card p-3 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ' +
                         (isPaymentCard ? (isPaid ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-sky-950/30 border-sky-400/40') :
-                        (welcomeDrinkEarned ? 'bg-amber-950/50 border-gold/80 border-l-4' : checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'));
+                        (checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'));
                     card.dataset.guestId = doc.id;
                     card.dataset.listType = isPaymentCard ? 'payment' : 'hotel';
                     const nameParts = String(data.name || '').trim().split(/\s+/).filter(Boolean);
@@ -1507,47 +1505,53 @@
                         (isInterNationsMember ? 'border-sky-400/50 bg-sky-950/50 text-sky-100' : 'border-gray-500/50 bg-gray-800/60 text-gray-200');
                     const memberStatus = String(data.interNationsStatus || '').trim();
                     typeBadge.textContent = isInterNationsMember
-                        ? (memberStatus ? 'INTERNATIONS · ' + memberStatus.toLocaleUpperCase() : 'INTERNATIONS')
+                        ? (memberStatus.toLocaleLowerCase().includes('basic') ? 'BASIC MEMBER' : 'PAID MEMBER')
                         : 'FRIEND';
                     titleLine.appendChild(typeBadge);
-                    details.appendChild(titleLine);
 
                     const actions = document.createElement('div');
                     actions.className = 'flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center';
 
                     if (isPaymentCard) {
-                        // Payment desk is intentionally compact: no repeated tier, total and drink explanation lines.
-                        if (upgradeCanBeSelected || charge.upgradeSelected) {
+                        // Drink rewards and collection appear only in the payment-management view.
+                        if (welcomeDrinkEarned) {
+                            const rewardBadge = document.createElement('span');
+                            rewardBadge.className = 'inline-flex items-center rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[9px] font-semibold tracking-wider text-amber-100';
+                            rewardBadge.textContent = 'DRINK EARNED';
+                            titleLine.appendChild(rewardBadge);
+                        }
+
+                        if (charge.drinkMode === 'upgrade' && !welcomeDrinkEarned &&
+                            (upgradeCanBeSelected || (charge.upgradeSelected && !chipAlreadyIssued))) {
                             const upgradeButton = document.createElement('button');
                             upgradeButton.type = 'button';
                             upgradeButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
                                 (charge.upgradeSelected ? 'border-sky-400/50 bg-sky-900/40 text-sky-100' : 'border-sky-400/40 bg-sky-950/30 text-sky-100 hover:bg-sky-900/50');
                             upgradeButton.textContent = charge.upgradeSelected
-                                ? 'UNDO UPGRADE · ' + formatEuro(charge.upgradePrice)
-                                : 'ADD DRINK · +' + formatEuro(charge.upgradePrice);
+                                ? 'UNDO UPGRADE'
+                                : 'ADD DRINK +' + formatEuro(charge.upgradePrice);
+                            upgradeButton.title = 'Paid upgrade: ' + formatEuro(charge.upgradePrice);
                             upgradeButton.addEventListener('click', () => toggleGuestDrinkUpgrade(doc.id, data, welcomeDrinkEarned));
                             actions.appendChild(upgradeButton);
                         }
 
                         if (drinkEntitled) {
-                            const chipLabel = document.createElement('label');
-                            chipLabel.className = 'inline-flex items-center gap-2 text-xs text-gray-100 rounded border border-white/15 px-3 py-2 cursor-pointer whitespace-nowrap';
-                            const chipCheckbox = document.createElement('input');
-                            chipCheckbox.type = 'checkbox';
-                            chipCheckbox.checked = chipAlreadyIssued;
-                            chipCheckbox.className = 'h-4 w-4 accent-emerald-500';
-                            chipCheckbox.setAttribute('aria-label', 'Drink chip collected for ' + (data.name || 'guest'));
-                            chipCheckbox.addEventListener('change', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
-                            const chipText = document.createElement('span');
-                            chipText.textContent = 'Drink chip collected';
-                            chipLabel.append(chipCheckbox, chipText);
-                            actions.appendChild(chipLabel);
+                            const chipButton = document.createElement('button');
+                            chipButton.type = 'button';
+                            chipButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
+                                (chipAlreadyIssued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : 'border-amber-500/50 bg-amber-950/40 text-amber-100 hover:bg-amber-900/50');
+                            chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
+                            chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
+                            chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
+                            actions.appendChild(chipButton);
                         }
+
+                        details.appendChild(titleLine);
 
                         const amount = document.createElement('span');
                         amount.className = 'text-sm font-semibold text-white tabular-nums whitespace-nowrap';
                         const paidAmount = data.amountPaid != null ? Number(data.amountPaid) : charge.total;
-                        amount.textContent = formatEuro(isPaid ? paidAmount : charge.total) + (isPaid ? ' · PAID' : ' · DUE');
+                        amount.textContent = formatEuro(isPaid ? paidAmount : charge.total);
                         actions.appendChild(amount);
 
                         const paymentButton = document.createElement('button');
@@ -1559,39 +1563,26 @@
                         paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned));
                         actions.appendChild(paymentButton);
                     } else {
-                        if (welcomeDrinkEarned) {
-                            const rewardBadge = document.createElement('span');
-                            rewardBadge.className = 'inline-flex items-center rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[9px] font-semibold tracking-wider text-amber-100';
-                            rewardBadge.textContent = 'WELCOME DRINK EARNED';
-                            titleLine.appendChild(rewardBadge);
-                        }
-                        if (drinkEntitled) {
-                            const chipBadge = document.createElement('span');
-                            chipBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
-                                (chipAlreadyIssued ? 'border-emerald-500/50 bg-emerald-950/40 text-emerald-200' : 'border-amber-500/50 bg-amber-950/40 text-amber-100');
-                            chipBadge.textContent = chipAlreadyIssued ? 'DRINK CHIP ISSUED' : 'DRINK CHIP NOT ISSUED';
-                            titleLine.appendChild(chipBadge);
-                        }
-
-                        const meta = document.createElement('p');
-                        meta.className = 'text-xs text-gray-300 break-words mt-1';
-                        meta.textContent = 'Invited by: ' + (data.invitedBy || 'Not specified');
-                        details.appendChild(meta);
-
+                        // Hotel sees only the guest identity and check-in control.
+                        details.appendChild(titleLine);
                         const checkInButton = document.createElement('button');
                         checkInButton.type = 'button';
                         checkInButton.className = 'shrink-0 px-3 py-2 text-xs font-serif rounded ' + (checkedIn ? 'bg-emerald-700 text-white' : 'bg-gold/15 text-gold border border-gold/40');
-                        checkInButton.textContent = checkedIn ? 'CHECKED IN' : 'CHECK IN';
+                        checkInButton.textContent = checkedIn ? 'UNDO CHECK-IN' : 'CHECK IN';
+                        checkInButton.title = checkedIn ? 'Undo check-in. This is not a check-out.' : 'Mark this guest as checked in.';
                         checkInButton.setAttribute('aria-pressed', String(checkedIn));
                         checkInButton.addEventListener('click', () => toggleCheckIn(doc.id, checkedIn));
+                        actions.appendChild(checkInButton);
 
-                        const deleteButton = document.createElement('button');
-                        deleteButton.type = 'button';
-                        deleteButton.className = 'shrink-0 rounded border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200 hover:bg-red-900/70 transition-colors';
-                        deleteButton.innerHTML = '<i class="fa-solid fa-trash-can mr-1" aria-hidden="true"></i>Delete';
-                        deleteButton.setAttribute('aria-label', 'Delete guest ' + (data.name || ''));
-                        deleteButton.addEventListener('click', () => deleteGuest(doc.id, data.name));
-                        actions.append(checkInButton, deleteButton);
+                        if (currentStaffRole === 'admin') {
+                            const deleteButton = document.createElement('button');
+                            deleteButton.type = 'button';
+                            deleteButton.className = 'shrink-0 rounded border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200 hover:bg-red-900/70 transition-colors';
+                            deleteButton.textContent = 'DELETE';
+                            deleteButton.setAttribute('aria-label', 'Delete guest ' + (data.name || ''));
+                            deleteButton.addEventListener('click', () => deleteGuest(doc.id, data.name));
+                            actions.appendChild(deleteButton);
+                        }
                     }
 
                     card.append(details, actions);
