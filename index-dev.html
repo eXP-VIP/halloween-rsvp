@@ -1381,7 +1381,7 @@
                     renderUnrecognizedWelcomeDrinkList();
                     const issuedNameKeys = new Set(cachedGuestDocs.filter((doc) => Boolean(doc.data().welcomeDrinkChipIssued)).map((doc) => normalizeGuestName(doc.data().name)).filter(Boolean));
                     snapshot.docs.forEach((doc) => { const data = doc.data(); if (data.welcomeDrinkChipIssued && data.nameKey) issuedNameKeys.add(data.nameKey); });
-                    document.getElementById('welcomeDrinkChipCount').textContent = issuedNameKeys.size;
+                    document.getElementById('welcomeDrinkChipCount').textContent = issuedNameKeys.size + ' / ' + (document.getElementById('drinkEstimateTotal').textContent || '0');
                 }, (error) => console.error('Unregistered drink chip status listener failed:', error));
             }
             if (guestlistUnsubscribe) {
@@ -1392,37 +1392,20 @@
                 cachedGuestSnapshot = snapshot;
                 cachedGuestDocs = snapshot.docs;
                 listError.classList.add('hidden');
-                const categoryTotals = {
-                    Albatross: { total: 0, checked: 0, paid: 0 },
-                    Basics: { total: 0, checked: 0, paid: 0 },
-                    Friends: { total: 0, checked: 0, paid: 0 }
-                };
+                const categoryTotals = { Albatross: 0, Basics: 0, Friends: 0 };
                 snapshot.docs.forEach((guestDoc) => {
-                    const data = guestDoc.data();
-                    const category = getGuestCategory(data);
-                    categoryTotals[category].total++;
-                    if (data.checkedIn) {
-                        categoryTotals[category].checked++;
-                        if (data.paid) categoryTotals[category].paid++;
-                    }
+                    categoryTotals[getGuestCategory(guestDoc.data())]++;
                 });
-                const checkedInTotal = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().checkedIn)).length;
-                const paidCheckedInTotal = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().checkedIn) && Boolean(guestDoc.data().paid)).length;
-                document.getElementById('totalCount').textContent = snapshot.size;
-                document.getElementById('checkedInCount').textContent = checkedInTotal + ' / ' + snapshot.size;
-                document.getElementById('paidCount').textContent = paidCheckedInTotal + ' / ' + checkedInTotal;
-                document.getElementById('totalAlbatross').textContent = categoryTotals.Albatross.total;
-                document.getElementById('totalBasics').textContent = categoryTotals.Basics.total;
-                document.getElementById('totalFriends').textContent = categoryTotals.Friends.total;
-                document.getElementById('checkedAlbatross').textContent = categoryTotals.Albatross.checked + ' / ' + categoryTotals.Albatross.total;
-                document.getElementById('checkedBasics').textContent = categoryTotals.Basics.checked + ' / ' + categoryTotals.Basics.total;
-                document.getElementById('checkedFriends').textContent = categoryTotals.Friends.checked + ' / ' + categoryTotals.Friends.total;
-                document.getElementById('paidAlbatross').textContent = categoryTotals.Albatross.paid + ' / ' + categoryTotals.Albatross.checked;
-                document.getElementById('paidBasics').textContent = categoryTotals.Basics.paid + ' / ' + categoryTotals.Basics.checked;
-                document.getElementById('paidFriends').textContent = categoryTotals.Friends.paid + ' / ' + categoryTotals.Friends.checked;
+                const totalGuestRecords = snapshot.size;
+                const nonAlbatrossTotal = categoryTotals.Basics + categoryTotals.Friends;
+                const albatrossPercent = totalGuestRecords ? Math.round(categoryTotals.Albatross / totalGuestRecords * 100) : 0;
+                const nonAlbatrossPercent = totalGuestRecords ? 100 - albatrossPercent : 0;
+                document.getElementById('mixRatio').textContent = albatrossPercent + '% : ' + nonAlbatrossPercent + '%';
+                document.getElementById('mixCounts').textContent = 'Albatross ' + categoryTotals.Albatross + ' · Non-Albatross ' + nonAlbatrossTotal;
+                document.getElementById('mixBasicsFriends').textContent = 'Basics ' + categoryTotals.Basics + ' · Friends ' + categoryTotals.Friends;
                 const issuedNameKeys = new Set(snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
                 unrecognizedDrinkChipStatus.forEach((record, nameKey) => { if (record.welcomeDrinkChipIssued) issuedNameKeys.add(nameKey); });
-                document.getElementById('welcomeDrinkChipCount').textContent = issuedNameKeys.size;
+                document.getElementById('welcomeDrinkChipCount').textContent = issuedNameKeys.size + ' / ' + (document.getElementById('drinkEstimateTotal').textContent || '0');
 
                 // A welcome drink is earned only after at least two invited guest records have checked in.
                 // Each checked-in Firestore record counts once; inviter names are normalised for matching.
@@ -1620,14 +1603,69 @@
                 document.getElementById('noUncheckGuests').classList.toggle('hidden', notCheckedIn.length > 0);
                 document.getElementById('noCheckedGuests').classList.toggle('hidden', checkedIn.length > 0);
 
-                const checkedInGuests = guestDocs.filter((item) => Boolean(item.data.checkedIn));
-                const totalCollected = checkedInGuests.filter((item) => Boolean(item.data.paid)).reduce((sum, item) => {
+                // Estimate drink entitlements for full attendance. Each normalized guest name can receive one chip.
+                const potentialReferralCounts = new Map();
+                guestDocs.forEach((item) => {
+                    const inviterName = String(item.data.invitedBy || '').trim();
+                    const inviterKey = normalizeGuestName(inviterName);
+                    if (!inviterKey) return;
+                    if (!potentialReferralCounts.has(inviterKey)) {
+                        potentialReferralCounts.set(inviterKey, { name: inviterName, guestIds: new Set() });
+                    }
+                    potentialReferralCounts.get(inviterKey).guestIds.add(item.doc.id);
+                });
+                const estimatedEarnedKeys = new Set(
+                    Array.from(potentialReferralCounts.entries())
+                        .filter(([, record]) => record.guestIds.size >= 2)
+                        .map(([key]) => key)
+                );
+                const estimatedDrinksByPerson = new Map();
+                guestDocs.forEach((item) => {
+                    const key = normalizeGuestName(item.data.name);
+                    if (!key) return;
+                    const tier = getGuestTier(item.data);
+                    const rule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+                    let kind = '';
+                    if (estimatedEarnedKeys.has(key)) kind = 'referrals';
+                    else if (rule.mode === 'included') kind = 'included';
+                    else if (rule.mode === 'upgrade' && Boolean(item.data.welcomeDrinkUpgradeSelected)) kind = 'upgrades';
+                    if (kind && !estimatedDrinksByPerson.has(key)) estimatedDrinksByPerson.set(key, kind);
+                });
+                estimatedEarnedKeys.forEach((key) => {
+                    if (!guestDocs.some((item) => normalizeGuestName(item.data.name) === key) && !estimatedDrinksByPerson.has(key)) {
+                        estimatedDrinksByPerson.set(key, 'referrals');
+                    }
+                });
+                const drinkForecastCounts = { referrals: 0, included: 0, upgrades: 0 };
+                estimatedDrinksByPerson.forEach((kind) => { drinkForecastCounts[kind]++; });
+                const estimatedDrinkTotal = estimatedDrinksByPerson.size;
+                document.getElementById('drinkEstimateTotal').textContent = estimatedDrinkTotal;
+                document.getElementById('drinkEstimateBreakdown').textContent =
+                    'Referrals ' + drinkForecastCounts.referrals +
+                    ' · Included ' + drinkForecastCounts.included +
+                    ' · Upgrades ' + drinkForecastCounts.upgrades;
+
+                const issuedNameKeys = new Set(
+                    guestDocs.filter((item) => Boolean(item.data.welcomeDrinkChipIssued))
+                        .map((item) => normalizeGuestName(item.data.name)).filter(Boolean)
+                );
+                unrecognizedDrinkChipStatus.forEach((record, nameKey) => {
+                    if (record.welcomeDrinkChipIssued) issuedNameKeys.add(nameKey);
+                });
+                document.getElementById('welcomeDrinkChipCount').textContent = issuedNameKeys.size + ' / ' + estimatedDrinkTotal;
+
+                const totalCollected = guestDocs.filter((item) => Boolean(item.data.paid)).reduce((sum, item) => {
                     if (item.data.amountPaid != null && Number.isFinite(Number(item.data.amountPaid))) return sum + Number(item.data.amountPaid);
                     const key = normalizeGuestName(item.data.name);
                     const referrals = checkedInReferralsByInviter.get(key)?.guestIds.size || 0;
                     return sum + calculateGuestCharge(item.data, referrals >= 2).total;
                 }, 0);
-                document.getElementById('collectedAmount').textContent = formatEuro(totalCollected);
+                const maxFullAttendance = guestDocs.reduce((sum, item) => {
+                    const key = normalizeGuestName(item.data.name);
+                    return sum + calculateGuestCharge(item.data, estimatedEarnedKeys.has(key)).total;
+                }, 0);
+                document.getElementById('collectedAmount').textContent =
+                    formatEuro(totalCollected) + ' / ' + formatEuro(maxFullAttendance);
 
                 const registeredNameKeys = new Set(guestDocs.map((item) => normalizeGuestName(item.data.name)).filter(Boolean));
                 const pendingChipKeys = new Set();
