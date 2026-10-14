@@ -1660,24 +1660,6 @@
                 document.getElementById('collectedAmount').textContent =
                     formatEuro(totalCollected) + ' / ' + formatEuro(maxFullAttendance);
 
-                const registeredNameKeys = new Set(guestDocs.map((item) => normalizeGuestName(item.data.name)).filter(Boolean));
-                const pendingChipKeys = new Set();
-                guestDocs.forEach((item) => {
-                    const key = normalizeGuestName(item.data.name);
-                    if (!key || isGuestDrinkChipIssued(item.data)) return;
-                    const referrals = checkedInReferralsByInviter.get(key)?.guestIds.size || 0;
-                    const earned = referrals >= 2;
-                    const tier = getGuestTier(item.data);
-                    const rule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
-                    const drinkEntitled = earned || rule.mode === 'included' || (rule.mode === 'upgrade' && Boolean(item.data.welcomeDrinkUpgradeSelected));
-                    if (drinkEntitled) pendingChipKeys.add(key);
-                });
-                cachedQualifiedInviters.forEach((inviter) => {
-                    if (registeredNameKeys.has(inviter.key)) return;
-                    const state = unrecognizedDrinkChipStatus.get(inviter.key) || {};
-                    if (!state.welcomeDrinkChipIssued) pendingChipKeys.add(inviter.key);
-                });
-                document.getElementById('pendingChipCount').textContent = pendingChipKeys.size;
                 const unpaidGuests = checkedInGuests.filter((item) => !item.data.paid).sort((a, b) => {
                     const timeA = checkInTime(a), timeB = checkInTime(b);
                     if (timeA == null && timeB != null) return 1;
