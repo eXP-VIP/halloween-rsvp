@@ -414,7 +414,8 @@
                                     <p id="guestAlbatrossSummary">Albatross 0 · Paid 0</p>
                                     <p id="guestBasicsSummary">Basics 0 · Paid 0</p>
                                     <p id="guestFriendsSummary">Friends 0 · Paid 0</p>
-                                    <p id="guestMixRatio" class="font-semibold text-gold">Albatross : rest 1 : 0.0</p>
+                                    <p id="guestMixRatio" class="font-semibold text-gold">Total rate 1.0 : 1</p>
+                                    <p id="guestPaidMixRatio">Paid rate 1.0 : 1</p>
                                 </div>
                             </div>
                         </div>
@@ -593,6 +594,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.14.2</p>
         </div>
     </footer>
 
@@ -1442,15 +1444,20 @@
                 const totalGuestRecords = snapshot.size;
                 const totalPaidRecords = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().paid)).length;
                 const nonAlbatrossTotal = categoryTotals.Basics.total + categoryTotals.Friends.total;
-                const albatrossRestRatio = categoryTotals.Albatross.total > 0
-                    ? (nonAlbatrossTotal / categoryTotals.Albatross.total).toFixed(1)
-                    : (nonAlbatrossTotal > 0 ? '∞' : '0.0');
+                const nonAlbatrossPaid = categoryTotals.Basics.paid + categoryTotals.Friends.paid;
+                const totalRate = categoryTotals.Albatross.total > 0
+                    ? (categoryTotals.Albatross.total / Math.max(1, nonAlbatrossTotal)).toFixed(1) + ' : 1'
+                    : '0 : ' + nonAlbatrossTotal;
+                const paidRate = categoryTotals.Albatross.paid > 0
+                    ? (categoryTotals.Albatross.paid / Math.max(1, nonAlbatrossPaid)).toFixed(1) + ' : 1'
+                    : '0 : ' + nonAlbatrossPaid;
                 document.getElementById('guestTotalCount').textContent = totalGuestRecords;
                 document.getElementById('guestPaidCount').textContent = totalPaidRecords;
                 document.getElementById('guestAlbatrossSummary').textContent = 'Albatross ' + categoryTotals.Albatross.total + ' · Paid ' + categoryTotals.Albatross.paid;
                 document.getElementById('guestBasicsSummary').textContent = 'Basics ' + categoryTotals.Basics.total + ' · Paid ' + categoryTotals.Basics.paid;
                 document.getElementById('guestFriendsSummary').textContent = 'Friends ' + categoryTotals.Friends.total + ' · Paid ' + categoryTotals.Friends.paid;
-                document.getElementById('guestMixRatio').textContent = 'Albatross : rest 1 : ' + albatrossRestRatio;
+                document.getElementById('guestMixRatio').textContent = 'Total rate ' + totalRate;
+                document.getElementById('guestPaidMixRatio').textContent = 'Paid rate ' + paidRate;
                 const issuedNameKeys = new Set(snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
                 unrecognizedDrinkChipStatus.forEach((record, nameKey) => { if (record.welcomeDrinkChipIssued) issuedNameKeys.add(nameKey); });
 
@@ -1487,6 +1494,7 @@
                 paidContainer.replaceChildren();
 
                 const guestDocs = snapshot.docs.map((doc) => ({ doc, data: doc.data() }));
+                const checkedInGuests = guestDocs.filter((item) => Boolean(item.data.checkedIn));
                 const compareNames = (a, b) => String(a.data.name || '').localeCompare(String(b.data.name || ''), undefined, { sensitivity: 'base' });
                 const timestampMillis = (value) => {
                     if (!value) return null;
@@ -1691,7 +1699,8 @@
                 });
                 const estimatedDrinkTotal = estimatedDrinksByPerson.size;
                 document.getElementById('drinkEstimateTotal').textContent = estimatedDrinkTotal;
-                document.getElementById('welcomeDrinkChipCount').textContent = issuedNameKeys.size;
+                const issuedEligibleDrinkTotal = Object.values(drinkIssuedCounts).reduce((sum, count) => sum + count, 0);
+                document.getElementById('welcomeDrinkChipCount').textContent = issuedEligibleDrinkTotal;
                 document.getElementById('drinkReferralSummary').textContent = 'Referrals ' + drinkForecastCounts.referrals + ' / ' + drinkIssuedCounts.referrals + ' issued';
                 document.getElementById('drinkIncludedSummary').textContent = 'Included ' + drinkForecastCounts.included + ' / ' + drinkIssuedCounts.included + ' issued';
                 document.getElementById('drinkUpgradeSummary').textContent = 'Upgrades ' + drinkForecastCounts.upgrades + ' / ' + drinkIssuedCounts.upgrades + ' issued';
