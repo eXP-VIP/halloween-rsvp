@@ -1820,6 +1820,7 @@
                     const latestData = latest.data() || {};
                     const latestNameKey = normalizeGuestName(latestData.name);
                     const hasIssuedChip = Boolean(latestData.welcomeDrinkChipIssued ||
+                        cachedGuestDocs.some((guestDoc) => normalizeGuestName(guestDoc.data().name) === latestNameKey && Boolean(guestDoc.data().welcomeDrinkChipIssued)) ||
                         (unrecognizedDrinkChipStatus.get(latestNameKey) || {}).welcomeDrinkChipIssued);
                     if (latestData.paid || hasIssuedChip) {
                         const listError = document.getElementById('guestlistError');
