@@ -395,27 +395,63 @@
                     <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">The live guest list is not connected. Configure the real Firebase settings and Firestore access rules before using check-in.</p>
                 </div>
                 <div id="guestlistSection" class="hidden">
-                    <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 mb-4">
                         <div class="rounded-lg border border-gold/25 bg-black/35 p-3 min-w-0">
-                            <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guest mix</p>
-                            <p id="mixRatio" class="mt-2 text-xl font-semibold text-gold tabular-nums">0% : 0%</p>
-                            <p id="mixCounts" class="mt-1 text-xs text-gray-200">Albatross 0 · Non-Albatross 0</p>
-                            <p id="mixBasicsFriends" class="mt-1 text-[10px] text-gray-400">Basics 0 · Friends 0</p>
+                            <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="min-w-0">
+                                        <p id="guestTotalCount" class="text-3xl font-semibold text-gold tabular-nums">0</p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Total</p>
+                                    </div>
+                                    <span class="text-2xl text-gray-500">/</span>
+                                    <div class="min-w-0">
+                                        <p id="guestPaidCount" class="text-3xl font-semibold text-sky-200 tabular-nums">0</p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Paid</p>
+                                    </div>
+                                </div>
+                                <div class="text-[10px] leading-4 text-gray-300">
+                                    <p id="guestAlbatrossSummary">Albatross 0 · Paid 0</p>
+                                    <p id="guestBasicsSummary">Basics 0 · Paid 0</p>
+                                    <p id="guestFriendsSummary">Friends 0 · Paid 0</p>
+                                    <p id="guestMixRatio" class="font-semibold text-gold">Albatross : rest 1 : 0.0</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="rounded-lg border border-amber-400/40 bg-amber-950/30 p-3 min-w-0">
-                            <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Estimated welcome drinks</p>
-                            <p id="drinkEstimateTotal" class="mt-2 text-3xl font-semibold text-amber-200 tabular-nums">0</p>
-                            <p id="drinkEstimateBreakdown" class="mt-1 text-[10px] leading-4 text-gray-300">Referrals 0 · Included 0 · Upgrades 0</p>
-                        </div>
-                        <div class="rounded-lg border border-emerald-400/30 bg-emerald-950/20 p-3 min-w-0">
-                            <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Chips issued</p>
-                            <p id="welcomeDrinkChipCount" class="mt-2 text-3xl font-semibold text-emerald-200 tabular-nums">0 / 0</p>
-                            <p class="mt-1 text-[10px] text-gray-400">Issued / estimated drinks</p>
+                            <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Welcome drinks</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="min-w-0">
+                                        <p id="drinkEstimateTotal" class="text-3xl font-semibold text-amber-200 tabular-nums">0</p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Estimated</p>
+                                    </div>
+                                    <span class="text-2xl text-gray-500">/</span>
+                                    <div class="min-w-0">
+                                        <p id="welcomeDrinkChipCount" class="text-3xl font-semibold text-emerald-200 tabular-nums">0</p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Issued</p>
+                                    </div>
+                                </div>
+                                <div class="text-[10px] leading-4 text-gray-300">
+                                    <p id="drinkReferralSummary">Referrals 0 / 0 issued</p>
+                                    <p id="drinkIncludedSummary">Included 0 / 0 issued</p>
+                                    <p id="drinkUpgradeSummary">Upgrades 0 / 0 issued</p>
+                                </div>
+                            </div>
                         </div>
                         <div id="collectedMetric" class="rounded-lg border border-sky-400/30 bg-sky-950/25 p-3 min-w-0">
-                            <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Collected / full attendance</p>
-                            <p id="collectedAmount" class="mt-2 text-xl sm:text-2xl font-semibold text-sky-200 tabular-nums">€0 / €0</p>
-                            <p class="mt-1 text-[10px] text-gray-400">Received / estimated maximum</p>
+                            <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Payments</p>
+                            <div class="flex items-start gap-3 mt-2">
+                                <div class="min-w-0">
+                                    <p id="collectedAmount" class="text-xl sm:text-2xl font-semibold text-sky-200 tabular-nums">€0</p>
+                                    <p class="text-[10px] uppercase tracking-wider text-gray-400">Collected</p>
+                                </div>
+                                <span class="text-xl text-gray-500">/</span>
+                                <div class="min-w-0">
+                                    <p id="fullAttendanceAmount" class="text-xl sm:text-2xl font-semibold text-white tabular-nums">€0</p>
+                                    <p class="text-[10px] uppercase tracking-wider text-gray-400">Full attendance</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <section id="adminPricingPanel" class="rounded-xl border border-gold/40 bg-black/30 p-4 mb-5">
@@ -1159,8 +1195,8 @@
             show('collectedMetric', currentStaffRole === 'admin');
             const statsGrid = document.getElementById('staffSummaryStats');
             if (statsGrid) {
-                statsGrid.classList.toggle('lg:grid-cols-4', currentStaffRole === 'admin');
-                statsGrid.classList.toggle('lg:grid-cols-3', currentStaffRole !== 'admin');
+                statsGrid.classList.toggle('xl:grid-cols-3', currentStaffRole === 'admin');
+                statsGrid.classList.toggle('xl:grid-cols-2', currentStaffRole !== 'admin');
             }
             show('adminPricingPanel', currentStaffRole === 'admin');
             show('internationsImportPanel', currentStaffRole === 'admin');
@@ -1392,20 +1428,31 @@
                 cachedGuestSnapshot = snapshot;
                 cachedGuestDocs = snapshot.docs;
                 listError.classList.add('hidden');
-                const categoryTotals = { Albatross: 0, Basics: 0, Friends: 0 };
+                const categoryTotals = {
+                    Albatross: { total: 0, paid: 0 },
+                    Basics: { total: 0, paid: 0 },
+                    Friends: { total: 0, paid: 0 }
+                };
                 snapshot.docs.forEach((guestDoc) => {
-                    categoryTotals[getGuestCategory(guestDoc.data())]++;
+                    const data = guestDoc.data();
+                    const category = getGuestCategory(data);
+                    categoryTotals[category].total++;
+                    if (data.paid) categoryTotals[category].paid++;
                 });
                 const totalGuestRecords = snapshot.size;
-                const nonAlbatrossTotal = categoryTotals.Basics + categoryTotals.Friends;
-                const albatrossPercent = totalGuestRecords ? Math.round(categoryTotals.Albatross / totalGuestRecords * 100) : 0;
-                const nonAlbatrossPercent = totalGuestRecords ? 100 - albatrossPercent : 0;
-                document.getElementById('mixRatio').textContent = albatrossPercent + '% : ' + nonAlbatrossPercent + '%';
-                document.getElementById('mixCounts').textContent = 'Albatross ' + categoryTotals.Albatross + ' · Non-Albatross ' + nonAlbatrossTotal;
-                document.getElementById('mixBasicsFriends').textContent = 'Basics ' + categoryTotals.Basics + ' · Friends ' + categoryTotals.Friends;
+                const totalPaidRecords = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().paid)).length;
+                const nonAlbatrossTotal = categoryTotals.Basics.total + categoryTotals.Friends.total;
+                const albatrossRestRatio = categoryTotals.Albatross.total > 0
+                    ? (nonAlbatrossTotal / categoryTotals.Albatross.total).toFixed(1)
+                    : (nonAlbatrossTotal > 0 ? '∞' : '0.0');
+                document.getElementById('guestTotalCount').textContent = totalGuestRecords;
+                document.getElementById('guestPaidCount').textContent = totalPaidRecords;
+                document.getElementById('guestAlbatrossSummary').textContent = 'Albatross ' + categoryTotals.Albatross.total + ' · Paid ' + categoryTotals.Albatross.paid;
+                document.getElementById('guestBasicsSummary').textContent = 'Basics ' + categoryTotals.Basics.total + ' · Paid ' + categoryTotals.Basics.paid;
+                document.getElementById('guestFriendsSummary').textContent = 'Friends ' + categoryTotals.Friends.total + ' · Paid ' + categoryTotals.Friends.paid;
+                document.getElementById('guestMixRatio').textContent = 'Albatross : rest 1 : ' + albatrossRestRatio;
                 const issuedNameKeys = new Set(snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
                 unrecognizedDrinkChipStatus.forEach((record, nameKey) => { if (record.welcomeDrinkChipIssued) issuedNameKeys.add(nameKey); });
-                document.getElementById('welcomeDrinkChipCount').textContent = issuedNameKeys.size + ' / ' + (document.getElementById('drinkEstimateTotal').textContent || '0');
 
                 // A welcome drink is earned only after at least two invited guest records have checked in.
                 // Each checked-in Firestore record counts once; inviter names are normalised for matching.
@@ -1637,15 +1684,17 @@
                     }
                 });
                 const drinkForecastCounts = { referrals: 0, included: 0, upgrades: 0 };
-                estimatedDrinksByPerson.forEach((kind) => { drinkForecastCounts[kind]++; });
+                const drinkIssuedCounts = { referrals: 0, included: 0, upgrades: 0 };
+                estimatedDrinksByPerson.forEach((kind, key) => {
+                    drinkForecastCounts[kind]++;
+                    if (issuedNameKeys.has(key)) drinkIssuedCounts[kind]++;
+                });
                 const estimatedDrinkTotal = estimatedDrinksByPerson.size;
                 document.getElementById('drinkEstimateTotal').textContent = estimatedDrinkTotal;
-                document.getElementById('drinkEstimateBreakdown').textContent =
-                    'Referrals ' + drinkForecastCounts.referrals +
-                    ' · Included ' + drinkForecastCounts.included +
-                    ' · Upgrades ' + drinkForecastCounts.upgrades;
-
-                document.getElementById('welcomeDrinkChipCount').textContent = issuedNameKeys.size + ' / ' + estimatedDrinkTotal;
+                document.getElementById('welcomeDrinkChipCount').textContent = issuedNameKeys.size;
+                document.getElementById('drinkReferralSummary').textContent = 'Referrals ' + drinkForecastCounts.referrals + ' / ' + drinkIssuedCounts.referrals + ' issued';
+                document.getElementById('drinkIncludedSummary').textContent = 'Included ' + drinkForecastCounts.included + ' / ' + drinkIssuedCounts.included + ' issued';
+                document.getElementById('drinkUpgradeSummary').textContent = 'Upgrades ' + drinkForecastCounts.upgrades + ' / ' + drinkIssuedCounts.upgrades + ' issued';
 
                 const totalCollected = guestDocs.filter((item) => Boolean(item.data.paid)).reduce((sum, item) => {
                     if (item.data.amountPaid != null && Number.isFinite(Number(item.data.amountPaid))) return sum + Number(item.data.amountPaid);
@@ -1657,8 +1706,8 @@
                     const key = normalizeGuestName(item.data.name);
                     return sum + calculateGuestCharge(item.data, estimatedEarnedKeys.has(key)).total;
                 }, 0);
-                document.getElementById('collectedAmount').textContent =
-                    formatEuro(totalCollected) + ' / ' + formatEuro(maxFullAttendance);
+                document.getElementById('collectedAmount').textContent = formatEuro(totalCollected);
+                document.getElementById('fullAttendanceAmount').textContent = formatEuro(maxFullAttendance);
 
                 const unpaidGuests = checkedInGuests.filter((item) => !item.data.paid).sort((a, b) => {
                     const timeA = checkInTime(a), timeB = checkInTime(b);
