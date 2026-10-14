@@ -419,8 +419,8 @@
                             <p id="collectedAmount" class="mt-2 text-2xl font-semibold text-emerald-200 tabular-nums">€0</p>
                         </div>
                         <div class="rounded-lg border border-amber-400/40 bg-amber-950/30 p-3 flex flex-col">
-                            <p class="h-8 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Welcome drinks earned</p>
-                            <p id="welcomeDrinkCount" class="mt-2 text-2xl font-semibold text-amber-200 tabular-nums">0</p>
+                            <p class="h-8 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Chips pending</p>
+                            <p id="pendingChipCount" class="mt-2 text-2xl font-semibold text-amber-200 tabular-nums">0</p>
                         </div>
                         <div class="rounded-lg border border-emerald-400/30 bg-emerald-950/20 p-3 flex flex-col">
                             <p class="h-8 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Drink chips issued</p>
@@ -432,7 +432,7 @@
                             <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Admin · Prices</h4>
                             <span class="text-[10px] uppercase tracking-wider text-amber-200">Prototype · shared PIN access</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-4">Set the admission price and welcome-drink rule for each guest tier. “Included” means one drink is included in the admission price; “Paid upgrade” adds the upgrade price; “No upgrade allowed” blocks paid upgrades but does not remove an earned referral drink. Only one welcome drink can be collected per guest.</p>
+                        <p class="text-xs text-gray-300 mb-4">Set the admission price and welcome-drink rule for each guest tier. “Included” means one drink is included in the admission price; “Paid upgrade” adds its price; “Unavailable” disables paid upgrades. Earned referral drinks remain available. Only one welcome drink can be collected per guest.</p>
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
@@ -1197,6 +1197,8 @@
                 try { sessionStorage.removeItem(STAFF_SESSION_KEY); } catch (error) {}
                 try { sessionStorage.removeItem(STAFF_ROLE_SESSION_KEY); } catch (error) {}
                 currentStaffRole = "admin";
+                const roleSelector = document.getElementById('staffRole');
+                if (roleSelector) roleSelector.value = 'admin';
                 if (guestlistUnsubscribe) {
                     guestlistUnsubscribe();
                     guestlistUnsubscribe = null;
@@ -1434,7 +1436,6 @@
                     .filter((inviter) => inviter.count >= 2)
                     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
                 cachedQualifiedInviters = qualifiedInviters;
-                document.getElementById('welcomeDrinkCount').textContent = qualifiedInviters.length;
                 renderInternationsImportPreview();
                 renderUnrecognizedWelcomeDrinkList();
 
@@ -1612,6 +1613,25 @@
                 document.getElementById('unpaidCount').textContent = unpaidOutstanding.length;
                 document.getElementById('outstandingAmount').textContent = formatEuro(totalOutstanding);
                 document.getElementById('collectedAmount').textContent = formatEuro(totalCollected);
+
+                const registeredNameKeys = new Set(guestDocs.map((item) => normalizeGuestName(item.data.name)).filter(Boolean));
+                const pendingChipKeys = new Set();
+                guestDocs.forEach((item) => {
+                    const key = normalizeGuestName(item.data.name);
+                    if (!key || isGuestDrinkChipIssued(item.data)) return;
+                    const referrals = checkedInReferralsByInviter.get(key)?.guestIds.size || 0;
+                    const earned = referrals >= 2;
+                    const tier = getGuestTier(item.data);
+                    const rule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+                    const drinkEntitled = earned || rule.mode === 'included' || (rule.mode === 'upgrade' && Boolean(item.data.welcomeDrinkUpgradeSelected));
+                    if (drinkEntitled) pendingChipKeys.add(key);
+                });
+                cachedQualifiedInviters.forEach((inviter) => {
+                    if (registeredNameKeys.has(inviter.key)) return;
+                    const state = unrecognizedDrinkChipStatus.get(inviter.key) || {};
+                    if (!state.welcomeDrinkChipIssued) pendingChipKeys.add(inviter.key);
+                });
+                document.getElementById('pendingChipCount').textContent = pendingChipKeys.size;
                 const unpaidGuests = checkedInGuests.filter((item) => !item.data.paid).sort((a, b) => {
                     const timeA = checkInTime(a), timeB = checkInTime(b);
                     if (timeA == null && timeB != null) return 1;
