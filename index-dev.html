@@ -384,34 +384,38 @@
                     <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">The live guest list is not connected. Configure the real Firebase settings and Firestore access rules before using check-in.</p>
                 </div>
                 <div id="guestlistSection" class="hidden">
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
-                        <div class="rounded-lg border border-gold/25 bg-black/35 p-3">
-                            <p class="text-[10px] uppercase tracking-wider text-gray-300">Total guests</p>
-                            <p id="totalCount" class="text-2xl font-semibold text-gold tabular-nums">0</p>
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                        <div class="rounded-lg border border-gold/25 bg-black/35 p-3 flex flex-col">
+                            <p class="h-8 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Total guests</p>
+                            <p id="totalCount" class="mt-2 text-2xl font-semibold text-gold tabular-nums">0</p>
                         </div>
-                        <div class="rounded-lg border border-emerald-500/30 bg-emerald-950/25 p-3">
-                            <p class="text-[10px] uppercase tracking-wider text-gray-300">Checked in</p>
-                            <p id="checkedInCount" class="text-2xl font-semibold text-emerald-300 tabular-nums">0</p>
+                        <div class="rounded-lg border border-emerald-500/30 bg-emerald-950/25 p-3 flex flex-col">
+                            <p class="h-8 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Checked in</p>
+                            <p id="checkedInCount" class="mt-2 text-2xl font-semibold text-emerald-300 tabular-nums">0</p>
                         </div>
-                        <div class="rounded-lg border border-sky-400/30 bg-sky-950/25 p-3">
-                            <p class="text-[10px] uppercase tracking-wider text-gray-300">Paid</p>
-                            <p id="paidCount" class="text-2xl font-semibold text-sky-200 tabular-nums">0</p>
+                        <div class="rounded-lg border border-sky-400/30 bg-sky-950/25 p-3 flex flex-col">
+                            <p class="h-8 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Paid guests</p>
+                            <p id="paidCount" class="mt-2 text-2xl font-semibold text-sky-200 tabular-nums">0</p>
                         </div>
-                        <div class="rounded-lg border border-sky-400/30 bg-sky-950/25 p-3">
-                            <p class="text-[10px] uppercase tracking-wider text-gray-300">Awaiting payment</p>
-                            <p id="unpaidCount" class="text-2xl font-semibold text-sky-200 tabular-nums">0</p>
+                        <div class="rounded-lg border border-sky-400/30 bg-sky-950/25 p-3 flex flex-col">
+                            <p class="h-8 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Awaiting payment</p>
+                            <p id="unpaidCount" class="mt-2 text-2xl font-semibold text-sky-200 tabular-nums">0</p>
                         </div>
-                        <div class="rounded-lg border border-sky-400/30 bg-sky-950/25 p-3">
-                            <p class="text-[10px] uppercase tracking-wider text-gray-300">Outstanding</p>
-                            <p id="outstandingAmount" class="text-xl font-semibold text-sky-200 tabular-nums">€0.00</p>
+                        <div class="rounded-lg border border-sky-400/30 bg-sky-950/25 p-3 flex flex-col">
+                            <p class="h-8 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Outstanding</p>
+                            <p id="outstandingAmount" class="mt-2 text-2xl font-semibold text-sky-200 tabular-nums">€0</p>
                         </div>
-                        <div class="rounded-lg border border-amber-400/40 bg-amber-950/30 p-3">
-                            <p class="text-[10px] uppercase tracking-wider text-gray-300">Welcome drinks earned</p>
-                            <p id="welcomeDrinkCount" class="text-2xl font-semibold text-amber-200 tabular-nums">0</p>
+                        <div class="rounded-lg border border-emerald-400/30 bg-emerald-950/20 p-3 flex flex-col">
+                            <p class="h-8 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Total collected</p>
+                            <p id="collectedAmount" class="mt-2 text-2xl font-semibold text-emerald-200 tabular-nums">€0</p>
                         </div>
-                        <div class="rounded-lg border border-emerald-400/30 bg-emerald-950/20 p-3">
-                            <p class="text-[10px] uppercase tracking-wider text-gray-300">Drink chips issued</p>
-                            <p id="welcomeDrinkChipCount" class="text-2xl font-semibold text-emerald-200 tabular-nums">0</p>
+                        <div class="rounded-lg border border-amber-400/40 bg-amber-950/30 p-3 flex flex-col">
+                            <p class="h-8 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Welcome drinks earned</p>
+                            <p id="welcomeDrinkCount" class="mt-2 text-2xl font-semibold text-amber-200 tabular-nums">0</p>
+                        </div>
+                        <div class="rounded-lg border border-emerald-400/30 bg-emerald-950/20 p-3 flex flex-col">
+                            <p class="h-8 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Drink chips issued</p>
+                            <p id="welcomeDrinkChipCount" class="mt-2 text-2xl font-semibold text-emerald-200 tabular-nums">0</p>
                         </div>
                     </div>
                     <section id="adminPricingPanel" class="rounded-xl border border-gold/40 bg-black/30 p-4 mb-5">
@@ -424,7 +428,7 @@
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
                                 <label for="basePriceBasics" class="form-label">Admission price (€)</label>
-                                <input id="basePriceBasics" type="number" min="0" step="0.50" class="form-field mb-3" value="15">
+                                <input id="basePriceBasics" type="number" min="0" step="1" class="form-field mb-3" value="15">
                                 <label for="drinkModeBasics" class="form-label">Welcome-drink rule</label>
                                 <select id="drinkModeBasics" class="form-field mb-3">
                                     <option value="included">Included in admission</option>
@@ -432,12 +436,12 @@
                                     <option value="not_allowed" selected>No upgrade allowed</option>
                                 </select>
                                 <label for="drinkPriceBasics" class="form-label">Upgrade price (€)</label>
-                                <input id="drinkPriceBasics" type="number" min="0" step="0.50" class="form-field" value="0" disabled>
+                                <input id="drinkPriceBasics" type="number" min="0" step="1" class="form-field" value="0" disabled>
                             </div>
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Paid Members</h5>
                                 <label for="basePricePaidMembers" class="form-label">Admission price (€)</label>
-                                <input id="basePricePaidMembers" type="number" min="0" step="0.50" class="form-field mb-3" value="5">
+                                <input id="basePricePaidMembers" type="number" min="0" step="1" class="form-field mb-3" value="5">
                                 <label for="drinkModePaidMembers" class="form-label">Welcome-drink rule</label>
                                 <select id="drinkModePaidMembers" class="form-field mb-3">
                                     <option value="included">Included in admission</option>
@@ -445,12 +449,12 @@
                                     <option value="not_allowed" selected>No upgrade allowed</option>
                                 </select>
                                 <label for="drinkPricePaidMembers" class="form-label">Upgrade price (€)</label>
-                                <input id="drinkPricePaidMembers" type="number" min="0" step="0.50" class="form-field" value="0" disabled>
+                                <input id="drinkPricePaidMembers" type="number" min="0" step="1" class="form-field" value="0" disabled>
                             </div>
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Friends</h5>
                                 <label for="basePriceFriends" class="form-label">Admission price (€)</label>
-                                <input id="basePriceFriends" type="number" min="0" step="0.50" class="form-field mb-3" value="20">
+                                <input id="basePriceFriends" type="number" min="0" step="1" class="form-field mb-3" value="20">
                                 <label for="drinkModeFriends" class="form-label">Welcome-drink rule</label>
                                 <select id="drinkModeFriends" class="form-field mb-3">
                                     <option value="included" selected>Included in admission</option>
@@ -458,7 +462,7 @@
                                     <option value="not_allowed">No upgrade allowed</option>
                                 </select>
                                 <label for="drinkPriceFriends" class="form-label">Upgrade price (€)</label>
-                                <input id="drinkPriceFriends" type="number" min="0" step="0.50" class="form-field" value="0" disabled>
+                                <input id="drinkPriceFriends" type="number" min="0" step="1" class="form-field" value="0" disabled>
                             </div>
                         </div>
                         <button type="button" id="savePricingButton" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest mt-4">Save pricing</button>
@@ -521,11 +525,11 @@
                         <p id="noCheckedGuests" class="text-xs text-gray-500 py-2 hidden">No guests checked in yet.</p>
                     </div>
                     <section id="internationsPaymentPanel" class="rounded-xl border border-sky-400/40 bg-sky-950/20 p-4 mt-6">
-                        <div class="mb-3">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
                             <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">Checked-in guests · Payment status</h4>
-                        </div>
-                        <div class="mb-4">
-                            <input type="search" id="paymentSearchInput" oninput="filterPaymentGuests()" aria-label="Search payment list" placeholder="Search guests..." class="form-field w-full text-sm">
+                            <div class="flex w-full sm:w-auto">
+                                <input type="search" id="paymentSearchInput" oninput="filterPaymentGuests()" aria-label="Search payment list" placeholder="Search guests..." class="form-field w-full sm:max-w-xs text-sm">
+                            </div>
                         </div>
                         <div class="mb-4">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
@@ -686,7 +690,7 @@
         }
 
         function formatEuro(value) {
-            return Number(value || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+            return Math.round(Number(value || 0)).toLocaleString('de-DE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
         }
 
         function calculateGuestCharge(data, welcomeDrinkEarned) {
@@ -737,7 +741,7 @@
             const readAmount = (id, label) => {
                 const n = Number(document.getElementById(id).value);
                 if (!Number.isFinite(n) || n < 0) throw new Error(label + ' must be zero or a positive amount.');
-                return Math.round(n * 100) / 100;
+                return Math.round(n);
             };
             let next;
             try {
@@ -1432,6 +1436,7 @@
                     const drinkIncluded = charge.drinkMode === 'included';
                     const upgradeCanBeSelected = charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued;
                     const drinkEntitled = welcomeDrinkEarned || drinkIncluded || charge.upgradeSelected || chipAlreadyIssued;
+
                     const card = document.createElement('div');
                     card.className = 'guest-card p-3 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ' +
                         (isPaymentCard ? (isPaid ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-sky-950/30 border-sky-400/40') :
@@ -1449,7 +1454,7 @@
                     card.dataset.sortPaymentOrder = paymentMillis == null ? '' : String(paymentMillis);
 
                     const details = document.createElement('div');
-                    details.className = 'min-w-0';
+                    details.className = 'min-w-0 flex-1';
                     const titleLine = document.createElement('div');
                     titleLine.className = 'flex flex-wrap items-center gap-2';
                     const name = document.createElement('p');
@@ -1462,109 +1467,77 @@
                         (isInterNationsMember ? 'border-sky-400/50 bg-sky-950/50 text-sky-100' : 'border-gray-500/50 bg-gray-800/60 text-gray-200');
                     const memberStatus = String(data.interNationsStatus || '').trim();
                     typeBadge.textContent = isInterNationsMember
-                        ? (memberStatus ? 'INTERNATIONS · ' + memberStatus.toLocaleUpperCase() : 'INTERNATIONS · STATUS NOT LISTED')
-                        : 'FRIEND · WEBSITE RSVP';
+                        ? (memberStatus ? 'INTERNATIONS · ' + memberStatus.toLocaleUpperCase() : 'INTERNATIONS')
+                        : 'FRIEND';
                     titleLine.appendChild(typeBadge);
-
-                    if (welcomeDrinkEarned) {
-                        const rewardBadge = document.createElement('span');
-                        rewardBadge.className = 'inline-flex items-center rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[9px] font-semibold tracking-wider text-amber-100';
-                        rewardBadge.textContent = 'WELCOME DRINK EARNED';
-                        rewardBadge.title = invitedCount + ' invited guests have checked in.';
-                        titleLine.appendChild(rewardBadge);
-                    } else if (drinkIncluded) {
-                        const includedBadge = document.createElement('span');
-                        includedBadge.className = 'inline-flex items-center rounded-full border border-sky-400/40 bg-sky-950/40 px-2 py-1 text-[9px] font-semibold tracking-wider text-sky-100';
-                        includedBadge.textContent = 'WELCOME DRINK INCLUDED';
-                        titleLine.appendChild(includedBadge);
-                    } else if (charge.upgradeSelected) {
-                        const upgradeBadge = document.createElement('span');
-                        upgradeBadge.className = 'inline-flex items-center rounded-full border border-sky-400/40 bg-sky-950/40 px-2 py-1 text-[9px] font-semibold tracking-wider text-sky-100';
-                        upgradeBadge.textContent = 'DRINK UPGRADE SELECTED';
-                        titleLine.appendChild(upgradeBadge);
-                    }
-
-                    if (drinkEntitled) {
-                        const chipBadge = document.createElement('span');
-                        chipBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
-                            (chipAlreadyIssued ? 'border-emerald-500/50 bg-emerald-950/40 text-emerald-200' : 'border-amber-500/50 bg-amber-950/40 text-amber-100');
-                        chipBadge.textContent = chipAlreadyIssued ? 'DRINK CHIP ISSUED' : 'DRINK CHIP NOT ISSUED';
-                        titleLine.appendChild(chipBadge);
-                    }
-                    if (isPaymentCard && isPaid) {
-                        const paidBadge = document.createElement('span');
-                        paidBadge.className = 'inline-flex items-center rounded-full border border-emerald-500/50 bg-emerald-950/40 px-2 py-1 text-[9px] font-semibold tracking-wider text-emerald-200';
-                        paidBadge.textContent = 'PAID';
-                        titleLine.appendChild(paidBadge);
-                    }
                     details.appendChild(titleLine);
 
-                    const meta = document.createElement('p');
-                    meta.className = 'text-xs text-gray-300 break-words mt-1';
-                    if (isPaymentCard) {
-                        meta.textContent = 'Admission tier: ' + (tier === 'basics' ? 'Basics' : tier === 'paidMembers' ? 'Paid Members' : 'Friends');
-                    } else {
-                        meta.textContent = 'Invited by: ' + (data.invitedBy || 'Not specified');
-                    }
-                    details.appendChild(meta);
-
-                    if (isPaymentCard) {
-                        const amountLine = document.createElement('p');
-                        amountLine.className = 'text-sm font-semibold text-white mt-2';
-                        amountLine.textContent = 'Total charge: ' + formatEuro(charge.total) + (isPaid ? ' · PAID' : ' · DUE');
-                        details.appendChild(amountLine);
-
-                        const drinkInfo = document.createElement('p');
-                        drinkInfo.className = 'text-xs text-gray-300 mt-1';
-                        if (welcomeDrinkEarned) {
-                            drinkInfo.textContent = 'Welcome drink earned through referrals · no extra charge';
-                        } else if (drinkIncluded) {
-                            drinkInfo.textContent = 'One welcome drink included in admission';
-                        } else if (charge.drinkMode === 'upgrade') {
-                            drinkInfo.textContent = charge.upgradeSelected
-                                ? 'One welcome-drink upgrade added: ' + formatEuro(charge.upgradePrice)
-                                : 'Optional welcome-drink upgrade: ' + formatEuro(charge.upgradePrice);
-                        } else {
-                            drinkInfo.textContent = 'No paid welcome-drink upgrade allowed for this tier';
-                        }
-                        details.appendChild(drinkInfo);
-                    }
-
                     const actions = document.createElement('div');
-                    actions.className = 'flex shrink-0 flex-wrap items-center gap-2 self-end sm:self-auto';
+                    actions.className = 'flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center';
+
                     if (isPaymentCard) {
+                        // Payment desk is intentionally compact: no repeated tier, total and drink explanation lines.
                         if (upgradeCanBeSelected || (charge.upgradeSelected && !chipAlreadyIssued && !welcomeDrinkEarned)) {
                             const upgradeButton = document.createElement('button');
                             upgradeButton.type = 'button';
                             upgradeButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
                                 (charge.upgradeSelected ? 'border-sky-400/50 bg-sky-900/40 text-sky-100' : 'border-sky-400/40 bg-sky-950/30 text-sky-100 hover:bg-sky-900/50');
                             upgradeButton.textContent = charge.upgradeSelected
-                                ? 'REMOVE UPGRADE'
-                                : 'ADD DRINK UPGRADE · +' + formatEuro(charge.upgradePrice);
-                            upgradeButton.title = 'Toggle one welcome-drink upgrade; adding an upgrade after payment resets the bill to unpaid.';
+                                ? 'UNDO UPGRADE · ' + formatEuro(charge.upgradePrice)
+                                : 'ADD DRINK · +' + formatEuro(charge.upgradePrice);
                             upgradeButton.addEventListener('click', () => toggleGuestDrinkUpgrade(doc.id, data, welcomeDrinkEarned));
                             actions.appendChild(upgradeButton);
                         }
+
+                        if (drinkEntitled) {
+                            const chipLabel = document.createElement('label');
+                            chipLabel.className = 'inline-flex items-center gap-2 text-xs text-gray-100 rounded border border-white/15 px-3 py-2 cursor-pointer whitespace-nowrap';
+                            const chipCheckbox = document.createElement('input');
+                            chipCheckbox.type = 'checkbox';
+                            chipCheckbox.checked = chipAlreadyIssued;
+                            chipCheckbox.className = 'h-4 w-4 accent-emerald-500';
+                            chipCheckbox.setAttribute('aria-label', 'Drink chip collected for ' + (data.name || 'guest'));
+                            chipCheckbox.addEventListener('change', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
+                            const chipText = document.createElement('span');
+                            chipText.textContent = 'Drink chip collected';
+                            chipLabel.append(chipCheckbox, chipText);
+                            actions.appendChild(chipLabel);
+                        }
+
+                        const amount = document.createElement('span');
+                        amount.className = 'text-sm font-semibold text-white tabular-nums whitespace-nowrap';
+                        const paidAmount = data.amountPaid != null ? Number(data.amountPaid) : charge.total;
+                        amount.textContent = formatEuro(isPaid ? paidAmount : charge.total) + (isPaid ? ' · PAID' : ' · DUE');
+                        actions.appendChild(amount);
 
                         const paymentButton = document.createElement('button');
                         paymentButton.type = 'button';
                         paymentButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
                             (isPaid ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : 'border-gold/50 bg-gold/15 text-amber-100 hover:bg-gold/25');
-                        paymentButton.textContent = isPaid ? 'MARK UNPAID' : 'MARK PAID · ' + formatEuro(charge.total);
+                        paymentButton.textContent = isPaid ? 'MARK UNPAID' : 'MARK PAID';
                         paymentButton.setAttribute('aria-pressed', String(isPaid));
                         paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned));
                         actions.appendChild(paymentButton);
-
-                        if (drinkEntitled && welcomeDrinkEarned) {
-                            const chipButton = document.createElement('button');
-                            chipButton.type = 'button';
-                            chipButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
-                                (chipAlreadyIssued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : 'border-amber-500/50 bg-amber-950/40 text-amber-100');
-                            chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP ISSUED' : 'MARK CHIP ISSUED';
-                            chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
-                            actions.appendChild(chipButton);
-                        }
                     } else {
+                        if (welcomeDrinkEarned) {
+                            const rewardBadge = document.createElement('span');
+                            rewardBadge.className = 'inline-flex items-center rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[9px] font-semibold tracking-wider text-amber-100';
+                            rewardBadge.textContent = 'WELCOME DRINK EARNED';
+                            titleLine.appendChild(rewardBadge);
+                        }
+                        if (drinkEntitled) {
+                            const chipBadge = document.createElement('span');
+                            chipBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
+                                (chipAlreadyIssued ? 'border-emerald-500/50 bg-emerald-950/40 text-emerald-200' : 'border-amber-500/50 bg-amber-950/40 text-amber-100');
+                            chipBadge.textContent = chipAlreadyIssued ? 'DRINK CHIP ISSUED' : 'DRINK CHIP NOT ISSUED';
+                            titleLine.appendChild(chipBadge);
+                        }
+
+                        const meta = document.createElement('p');
+                        meta.className = 'text-xs text-gray-300 break-words mt-1';
+                        meta.textContent = 'Invited by: ' + (data.invitedBy || 'Not specified');
+                        details.appendChild(meta);
+
                         const checkInButton = document.createElement('button');
                         checkInButton.type = 'button';
                         checkInButton.className = 'shrink-0 px-3 py-2 text-xs font-serif rounded ' + (checkedIn ? 'bg-emerald-700 text-white' : 'bg-gold/15 text-gold border border-gold/40');
@@ -1580,8 +1553,8 @@
                         deleteButton.addEventListener('click', () => deleteGuest(doc.id, data.name));
                         actions.append(checkInButton, deleteButton);
                     }
-                    card.appendChild(details);
-                    card.appendChild(actions);
+
+                    card.append(details, actions);
                     return card;
                 }
 
@@ -1599,8 +1572,15 @@
                     const referrals = checkedInReferralsByInviter.get(key)?.guestIds.size || 0;
                     return sum + calculateGuestCharge(item.data, referrals >= 2).total;
                 }, 0);
+                const totalCollected = checkedInGuests.filter((item) => Boolean(item.data.paid)).reduce((sum, item) => {
+                    if (item.data.amountPaid != null && Number.isFinite(Number(item.data.amountPaid))) return sum + Number(item.data.amountPaid);
+                    const key = normalizeGuestName(item.data.name);
+                    const referrals = checkedInReferralsByInviter.get(key)?.guestIds.size || 0;
+                    return sum + calculateGuestCharge(item.data, referrals >= 2).total;
+                }, 0);
                 document.getElementById('unpaidCount').textContent = unpaidOutstanding.length;
                 document.getElementById('outstandingAmount').textContent = formatEuro(totalOutstanding);
+                document.getElementById('collectedAmount').textContent = formatEuro(totalCollected);
                 const unpaidGuests = checkedInGuests.filter((item) => !item.data.paid).sort((a, b) => {
                     const timeA = checkInTime(a), timeB = checkInTime(b);
                     if (timeA == null && timeB != null) return 1;
@@ -1687,17 +1667,19 @@
             }
             const nextPaid = !currentlyPaid;
             try {
+                const charge = calculateGuestCharge(data, welcomeDrinkEarned);
                 const update = {
                     paid: nextPaid,
                     paidAt: nextPaid ? firebase.firestore.FieldValue.serverTimestamp() : null,
+                    amountPaid: nextPaid ? charge.total : null,
                     paymentStatusUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 const tier = getGuestTier(data);
                 const rule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
                 const paidUpgrade = rule.mode === 'upgrade' && Boolean(data.welcomeDrinkUpgradeSelected) && !welcomeDrinkEarned;
-                // One chip is issued at payment for an included drink or paid upgrade.
-                // Referral-earned drinks stay manually controlled by staff.
-                if (nextPaid && (rule.mode === 'included' || paidUpgrade) && !isGuestDrinkChipIssued(data)) {
+                // Payment automatically collects an included or paid-upgrade drink chip.
+                // An earned referral drink remains manually checked as collected.
+                if (nextPaid && !welcomeDrinkEarned && (rule.mode === 'included' || paidUpgrade) && !isGuestDrinkChipIssued(data)) {
                     update.welcomeDrinkChipIssued = true;
                     update.welcomeDrinkChipIssuedAt = firebase.firestore.FieldValue.serverTimestamp();
                     update.welcomeDrinkChipIssuedBy = 'payment';
