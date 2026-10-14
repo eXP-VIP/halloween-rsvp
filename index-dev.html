@@ -1214,12 +1214,122 @@
             }
         });
 
+        function renderUnrecognizedWelcomeDrinkList() {
+            const rewardList = document.getElementById('welcomeDrinkList');
+            if (!rewardList) return;
+            rewardList.replaceChildren();
+            const unrecognized = cachedQualifiedInviters.filter((inviter) =>
+                !cachedGuestDocs.some((doc) => normalizeGuestName(doc.data().name) === inviter.key)
+            );
+            if (!unrecognized.length) {
+                const empty = document.createElement('p');
+                empty.className = 'text-xs text-gray-400';
+                empty.textContent = 'No unregistered inviter currently qualifies for a welcome drink.';
+                rewardList.appendChild(empty);
+                return;
+            }
+            unrecognized.forEach((inviter) => {
+                const row = document.createElement('div');
+                row.className = 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-gold/30 bg-black/25 px-3 py-2';
+                const inviterName = document.createElement('span');
+                inviterName.className = 'font-medium break-words';
+                inviterName.textContent = inviter.name;
+                const rightSide = document.createElement('div');
+                rightSide.className = 'flex flex-wrap items-center gap-2';
+                const reward = document.createElement('span');
+                reward.className = 'inline-flex self-start sm:self-auto rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[10px] font-semibold tracking-wider text-amber-100';
+                reward.textContent = 'WELCOME DRINK EARNED · ' + inviter.count + ' CHECKED IN';
+                rightSide.appendChild(reward);
+                const state = unrecognizedDrinkChipStatus.get(inviter.key) || {};
+                const issued = Boolean(state.welcomeDrinkChipIssued);
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'rounded border px-3 py-2 text-[10px] font-semibold tracking-wider ' + (issued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-200' : 'border-gold/50 bg-gold/10 text-amber-100 hover:bg-gold/20');
+                button.textContent = issued ? 'UNDO CHIP ISSUED' : 'MARK CHIP ISSUED';
+                button.addEventListener('click', () => toggleUnrecognizedDrinkChip(inviter, issued));
+                rightSide.appendChild(button);
+                row.append(inviterName, rightSide);
+                rewardList.appendChild(row);
+            });
+        }
+
+        async function toggleUnrecognizedDrinkChip(inviter, currentlyIssued) {
+            if (!db) return;
+            try {
+                const nextIssued = !currentlyIssued;
+                await db.collection('welcome_drink_rewards').doc(encodeURIComponent(inviter.key)).set({
+                    name: inviter.name,
+                    nameKey: inviter.key,
+                    welcomeDrinkChipIssued: nextIssued,
+                    welcomeDrinkChipIssuedAt: nextIssued ? firebase.firestore.FieldValue.serverTimestamp() : null,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            } catch (error) {
+                console.error('Unregistered inviter chip status update failed:', error);
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Could not save the chip status for this unregistered inviter.';
+                listError.classList.remove('hidden');
+            }
+        }
+
+        async function toggleGuestDrinkUpgrade(id, data, welcomeDrinkEarned) {
+            if (!db || !id) return;
+            const tier = getGuestTier(data);
+            const rule = pricingSettings.drinkRules[tier];
+            if (!rule || rule.mode !== 'upgrade' || welcomeDrinkEarned || data.welcomeDrinkChipIssued) return;
+            const nextSelected = !Boolean(data.welcomeDrinkUpgradeSelected);
+            try {
+                const update = {
+                    welcomeDrinkUpgradeSelected: nextSelected,
+                    welcomeDrinkUpgradePrice: nextSelected ? Number(rule.price || 0) : null,
+                    welcomeDrinkUpgradeUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                if (nextSelected && data.paid) {
+                    update.paid = false;
+                    update.paidAt = null;
+                    update.paymentStatusUpdatedAt = firebase.firestore.FieldValue.serverTimestamp();
+                }
+                await db.collection('halloween_guests').doc(id).update(update);
+            } catch (error) {
+                console.error('Welcome-drink upgrade update failed:', error);
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Could not save the drink upgrade. Check database permissions and try again.';
+                listError.classList.remove('hidden');
+            }
+        }
+
         function loadLiveGuestlist() {
             const listError = document.getElementById('guestlistError');
             if (!db) {
                 listError.textContent = 'Firebase could not connect. Check the Firebase project configuration and Firestore rules.';
                 listError.classList.remove('hidden');
                 return;
+            }
+            if (!pricingUnsubscribe) {
+                pricingUnsubscribe = db.collection('event_settings').doc('pricing').onSnapshot((doc) => {
+                    if (doc.exists) {
+                        pricingSettings = normalizePricingSettings(doc.data());
+                        renderPricingForm();
+                        if (document.getElementById('guestlistSection') && !document.getElementById('guestlistSection').classList.contains('hidden')) loadLiveGuestlist();
+                    }
+                }, (error) => {
+                    console.error('Pricing settings listener failed:', error);
+                    const status = document.getElementById('pricingSaveStatus');
+                    if (status) status.textContent = 'Pricing could not be read. Check the database permissions.';
+                });
+            }
+            if (!drinkRewardsUnsubscribe) {
+                drinkRewardsUnsubscribe = db.collection('welcome_drink_rewards').onSnapshot((snapshot) => {
+                    unrecognizedDrinkChipStatus = new Map();
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        if (data.nameKey) unrecognizedDrinkChipStatus.set(data.nameKey, data);
+                    });
+                    renderUnrecognizedWelcomeDrinkList();
+                    const externalIssued = snapshot.docs.filter((doc) => Boolean(doc.data().welcomeDrinkChipIssued)).length;
+                    const knownIssued = cachedGuestDocs.filter((doc) => Boolean(doc.data().welcomeDrinkChipIssued)).length;
+                    document.getElementById('welcomeDrinkChipCount').textContent = knownIssued + externalIssued;
+                }, (error) => console.error('Unregistered drink chip status listener failed:', error));
             }
             if (guestlistUnsubscribe) {
                 guestlistUnsubscribe();
@@ -1233,7 +1343,7 @@
                 const checkedInTotal = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().checkedIn)).length;
                 document.getElementById('checkedInCount').textContent = checkedInTotal;
                 document.getElementById('paidCount').textContent = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().paid)).length;
-                document.getElementById('welcomeDrinkChipCount').textContent = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).length;
+                document.getElementById('welcomeDrinkChipCount').textContent = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).length + Array.from(unrecognizedDrinkChipStatus.values()).filter((record) => Boolean(record.welcomeDrinkChipIssued)).length;
 
                 // A welcome drink is earned only after at least two invited guest records have checked in.
                 // Each checked-in Firestore record counts once; inviter names are normalised for matching.
@@ -1250,47 +1360,14 @@
                     checkedInReferralsByInviter.get(inviterKey).guestIds.add(guestDoc.id);
                 });
 
-                // Include qualifying inviters even when they have no registration of their own.
                 const qualifiedInviters = Array.from(checkedInReferralsByInviter.entries())
                     .map(([key, value]) => ({ key, name: value.name, count: value.guestIds.size }))
                     .filter((inviter) => inviter.count >= 2)
                     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+                cachedQualifiedInviters = qualifiedInviters;
                 document.getElementById('welcomeDrinkCount').textContent = qualifiedInviters.length;
                 renderInternationsImportPreview();
-                const rewardList = document.getElementById('welcomeDrinkList');
-                rewardList.replaceChildren();
-                if (!qualifiedInviters.length) {
-                    const empty = document.createElement('p');
-                    empty.className = 'text-xs text-gray-400';
-                    empty.textContent = 'No inviter has two checked-in referrals yet.';
-                    rewardList.appendChild(empty);
-                } else {
-                    qualifiedInviters.forEach((inviter) => {
-                        const row = document.createElement('div');
-                        row.className = 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-gold/30 bg-black/25 px-3 py-2';
-                        const inviterName = document.createElement('span');
-                        inviterName.className = 'font-medium break-words';
-                        inviterName.textContent = inviter.name;
-                        const rightSide = document.createElement('div');
-                        rightSide.className = 'flex flex-wrap items-center gap-2';
-                        const reward = document.createElement('span');
-                        reward.className = 'inline-flex self-start sm:self-auto rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[10px] font-semibold tracking-wider text-amber-100';
-                        reward.textContent = `WELCOME DRINK EARNED · ${inviter.count} CHECKED IN`;
-                        rightSide.appendChild(reward);
-                        const inviterDoc = cachedGuestDocs.find((item) => normalizeGuestName(item.data().name) === inviter.key);
-                        const chipIssued = Boolean(inviterDoc && inviterDoc.data().welcomeDrinkChipIssued);
-                        const chipButton = document.createElement('button');
-                        chipButton.type = 'button';
-                        chipButton.className = 'rounded border px-3 py-2 text-[10px] font-semibold tracking-wider ' + (chipIssued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-200' : 'border-gold/50 bg-gold/10 text-amber-100 hover:bg-gold/20');
-                        chipButton.textContent = chipIssued ? 'UNDO CHIP ISSUED' : 'MARK CHIP ISSUED';
-                        chipButton.disabled = !inviterDoc;
-                        chipButton.title = !inviterDoc ? 'This inviter has no guest record where chip status can be stored.' : (chipIssued ? 'Undo the issued status if the chip was not handed over.' : 'Record that staff handed the welcome-drink chip to this person.');
-                        if (inviterDoc) chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(inviterDoc.id, inviter.name, chipIssued));
-                        rightSide.appendChild(chipButton);
-                        row.append(inviterName, rightSide);
-                        rewardList.appendChild(row);
-                    });
-                }
+                renderUnrecognizedWelcomeDrinkList();
 
                 const hotelOpenContainer = document.getElementById('guestNotCheckedInContainer');
                 const hotelCheckedContainer = document.getElementById('guestCheckedInContainer');
