@@ -678,6 +678,13 @@
             return 'friends';
         }
 
+        function isGuestDrinkChipIssued(data) {
+            const key = normalizeGuestName(data && data.name);
+            if (key && Boolean((unrecognizedDrinkChipStatus.get(key) || {}).welcomeDrinkChipIssued)) return true;
+            if (key && cachedGuestDocs.some((doc) => normalizeGuestName(doc.data().name) === key && Boolean(doc.data().welcomeDrinkChipIssued))) return true;
+            return Boolean(data && data.welcomeDrinkChipIssued);
+        }
+
         function formatEuro(value) {
             return Number(value || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
         }
@@ -1294,7 +1301,7 @@
             if (!db || !id) return;
             const tier = getGuestTier(data);
             const rule = pricingSettings.drinkRules[tier];
-            if (!rule || rule.mode !== 'upgrade' || welcomeDrinkEarned || data.welcomeDrinkChipIssued) return;
+            if (!rule || rule.mode !== 'upgrade' || welcomeDrinkEarned || isGuestDrinkChipIssued(data)) return;
             const nextSelected = !Boolean(data.welcomeDrinkUpgradeSelected);
             try {
                 const update = {
@@ -1344,9 +1351,9 @@
                         if (data.nameKey) unrecognizedDrinkChipStatus.set(data.nameKey, data);
                     });
                     renderUnrecognizedWelcomeDrinkList();
-                    const externalIssued = snapshot.docs.filter((doc) => Boolean(doc.data().welcomeDrinkChipIssued)).length;
-                    const knownIssued = cachedGuestDocs.filter((doc) => Boolean(doc.data().welcomeDrinkChipIssued)).length;
-                    document.getElementById('welcomeDrinkChipCount').textContent = knownIssued + externalIssued;
+                    const issuedNameKeys = new Set(cachedGuestDocs.filter((doc) => Boolean(doc.data().welcomeDrinkChipIssued)).map((doc) => normalizeGuestName(doc.data().name)).filter(Boolean));
+                    snapshot.docs.forEach((doc) => { const data = doc.data(); if (data.welcomeDrinkChipIssued && data.nameKey) issuedNameKeys.add(data.nameKey); });
+                    document.getElementById('welcomeDrinkChipCount').textContent = issuedNameKeys.size;
                 }, (error) => console.error('Unregistered drink chip status listener failed:', error));
             }
             if (guestlistUnsubscribe) {
@@ -1361,7 +1368,9 @@
                 const checkedInTotal = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().checkedIn)).length;
                 document.getElementById('checkedInCount').textContent = checkedInTotal;
                 document.getElementById('paidCount').textContent = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().checkedIn) && Boolean(guestDoc.data().paid)).length;
-                document.getElementById('welcomeDrinkChipCount').textContent = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).length + Array.from(unrecognizedDrinkChipStatus.values()).filter((record) => Boolean(record.welcomeDrinkChipIssued)).length;
+                const issuedNameKeys = new Set(snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
+                unrecognizedDrinkChipStatus.forEach((record, nameKey) => { if (record.welcomeDrinkChipIssued) issuedNameKeys.add(nameKey); });
+                document.getElementById('welcomeDrinkChipCount').textContent = issuedNameKeys.size;
 
                 // A welcome drink is earned only after at least two invited guest records have checked in.
                 // Each checked-in Firestore record counts once; inviter names are normalised for matching.
@@ -1419,9 +1428,10 @@
                     const isPaid = Boolean(data.paid);
                     const tier = getGuestTier(data);
                     const charge = calculateGuestCharge(data, welcomeDrinkEarned);
+                    const chipAlreadyIssued = isGuestDrinkChipIssued(data);
                     const drinkIncluded = charge.drinkMode === 'included';
-                    const upgradeCanBeSelected = charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !data.welcomeDrinkChipIssued;
-                    const drinkEntitled = welcomeDrinkEarned || drinkIncluded || charge.upgradeSelected || Boolean(data.welcomeDrinkChipIssued);
+                    const upgradeCanBeSelected = charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued;
+                    const drinkEntitled = welcomeDrinkEarned || drinkIncluded || charge.upgradeSelected || chipAlreadyIssued;
                     const card = document.createElement('div');
                     card.className = 'guest-card p-3 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ' +
                         (isPaymentCard ? (isPaid ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-sky-950/30 border-sky-400/40') :
@@ -1477,8 +1487,8 @@
                     if (drinkEntitled) {
                         const chipBadge = document.createElement('span');
                         chipBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
-                            (data.welcomeDrinkChipIssued ? 'border-emerald-500/50 bg-emerald-950/40 text-emerald-200' : 'border-amber-500/50 bg-amber-950/40 text-amber-100');
-                        chipBadge.textContent = data.welcomeDrinkChipIssued ? 'DRINK CHIP ISSUED' : 'DRINK CHIP NOT ISSUED';
+                            (chipAlreadyIssued ? 'border-emerald-500/50 bg-emerald-950/40 text-emerald-200' : 'border-amber-500/50 bg-amber-950/40 text-amber-100');
+                        chipBadge.textContent = chipAlreadyIssued ? 'DRINK CHIP ISSUED' : 'DRINK CHIP NOT ISSUED';
                         titleLine.appendChild(chipBadge);
                     }
                     if (isPaymentCard && isPaid) {
@@ -1523,7 +1533,7 @@
                     const actions = document.createElement('div');
                     actions.className = 'flex shrink-0 flex-wrap items-center gap-2 self-end sm:self-auto';
                     if (isPaymentCard) {
-                        if (upgradeCanBeSelected || (charge.upgradeSelected && !data.welcomeDrinkChipIssued && !welcomeDrinkEarned)) {
+                        if (upgradeCanBeSelected || (charge.upgradeSelected && !chipAlreadyIssued && !welcomeDrinkEarned)) {
                             const upgradeButton = document.createElement('button');
                             upgradeButton.type = 'button';
                             upgradeButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
@@ -1549,9 +1559,9 @@
                             const chipButton = document.createElement('button');
                             chipButton.type = 'button';
                             chipButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
-                                (data.welcomeDrinkChipIssued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : 'border-amber-500/50 bg-amber-950/40 text-amber-100');
-                            chipButton.textContent = data.welcomeDrinkChipIssued ? 'UNDO CHIP ISSUED' : 'MARK CHIP ISSUED';
-                            chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, Boolean(data.welcomeDrinkChipIssued)));
+                                (chipAlreadyIssued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : 'border-amber-500/50 bg-amber-950/40 text-amber-100');
+                            chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP ISSUED' : 'MARK CHIP ISSUED';
+                            chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
                             actions.appendChild(chipButton);
                         }
                     } else {
@@ -1616,7 +1626,7 @@
             });
         }
 
-        async function markWelcomeDrinkChipIssued(id, inviterName, currentlyIssued) {
+        async function markWelcomeDrinkChipIssued(id, guestName, currentlyIssued) {
             if (!db || !id) {
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'Could not record the chip status because the guest database is not connected.';
@@ -1630,10 +1640,19 @@
                     welcomeDrinkChipIssuedAt: nextIssued ? firebase.firestore.FieldValue.serverTimestamp() : null,
                     welcomeDrinkChipIssuedBy: nextIssued ? 'staff' : null
                 });
+                const key = normalizeGuestName(guestName);
+                if (key && unrecognizedDrinkChipStatus.has(key)) {
+                    await db.collection('welcome_drink_rewards').doc(encodeURIComponent(key)).set({
+                        welcomeDrinkChipIssued: false,
+                        welcomeDrinkChipIssuedAt: null,
+                        migratedToGuestRecord: id,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                }
             } catch (error) {
                 console.error('Welcome-drink chip update failed:', error);
                 const listError = document.getElementById('guestlistError');
-                listError.textContent = 'Could not save the chip status. Check the database access rules and try again.';
+                listError.textContent = 'Could not save the chip status. Check Firebase access rules and try again.';
                 listError.classList.remove('hidden');
             }
         }
@@ -1678,7 +1697,7 @@
                 const paidUpgrade = rule.mode === 'upgrade' && Boolean(data.welcomeDrinkUpgradeSelected) && !welcomeDrinkEarned;
                 // One chip is issued at payment for an included drink or paid upgrade.
                 // Referral-earned drinks stay manually controlled by staff.
-                if (nextPaid && (rule.mode === 'included' || paidUpgrade) && !data.welcomeDrinkChipIssued) {
+                if (nextPaid && (rule.mode === 'included' || paidUpgrade) && !isGuestDrinkChipIssued(data)) {
                     update.welcomeDrinkChipIssued = true;
                     update.welcomeDrinkChipIssuedAt = firebase.firestore.FieldValue.serverTimestamp();
                     update.welcomeDrinkChipIssuedBy = 'payment';
