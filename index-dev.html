@@ -463,9 +463,8 @@
                         <p id="noCheckedGuests" class="text-xs text-gray-500 py-2 hidden">No guests checked in yet.</p>
                     </div>
                     <section id="internationsPaymentPanel" class="rounded-xl border border-sky-400/40 bg-sky-950/20 p-4 mt-6">
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-3">
-                            <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">Payment desk</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-sky-200">All checked-in guests · all must pay</span>
+                        <div class="mb-3">
+                            <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">All checked-in guests · all must pay</h4>
                         </div>
                         <div class="mb-4">
                             <input type="search" id="paymentSearchInput" oninput="filterPaymentGuests()" aria-label="Search payment list" placeholder="Search guests..." class="form-field w-full text-sm">
@@ -1178,7 +1177,7 @@
                     const meta = document.createElement('p');
                     meta.className = 'text-xs text-gray-300 break-words mt-1';
                     meta.textContent = isPaymentCard
-                        ? ('Hotel check-in: ' + (checkInTime(item) == null ? 'time not recorded for this earlier check-in' : new Date(checkInTime(item)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })))
+                        ? ('Checked in: ' + (checkInTime(item) == null ? 'time not recorded for this earlier check-in' : new Date(checkInTime(item)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })))
                         : ('Invited by: ' + (data.invitedBy || 'Not specified'));
                     details.appendChild(meta);
                     card.appendChild(details);
