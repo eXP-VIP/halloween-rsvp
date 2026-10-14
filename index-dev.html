@@ -406,6 +406,56 @@
                             <p id="welcomeDrinkChipCount" class="text-2xl font-semibold text-emerald-200 tabular-nums">0</p>
                         </div>
                     </div>
+                    <section id="adminPricingPanel" class="rounded-xl border border-gold/40 bg-black/30 p-4 mb-5">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-3">
+                            <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Admin · Prices</h4>
+                            <span class="text-[10px] uppercase tracking-wider text-amber-200">Prototype · shared PIN access</span>
+                        </div>
+                        <p class="text-xs text-gray-300 mb-4">Set the admission price and welcome-drink rule for each guest tier. “Included” means one drink is included in the admission price; “Paid upgrade” adds the upgrade price; “No upgrade allowed” blocks paid upgrades but does not remove an earned referral drink. Only one welcome drink can be collected per guest.</p>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                            <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
+                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
+                                <label for="basePriceBasics" class="form-label">Admission price (€)</label>
+                                <input id="basePriceBasics" type="number" min="0" step="0.50" class="form-field mb-3" value="15">
+                                <label for="drinkModeBasics" class="form-label">Welcome-drink rule</label>
+                                <select id="drinkModeBasics" class="form-field mb-3">
+                                    <option value="included">Included in admission</option>
+                                    <option value="upgrade">Paid upgrade</option>
+                                    <option value="not_allowed" selected>No upgrade allowed</option>
+                                </select>
+                                <label for="drinkPriceBasics" class="form-label">Upgrade price (€)</label>
+                                <input id="drinkPriceBasics" type="number" min="0" step="0.50" class="form-field" value="0" disabled>
+                            </div>
+                            <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
+                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Paid Members</h5>
+                                <label for="basePricePaidMembers" class="form-label">Admission price (€)</label>
+                                <input id="basePricePaidMembers" type="number" min="0" step="0.50" class="form-field mb-3" value="5">
+                                <label for="drinkModePaidMembers" class="form-label">Welcome-drink rule</label>
+                                <select id="drinkModePaidMembers" class="form-field mb-3">
+                                    <option value="included">Included in admission</option>
+                                    <option value="upgrade">Paid upgrade</option>
+                                    <option value="not_allowed" selected>No upgrade allowed</option>
+                                </select>
+                                <label for="drinkPricePaidMembers" class="form-label">Upgrade price (€)</label>
+                                <input id="drinkPricePaidMembers" type="number" min="0" step="0.50" class="form-field" value="0" disabled>
+                            </div>
+                            <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
+                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Friends</h5>
+                                <label for="basePriceFriends" class="form-label">Admission price (€)</label>
+                                <input id="basePriceFriends" type="number" min="0" step="0.50" class="form-field mb-3" value="20">
+                                <label for="drinkModeFriends" class="form-label">Welcome-drink rule</label>
+                                <select id="drinkModeFriends" class="form-field mb-3">
+                                    <option value="included" selected>Included in admission</option>
+                                    <option value="upgrade">Paid upgrade</option>
+                                    <option value="not_allowed">No upgrade allowed</option>
+                                </select>
+                                <label for="drinkPriceFriends" class="form-label">Upgrade price (€)</label>
+                                <input id="drinkPriceFriends" type="number" min="0" step="0.50" class="form-field" value="0" disabled>
+                            </div>
+                        </div>
+                        <button type="button" id="savePricingButton" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest mt-4">Save pricing</button>
+                        <p id="pricingSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-3"></p>
+                    </section>
                     <section id="internationsImportPanel" class="rounded-xl border border-sky-400/40 bg-sky-950/20 p-4 mb-5">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
                             <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">Import InterNations guest list</h4>
@@ -570,6 +620,159 @@
         let pendingInternationsHeaders = [];
         let pendingInternationsNameColumn = '';
         let cachedGuestDocs = [];
+        let pricingUnsubscribe = null;
+        let drinkRewardsUnsubscribe = null;
+        let cachedQualifiedInviters = [];
+        let unrecognizedDrinkChipStatus = new Map();
+        const DEFAULT_PRICING = {
+            basePrices: { basics: 15, paidMembers: 5, friends: 20 },
+            drinkRules: {
+                basics: { mode: 'not_allowed', price: 0 },
+                paidMembers: { mode: 'not_allowed', price: 0 },
+                friends: { mode: 'included', price: 0 }
+            }
+        };
+        let pricingSettings = JSON.parse(JSON.stringify(DEFAULT_PRICING));
+
+        function normalizePricingSettings(value) {
+            const raw = value || {};
+            const amount = (candidate, fallback) => {
+                const n = Number(candidate);
+                return Number.isFinite(n) && n >= 0 ? n : fallback;
+            };
+            const normalizeRule = (tier) => {
+                const fallback = DEFAULT_PRICING.drinkRules[tier];
+                const rule = (raw.drinkRules && raw.drinkRules[tier]) || {};
+                return {
+                    mode: ['included', 'upgrade', 'not_allowed'].includes(rule.mode) ? rule.mode : fallback.mode,
+                    price: amount(rule.price, fallback.price)
+                };
+            };
+            return {
+                basePrices: {
+                    basics: amount(raw.basePrices && raw.basePrices.basics, 15),
+                    paidMembers: amount(raw.basePrices && raw.basePrices.paidMembers, 5),
+                    friends: amount(raw.basePrices && raw.basePrices.friends, 20)
+                },
+                drinkRules: {
+                    basics: normalizeRule('basics'),
+                    paidMembers: normalizeRule('paidMembers'),
+                    friends: normalizeRule('friends')
+                }
+            };
+        }
+
+        function getGuestTier(data) {
+            if (data && (data.guestType === 'friend' || data.source === 'website')) return 'friends';
+            if (data && (data.guestType === 'internations_member' || data.source === 'internations_import')) {
+                return String(data.interNationsStatus || '').toLocaleLowerCase().includes('basic member') ? 'basics' : 'paidMembers';
+            }
+            return 'friends';
+        }
+
+        function formatEuro(value) {
+            return Number(value || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+        }
+
+        function calculateGuestCharge(data, welcomeDrinkEarned) {
+            const tier = getGuestTier(data);
+            const basePrice = Number(pricingSettings.basePrices[tier] || 0);
+            const drinkRule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+            const upgradeSelected = Boolean(data && data.welcomeDrinkUpgradeSelected);
+            const upgradeCharge = drinkRule.mode === 'upgrade' && upgradeSelected && !welcomeDrinkEarned
+                ? Number(drinkRule.price || 0) : 0;
+            return {
+                tier,
+                basePrice,
+                drinkMode: drinkRule.mode,
+                upgradePrice: Number(drinkRule.price || 0),
+                upgradeSelected,
+                upgradeCharge,
+                total: basePrice + upgradeCharge
+            };
+        }
+
+        function renderPricingForm() {
+            const fields = {
+                basePriceBasics: pricingSettings.basePrices.basics,
+                basePricePaidMembers: pricingSettings.basePrices.paidMembers,
+                basePriceFriends: pricingSettings.basePrices.friends,
+                drinkPriceBasics: pricingSettings.drinkRules.basics.price,
+                drinkPricePaidMembers: pricingSettings.drinkRules.paidMembers.price,
+                drinkPriceFriends: pricingSettings.drinkRules.friends.price,
+                drinkModeBasics: pricingSettings.drinkRules.basics.mode,
+                drinkModePaidMembers: pricingSettings.drinkRules.paidMembers.mode,
+                drinkModeFriends: pricingSettings.drinkRules.friends.mode
+            };
+            Object.entries(fields).forEach(([id, value]) => {
+                const el = document.getElementById(id);
+                if (el) el.value = String(value);
+            });
+            ['Basics', 'PaidMembers', 'Friends'].forEach((tier) => {
+                const mode = document.getElementById('drinkMode' + tier);
+                const price = document.getElementById('drinkPrice' + tier);
+                if (mode && price) price.disabled = mode.value !== 'upgrade';
+            });
+        }
+
+        document.getElementById('savePricingButton').addEventListener('click', async () => {
+            const button = document.getElementById('savePricingButton');
+            const status = document.getElementById('pricingSaveStatus');
+            if (!db) { status.textContent = 'The database is not connected.'; return; }
+            const readAmount = (id, label) => {
+                const n = Number(document.getElementById(id).value);
+                if (!Number.isFinite(n) || n < 0) throw new Error(label + ' must be zero or a positive amount.');
+                return Math.round(n * 100) / 100;
+            };
+            let next;
+            try {
+                next = {
+                    basePrices: {
+                        basics: readAmount('basePriceBasics', 'Basics admission price'),
+                        paidMembers: readAmount('basePricePaidMembers', 'Paid Members admission price'),
+                        friends: readAmount('basePriceFriends', 'Friends admission price')
+                    },
+                    drinkRules: {
+                        basics: { mode: document.getElementById('drinkModeBasics').value, price: readAmount('drinkPriceBasics', 'Basics drink upgrade') },
+                        paidMembers: { mode: document.getElementById('drinkModePaidMembers').value, price: readAmount('drinkPricePaidMembers', 'Paid Members drink upgrade') },
+                        friends: { mode: document.getElementById('drinkModeFriends').value, price: readAmount('drinkPriceFriends', 'Friends drink upgrade') }
+                    }
+                };
+            } catch (error) {
+                status.textContent = error.message;
+                return;
+            }
+            if (Object.values(next.drinkRules).some((rule) => !['included', 'upgrade', 'not_allowed'].includes(rule.mode))) {
+                status.textContent = 'Select a valid welcome-drink rule for each tier.';
+                return;
+            }
+            button.disabled = true;
+            status.textContent = 'Saving pricing settings…';
+            try {
+                await db.collection('event_settings').doc('pricing').set({
+                    ...next,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                pricingSettings = normalizePricingSettings(next);
+                renderPricingForm();
+                status.textContent = 'Pricing saved. Guest totals are updating.';
+                if (document.getElementById('guestlistSection') && !document.getElementById('guestlistSection').classList.contains('hidden')) loadLiveGuestlist();
+            } catch (error) {
+                console.error('Pricing settings save failed:', error);
+                status.textContent = 'Could not save pricing. Check database permissions and try again.';
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        ['Basics', 'PaidMembers', 'Friends'].forEach((tier) => {
+            const mode = document.getElementById('drinkMode' + tier);
+            if (mode) mode.addEventListener('change', () => {
+                const price = document.getElementById('drinkPrice' + tier);
+                if (price) price.disabled = mode.value !== 'upgrade';
+            });
+        });
+        renderPricingForm();
 
         function normalizeGuestName(value) {
             return String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
