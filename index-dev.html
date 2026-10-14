@@ -365,7 +365,7 @@
         <div id="hostessPortal" class="hidden relative z-20 w-full mt-8 mb-8">
             <div class="glass-panel rounded-2xl p-5 sm:p-8 max-w-3xl w-full mx-auto gold-border-glow">
                 <div class="flex justify-between items-center mb-5 border-b border-gold/20 pb-4">
-                    <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Guest Check-in</h3>
+                    <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Check-in</h3>
                     <button type="button" onclick="toggleHostessPortal()" aria-label="Close staff check-in" class="text-gray-300 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
                 <div id="staffLoginSection" class="space-y-4 py-5">
@@ -529,6 +529,9 @@
         // Keep the Exclusive Parties group invitation and original single-password hostess gate.
         const WHATSAPP_GROUP_INVITE_URL = "https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58";
         const HOSTESS_PASSWORD = "1800";
+        const STAFF_SESSION_KEY = "halloweenStaffPortalSession";
+        let guestlistUnsubscribe = null;
+        let cachedGuestSnapshot = null;
 
         const firebaseConfigured = Boolean(
             firebaseConfig.apiKey &&
@@ -849,6 +852,7 @@
         const statusMessage = document.getElementById('statusMessage');
         const statusText = document.getElementById('statusText');
         const errorMessage = document.getElementById('errorMessage');
+        let lastSubmittedGuest = null;
 
         function showSubmittedGuest(guest) {
             document.getElementById('summaryName').textContent = guest.name;
@@ -862,72 +866,47 @@
             if (!form.reportValidity()) return;
 
             submitBtn.disabled = true;
-            submitBtn.textContent = 'SENDING DETAILS…';
+            submitBtn.textContent = 'SAVING…';
             statusMessage.classList.add('hidden');
             errorMessage.classList.add('hidden');
 
-            const fields = form.elements;
             const guest = {
                 name: document.getElementById('guestName').value.trim(),
                 invitedBy: document.getElementById('guestInviter').value.trim(),
                 checkedIn: false,
+                checkedInAt: null,
+                paid: false,
+                paidAt: null,
+                welcomeDrinkChipIssued: false,
                 guestType: 'friend',
                 source: 'website'
             };
 
-            const databaseTask = db
-                ? db.collection('halloween_guests').add({
-                    ...guest,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(() => true).catch((error) => {
-                    console.error('Guest-list database save failed:', error);
-                    return false;
-                })
-                : Promise.resolve(false);
-
-            const formspreeTask = fetch(form.action, {
-                method: 'POST',
-                body: new FormData(form),
-                headers: { 'Accept': 'application/json' }
-            }).then((response) => {
-                if (!response.ok) throw new Error('Formspree returned an error.');
-                return true;
-            }).catch((error) => {
-                console.error('Formspree submission failed:', error);
-                return false;
-            });
+            if (!db) {
+                errorMessage.textContent = 'Registration could not be saved because the guest database is unavailable. Please retry later or contact Ari.';
+                errorMessage.classList.remove('hidden');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'ADD ME TO THE GUEST LIST';
+                return;
+            }
 
             try {
-                const [savedToDatabase, sentToHost] = await Promise.all([databaseTask, formspreeTask]);
+                await db.collection('halloween_guests').add({
+                    ...guest,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                lastSubmittedGuest = guest;
                 showSubmittedGuest(guest);
-
+                statusText.textContent = 'Thank you — your registration has been saved to the guest list. Please use the same full name when you arrive so the hotel can find you.';
                 statusMessage.classList.remove('hidden');
-
-                if (savedToDatabase && sentToHost) {
-                    statusText.textContent = 'Thank you — your details have been sent to the host and added to the guest list. The hostess will check your name at the entrance, so please use the same full name when you arrive.';
-                } else if (sentToHost && !savedToDatabase) {
-                    statusText.textContent = 'Your details have reached the host by email, but the live check-in list could not be updated. Please contact Ari before the event to make sure your name is on the door list.';
-                } else if (!sentToHost && savedToDatabase) {
-                    statusText.textContent = 'Your details are on the live guest list, but the host email notification could not be sent. Your registration is saved; please contact Ari if you need confirmation.';
-                } else {
-                    statusText.textContent = 'We could not confirm the registration with either service. Your details are shown below; please retry or contact Ari using the WhatsApp link at the bottom of the invitation.';
-                }
-
-                // The submitted record stays visible in the summary. Clear the form when at least one
-                // delivery path succeeded so the page is ready to register the next guest.
-                const deliverySucceeded = savedToDatabase || sentToHost;
-                document.getElementById('postRegistrationActions').classList.toggle('hidden', !deliverySucceeded);
-                if (deliverySucceeded) {
-                    document.body.classList.add('confirmation-mode');
-                    form.reset();
-                    form.classList.add('hidden');
-                    document.getElementById('registerAnotherBtn').textContent = 'Register another guest';
-                } else {
-                    document.getElementById('registerAnotherBtn').textContent = 'Return to form and retry';
-                }
+                document.getElementById('postRegistrationActions').classList.remove('hidden');
+                document.body.classList.add('confirmation-mode');
+                form.reset();
+                form.classList.add('hidden');
+                document.getElementById('registerAnotherBtn').textContent = 'Register another guest';
             } catch (error) {
-                console.error('Unexpected registration error:', error);
-                errorMessage.textContent = 'The submission could not be completed. Your entries have been kept in the form so you can retry.';
+                console.error('Guest-list database save failed:', error);
+                errorMessage.textContent = 'Registration could not be saved. Your entries are still in the form; please retry or contact Ari.';
                 errorMessage.classList.remove('hidden');
             } finally {
                 submitBtn.disabled = false;
@@ -948,16 +927,43 @@
         function toggleHostessPortal() {
             const portal = document.getElementById('hostessPortal');
             const opening = portal.classList.contains('hidden');
-            portal.classList.toggle('hidden');
-            document.body.classList.toggle('staff-mode', opening);
-            document.getElementById('staffLoginError').classList.add('hidden');
-            document.getElementById('portalConfigWarning').classList.toggle('hidden', Boolean(db && auth));
-            if (!opening) return;
+            const loginSection = document.getElementById('staffLoginSection');
+            const guestlistSection = document.getElementById('guestlistSection');
 
-            document.getElementById('staffLoginSection').classList.remove('hidden');
-            document.getElementById('guestlistSection').classList.add('hidden');
-            document.getElementById('staffPassword').value = '';
+            if (!opening) {
+                // The X button logs out and returns to the public entry page.
+                try { sessionStorage.removeItem(STAFF_SESSION_KEY); } catch (error) {}
+                if (guestlistUnsubscribe) {
+                    guestlistUnsubscribe();
+                    guestlistUnsubscribe = null;
+                }
+                cachedGuestSnapshot = null;
+                portal.classList.add('hidden');
+                document.body.classList.remove('staff-mode');
+                loginSection.classList.remove('hidden');
+                guestlistSection.classList.add('hidden');
+                document.getElementById('staffPassword').value = '';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            portal.classList.remove('hidden');
+            document.body.classList.add('staff-mode');
+            document.getElementById('staffLoginError').classList.add('hidden');
             document.getElementById('portalConfigWarning').classList.toggle('hidden', Boolean(db));
+
+            let activeSession = false;
+            try { activeSession = sessionStorage.getItem(STAFF_SESSION_KEY) === '1'; } catch (error) {}
+            if (activeSession) {
+                loginSection.classList.add('hidden');
+                guestlistSection.classList.remove('hidden');
+                loadLiveGuestlist();
+            } else {
+                loginSection.classList.remove('hidden');
+                guestlistSection.classList.add('hidden');
+                document.getElementById('staffPassword').value = '';
+                document.getElementById('portalConfigWarning').classList.toggle('hidden', Boolean(db));
+            }
             portal.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
@@ -977,6 +983,7 @@
             loginButton.disabled = true;
             loginButton.textContent = 'UNLOCKING…';
             try {
+                try { sessionStorage.setItem(STAFF_SESSION_KEY, '1'); } catch (storageError) {}
                 document.getElementById('staffLoginSection').classList.add('hidden');
                 document.getElementById('guestlistSection').classList.remove('hidden');
                 document.getElementById('staffPassword').value = '';
@@ -1000,12 +1007,19 @@
                 listError.classList.remove('hidden');
                 return;
             }
-            db.collection('halloween_guests').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+            if (guestlistUnsubscribe) {
+                guestlistUnsubscribe();
+                guestlistUnsubscribe = null;
+            }
+            guestlistUnsubscribe = db.collection('halloween_guests').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+                cachedGuestSnapshot = snapshot;
                 cachedGuestDocs = snapshot.docs;
                 listError.classList.add('hidden');
                 document.getElementById('totalCount').textContent = snapshot.size;
                 const checkedInTotal = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().checkedIn)).length;
                 document.getElementById('checkedInCount').textContent = checkedInTotal;
+                document.getElementById('paidCount').textContent = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().paid)).length;
+                document.getElementById('welcomeDrinkChipCount').textContent = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).length;
 
                 // A welcome drink is earned only after at least two invited guest records have checked in.
                 // Each checked-in Firestore record counts once; inviter names are normalised for matching.
@@ -1054,10 +1068,10 @@
                         const chipButton = document.createElement('button');
                         chipButton.type = 'button';
                         chipButton.className = 'rounded border px-3 py-2 text-[10px] font-semibold tracking-wider ' + (chipIssued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-200' : 'border-gold/50 bg-gold/10 text-amber-100 hover:bg-gold/20');
-                        chipButton.textContent = chipIssued ? 'CHIP ISSUED ✓' : 'MARK CHIP ISSUED';
-                        chipButton.disabled = chipIssued || !inviterDoc;
-                        chipButton.title = !inviterDoc ? 'Import or register this inviter so chip status can be stored.' : (chipIssued ? 'Chip issue already recorded.' : 'Record that staff handed the welcome-drink chip to this person.');
-                        if (inviterDoc && !chipIssued) chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(inviterDoc.id, inviter.name));
+                        chipButton.textContent = chipIssued ? 'UNDO CHIP ISSUED' : 'MARK CHIP ISSUED';
+                        chipButton.disabled = !inviterDoc;
+                        chipButton.title = !inviterDoc ? 'This inviter has no guest record where chip status can be stored.' : (chipIssued ? 'Undo the issued status if the chip was not handed over.' : 'Record that staff handed the welcome-drink chip to this person.');
+                        if (inviterDoc) chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(inviterDoc.id, inviter.name, chipIssued));
                         rightSide.appendChild(chipButton);
                         row.append(inviterName, rightSide);
                         rewardList.appendChild(row);
@@ -1117,6 +1131,18 @@
                         ? (membershipStatus ? 'INTERNATIONS · ' + membershipStatus.toLocaleUpperCase() : 'INTERNATIONS · STATUS NOT LISTED')
                         : 'FRIEND · WEBSITE RSVP';
                     titleLine.appendChild(typeBadge);
+                    if (data.welcomeDrinkChipIssued) {
+                        const chipBadge = document.createElement('span');
+                        chipBadge.className = 'inline-flex items-center rounded-full border border-emerald-500/50 bg-emerald-950/40 px-2 py-1 text-[9px] font-semibold tracking-wider text-emerald-200';
+                        chipBadge.textContent = 'DRINK CHIP ISSUED';
+                        titleLine.appendChild(chipBadge);
+                    }
+                    if (isPaymentCard && data.paid) {
+                        const paidBadge = document.createElement('span');
+                        paidBadge.className = 'inline-flex items-center rounded-full border border-emerald-500/50 bg-emerald-950/40 px-2 py-1 text-[9px] font-semibold tracking-wider text-emerald-200';
+                        paidBadge.textContent = 'PAID';
+                        titleLine.appendChild(paidBadge);
+                    }
 
                     if (!isPaymentCard && welcomeDrinkEarned) {
                         const rewardBadge = document.createElement('span');
@@ -1133,12 +1159,6 @@
                         ? ('Hotel check-in: ' + (checkInTime(item) == null ? 'time not recorded for this earlier check-in' : new Date(checkInTime(item)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })))
                         : ('Invited by: ' + (data.invitedBy || 'Not specified'));
                     details.appendChild(meta);
-                    if (!isPaymentCard && welcomeDrinkEarned && data.welcomeDrinkChipIssued) {
-                        const chipState = document.createElement('p');
-                        chipState.className = 'text-[10px] uppercase tracking-wider text-emerald-300 mt-2';
-                        chipState.textContent = 'Welcome-drink chip already issued';
-                        details.appendChild(chipState);
-                    }
                     card.appendChild(details);
 
                     const actions = document.createElement('div');
@@ -1204,25 +1224,24 @@
             });
         }
 
-        async function markWelcomeDrinkChipIssued(id, inviterName) {
+        async function markWelcomeDrinkChipIssued(id, inviterName, currentlyIssued) {
             if (!db || !id) {
                 const listError = document.getElementById('guestlistError');
-                listError.textContent = 'Could not record the chip issue because the guest database is not connected.';
+                listError.textContent = 'Could not record the chip status because the guest database is not connected.';
                 listError.classList.remove('hidden');
                 return;
             }
-            const confirmed = window.confirm('Confirm that the welcome-drink chip has been handed to ' + inviterName + '? This will mark the chip as issued in the guest database.');
-            if (!confirmed) return;
+            const nextIssued = !currentlyIssued;
             try {
                 await db.collection('halloween_guests').doc(id).update({
-                    welcomeDrinkChipIssued: true,
-                    welcomeDrinkChipIssuedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    welcomeDrinkChipIssuedBy: 'staff'
+                    welcomeDrinkChipIssued: nextIssued,
+                    welcomeDrinkChipIssuedAt: nextIssued ? firebase.firestore.FieldValue.serverTimestamp() : null,
+                    welcomeDrinkChipIssuedBy: nextIssued ? 'staff' : null
                 });
             } catch (error) {
                 console.error('Welcome-drink chip update failed:', error);
                 const listError = document.getElementById('guestlistError');
-                listError.textContent = 'Could not record the chip issue. Check Firebase access rules and try again.';
+                listError.textContent = 'Could not save the chip status. Check the database access rules and try again.';
                 listError.classList.remove('hidden');
             }
         }
@@ -1256,8 +1275,6 @@
                 return;
             }
             const nextPaid = !currentlyPaid;
-            const confirmed = window.confirm('Mark ' + (guestName || 'this guest') + ' as ' + (nextPaid ? 'PAID' : 'UNPAID') + '?');
-            if (!confirmed) return;
             try {
                 await db.collection('halloween_guests').doc(id).update({
                     paid: nextPaid,
@@ -1297,6 +1314,19 @@
                 card.style.display = card.innerText.toLocaleLowerCase().includes(query) ? 'flex' : 'none';
             });
         }
+        // Restore the staff screen after reload for this browser tab. Closing with X clears this session.
+        try {
+            if (sessionStorage.getItem(STAFF_SESSION_KEY) === '1') {
+                document.getElementById('hostessPortal').classList.remove('hidden');
+                document.body.classList.add('staff-mode');
+                document.getElementById('staffLoginSection').classList.add('hidden');
+                document.getElementById('guestlistSection').classList.remove('hidden');
+                loadLiveGuestlist();
+            }
+        } catch (error) {
+            console.warn('Staff session could not be restored in this browser tab.', error);
+        }
+
     </script>
 </body>
 </html>
