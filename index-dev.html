@@ -498,13 +498,13 @@
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
                         <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Check-in</h4>
                         <div class="flex w-full sm:w-auto">
-                            <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:max-w-xs text-sm">
+                            <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                         </div>
                     </div>
                     <div class="mb-4">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                             <p class="text-[10px] uppercase tracking-widest text-amber-100">Not checked in</p>
-                            <select id="hotelOpenSort" onchange="applyGuestSorts()" aria-label="Sort not checked-in guests" class="form-field text-xs py-2 sm:max-w-xs">
+                            <select id="hotelOpenSort" onchange="applyGuestSorts()" aria-label="Sort not checked-in guests" class="form-field w-full sm:w-64 max-w-full text-xs py-2">
                                 <option value="firstName" selected>Sort: First name</option>
                                 <option value="lastName">Sort: Family name</option>
                                 <option value="signupOrder">Sort: Sign-up order</option>
@@ -516,7 +516,7 @@
                     <div class="mb-6">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                             <p class="text-[10px] uppercase tracking-widest text-emerald-200">Checked in</p>
-                            <select id="hotelCheckedSort" onchange="applyGuestSorts()" aria-label="Sort checked-in guests" class="form-field text-xs py-2 sm:max-w-xs">
+                            <select id="hotelCheckedSort" onchange="applyGuestSorts()" aria-label="Sort checked-in guests" class="form-field w-full sm:w-64 max-w-full text-xs py-2">
                                 <option value="firstName" selected>Sort: First name</option>
                                 <option value="lastName">Sort: Family name</option>
                                 <option value="checkInOrder">Sort: Check-in order</option>
@@ -530,13 +530,13 @@
                         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
                             <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">Checked-in guests · Payment status</h4>
                             <div class="flex w-full sm:w-auto">
-                                <input type="search" id="paymentSearchInput" oninput="filterPaymentGuests()" aria-label="Search payment list" placeholder="Search guests..." class="form-field w-full sm:max-w-xs text-sm">
+                                <input type="search" id="paymentSearchInput" oninput="filterPaymentGuests()" aria-label="Search payment list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                             </div>
                         </div>
                         <div class="mb-4">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                                 <p class="text-[10px] uppercase tracking-widest text-amber-100">Awaiting payment <span id="internationsUnpaidCount" class="text-amber-200"></span></p>
-                                <select id="paymentUnpaidSort" onchange="applyGuestSorts()" aria-label="Sort guests awaiting payment" class="form-field text-xs py-2 sm:max-w-xs">
+                                <select id="paymentUnpaidSort" onchange="applyGuestSorts()" aria-label="Sort guests awaiting payment" class="form-field w-full sm:w-64 max-w-full text-xs py-2">
                                     <option value="checkInOrder" selected>Sort: Check-in order</option>
                                     <option value="firstName">Sort: First name</option>
                                     <option value="lastName">Sort: Family name</option>
@@ -549,7 +549,7 @@
                         <div>
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                                 <p class="text-[10px] uppercase tracking-widest text-emerald-200">Paid <span id="internationsPaidCount" class="text-emerald-200"></span></p>
-                                <select id="paymentPaidSort" onchange="applyGuestSorts()" aria-label="Sort paid guests" class="form-field text-xs py-2 sm:max-w-xs">
+                                <select id="paymentPaidSort" onchange="applyGuestSorts()" aria-label="Sort paid guests" class="form-field w-full sm:w-64 max-w-full text-xs py-2">
                                     <option value="firstName" selected>Sort: First name</option>
                                     <option value="lastName">Sort: Family name</option>
                                     <option value="paymentOrder">Sort: Payment order</option>
@@ -562,7 +562,7 @@
                     
                         <section id="unrecognizedWelcomeDrinkSection" class="hidden rounded-xl border border-gold/40 bg-amber-950/25 p-4 mt-5" aria-labelledby="welcomeDrinkHeading">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
-                            <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Welcome drinks earned</h4>
+                            <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Drinks earned</h4>
                             <span class="text-[10px] uppercase tracking-wider text-gray-300">2 or more invited guests checked in</span>
                         </div>
                         
@@ -1510,6 +1510,17 @@
                         : 'FRIEND';
                     titleLine.appendChild(typeBadge);
 
+                    const guestMeta = document.createElement('p');
+                    guestMeta.className = 'text-xs text-gray-300 break-words mt-1';
+                    const inviterText = String(data.invitedBy || '').trim() || 'Not specified';
+                    const signupDateMillis = timestampMillis(data.createdAt);
+                    const signupDateText = signupDateMillis == null
+                        ? ''
+                        : ' · Signed up: ' + new Date(signupDateMillis).toLocaleString([], {
+                            day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                        });
+                    guestMeta.textContent = 'Invited by: ' + inviterText + signupDateText;
+
                     const actions = document.createElement('div');
                     actions.className = 'flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center';
 
@@ -1548,6 +1559,7 @@
                         }
 
                         details.appendChild(titleLine);
+                        details.appendChild(guestMeta);
 
                         const amount = document.createElement('span');
                         amount.className = 'text-sm font-semibold text-white tabular-nums whitespace-nowrap';
@@ -1566,6 +1578,7 @@
                     } else {
                         // Hotel sees only the guest identity and check-in control.
                         details.appendChild(titleLine);
+                        details.appendChild(guestMeta);
                         const checkInButton = document.createElement('button');
                         checkInButton.type = 'button';
                         checkInButton.className = 'shrink-0 px-3 py-2 text-xs font-serif rounded ' + (checkedIn ? 'bg-emerald-700 text-white' : 'bg-gold/15 text-gold border border-gold/40');
@@ -1779,8 +1792,16 @@
             cards.sort((a, b) => {
                 if (sortBy === 'firstName') return compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
                 if (sortBy === 'lastName') return compareAlpha(a, b, 'sortLastName') || compareAlpha(a, b, 'sortFirstName');
+                if (sortBy === 'signupOrder') {
+                    const rawA = a.dataset.sortSignupOrder, rawB = b.dataset.sortSignupOrder;
+                    const timeA = rawA === '' || rawA == null ? null : Number(rawA);
+                    const timeB = rawB === '' || rawB == null ? null : Number(rawB);
+                    if (timeA == null && timeB != null) return 1;
+                    if (timeA != null && timeB == null) return -1;
+                    if (timeA != null && timeB != null && timeA !== timeB) return timeB - timeA;
+                    return compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
+                }
                 const timeKey = {
-                    signupOrder: 'sortSignupOrder',
                     checkInOrder: 'sortCheckInOrder',
                     paymentOrder: 'sortPaymentOrder'
                 }[sortBy];
