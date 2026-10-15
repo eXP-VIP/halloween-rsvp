@@ -427,7 +427,7 @@
                                 <div class="flex items-center gap-2">
                                     <div class="min-w-0">
                                         <p id="drinkEstimateTotal" class="text-3xl font-semibold text-amber-200 tabular-nums">0</p>
-                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Estimated</p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Total</p>
                                     </div>
                                     <span class="text-2xl text-gray-500">/</span>
                                     <div class="min-w-0">
@@ -554,9 +554,9 @@
                     <div id="hotelSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort check-in lists">
                         <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                         <button type="button" class="sort-option" data-sort-group="hotel" data-sort="firstName" aria-pressed="true" onclick="setHotelSort('firstName')">First name</button>
-                        <span class="admin-sort-controls hidden" id="adminGuestSortControls"><button type="button" class="sort-option" data-sort-group="admin" data-sort="signupNewest" aria-pressed="true" onclick="setAdminGuestSort('signupNewest')">Signup: newest</button>
-                        <button type="button" class="sort-option" data-sort-group="admin" data-sort="firstName" aria-pressed="false" onclick="setAdminGuestSort('firstName')">First name</button>
-                        <button type="button" class="sort-option" data-sort-group="admin" data-sort="lastName" aria-pressed="false" onclick="setAdminGuestSort('lastName')">Last Name</button></span>
+                        <span class="admin-sort-controls hidden" id="adminGuestSortControls"><button type="button" class="sort-option" data-sort-group="admin" data-sort="firstName" aria-pressed="true" onclick="setAdminGuestSort('firstName')">First name</button>
+                        <button type="button" class="sort-option" data-sort-group="admin" data-sort="lastName" aria-pressed="false" onclick="setAdminGuestSort('lastName')">Last Name</button>
+                        <button type="button" class="sort-option" data-sort-group="admin" data-sort="signupNewest" aria-pressed="false" onclick="setAdminGuestSort('signupNewest')">Signup</button></span>
                         <button type="button" class="sort-option" data-sort-group="hotel" data-sort="lastName" aria-pressed="false" onclick="setHotelSort('lastName')">Last Name</button>
                     </div>
                     <div class="mb-4">
@@ -1616,7 +1616,7 @@
                 const nonAlbatrossTotal = categoryTotals.Basics.total + categoryTotals.RSVPs.total;
                 const nonAlbatrossPaid = categoryTotals.Basics.paid + categoryTotals.RSVPs.paid;
                 const formatRate = (albatross, rest) => {
-                    if (!rest) return '—';
+                    if (!rest || !Number(albatross)) return '—';
                     return (Number(albatross) / Number(rest)).toFixed(1);
                 };
                 document.getElementById('guestTotalCount').textContent = totalGuestRecords;
@@ -1812,7 +1812,7 @@
                         if (welcomeDrinkEarned) {
                             const rewardBadge = document.createElement('span');
                             rewardBadge.className = 'inline-flex items-center rounded-full border border-amber-300 bg-amber-300/20 px-2 py-1 text-[9px] font-bold tracking-wider text-amber-100 shadow-sm shadow-amber-400/20';
-                            rewardBadge.textContent = 'GOLDEN DRINK EARNED';
+                            rewardBadge.textContent = 'REFERRALS DRINK';
                             rewardBadge.title = 'Referral-earned welcome drink: issue a drink chip, not a paid upgrade.';
                             titleLine.appendChild(rewardBadge);
                         }
@@ -2101,7 +2101,7 @@
         }
 
         let hotelSortBy = 'firstName';
-        let adminGuestSortBy = 'signupNewest';
+        let adminGuestSortBy = 'firstName';
         let paymentSortBy = 'timeOrder';
 
         function applySortToContainer(containerId, sortBy, timeKey, timeDirection) {
