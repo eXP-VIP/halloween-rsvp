@@ -368,33 +368,35 @@
             <div class="glass-panel rounded-2xl p-5 sm:p-8 max-w-3xl w-full mx-auto gold-border-glow">
                 <div class="flex justify-between items-center mb-5 border-b border-gold/20 pb-4">
                     <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Check-in</h3>
-                    <button type="button" onclick="toggleHostessPortal()" aria-label="Close staff check-in" class="text-gray-300 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                    <button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
                 <div id="staffLoginSection" class="space-y-4 py-5">
                     <div class="text-center mb-5">
-                        <p class="text-sm text-gray-200">Development copy: test the guest-list import, classification and drink-chip workflow here. The live index.html has not been changed.</p>
-                        <p class="text-xs text-amber-200 mt-2">The current PIN gate is not secure authentication. Do not treat this prototype as production-safe until Firebase Authentication and Firestore rules are secured.</p>
+                        <p class="text-sm text-gray-200">Sign in with your assigned staff email address and password.</p>
+                        <p class="text-xs text-amber-200 mt-2">Your role is assigned by the administrator. There is no role selector on this screen.</p>
                     </div>
                     <form id="staffLoginForm" class="space-y-4 max-w-md mx-auto">
                         <div>
-                            <label for="staffPassword" class="form-label">Management password</label>
-                            <input type="password" id="staffPassword" autocomplete="current-password" required class="form-field" placeholder="Enter management password">
+                            <label for="staffEmail" class="form-label">Staff email</label>
+                            <input type="email" id="staffEmail" name="email" autocomplete="username" required class="form-field" placeholder="you@example.com">
                         </div>
                         <div>
-                            <label for="staffRole" class="form-label">Preview role (development only)</label>
-                            <select id="staffRole" class="form-field">
-                                <option value="admin">Admin</option>
-                                <option value="hotel">Hotel</option>
-                                <option value="internations">InterNations</option>
-                            </select>
+                            <label for="staffPassword" class="form-label">Password</label>
+                            <input type="password" id="staffPassword" name="password" autocomplete="current-password" required class="form-field" placeholder="Your staff password">
+                            <div class="text-right mt-2">
+                                <button type="button" id="staffForgotPasswordBtn" class="text-[10px] text-gray-300 underline underline-offset-4 hover:text-gold">Forgot password?</button>
+                            </div>
                         </div>
-                        <p class="text-[11px] text-amber-200">Role selection is for previewing the interface only. The shared PIN does not securely enforce roles.</p>
-                        <button type="submit" id="staffLoginBtn" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Unlock Guest List</button>
+                        <button type="submit" id="staffLoginBtn" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Sign In</button>
                     </form>
                     <p id="staffLoginError" role="alert" class="text-red-300 text-xs text-center hidden"></p>
-                    <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">The live guest list is not connected. Configure the real Firebase settings and Firestore access rules before using check-in.</p>
+                    <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">Firebase Authentication or Firestore is unavailable. Check the project configuration and security rules.</p>
                 </div>
                 <div id="guestlistSection" class="hidden">
+                    <div id="staffIdentityBar" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gold/20 bg-black/30 px-3 py-2 mb-4">
+                        <p id="staffIdentity" class="text-[10px] text-gray-300 break-all">Signed in</p>
+                        <span class="text-[9px] text-emerald-200 uppercase tracking-wider">Authenticated</span>
+                    </div>
                     <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 mb-4">
                         <div class="rounded-lg border border-gold/25 bg-black/35 p-3 min-w-0">
                             <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</p>
@@ -617,12 +619,13 @@
             measurementId: "G-B28F50SQWD"
         };
 
-        // Keep the Exclusive Parties group invitation and original single-password hostess gate.
+        // Staff access uses Firebase Authentication plus a server-enforced staff_users/{uid} role record.
         const WHATSAPP_GROUP_INVITE_URL = "https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58";
-        const HOSTESS_PASSWORD = "1800";
-        const STAFF_SESSION_KEY = "halloweenStaffPortalSession";
-        const STAFF_ROLE_SESSION_KEY = "halloweenStaffPortalRole";
-        let currentStaffRole = "admin";
+        const STAFF_ROLES = ['admin', 'hotel', 'internations'];
+        let currentStaffRole = null;
+        let currentAuthUser = null;
+        let activeStaffUid = null;
+        let staffActivationPromise = null;
         let guestlistUnsubscribe = null;
         let cachedGuestSnapshot = null;
 
@@ -1195,122 +1198,184 @@
         });
 
         function applyStaffRole(role) {
-            currentStaffRole = ['admin', 'hotel', 'internations'].includes(role) ? role : 'admin';
+            if (!STAFF_ROLES.includes(role)) throw new Error('The account does not have a valid staff role.');
+            currentStaffRole = role;
             const show = (id, visible) => {
                 const element = document.getElementById(id);
                 if (element) element.classList.toggle('hidden', !visible);
             };
-            show('staffSummaryStats', currentStaffRole !== 'hotel');
-            show('collectedMetric', currentStaffRole === 'admin');
+            show('staffSummaryStats', role !== 'hotel');
+            show('collectedMetric', role === 'admin');
             const statsGrid = document.getElementById('staffSummaryStats');
             if (statsGrid) {
-                statsGrid.classList.toggle('xl:grid-cols-3', currentStaffRole === 'admin');
-                statsGrid.classList.toggle('xl:grid-cols-2', currentStaffRole !== 'admin');
+                statsGrid.classList.toggle('xl:grid-cols-3', role === 'admin');
+                statsGrid.classList.toggle('xl:grid-cols-2', role !== 'admin');
             }
-            show('adminPricingPanel', currentStaffRole === 'admin');
-            show('internationsImportPanel', currentStaffRole === 'admin');
-            show('hotelCheckInPanel', currentStaffRole !== 'internations');
-            show('internationsPaymentPanel', currentStaffRole !== 'hotel');
-            const selector = document.getElementById('staffRole');
-            if (selector) selector.value = currentStaffRole;
+            show('adminPricingPanel', role === 'admin');
+            show('internationsImportPanel', role === 'admin');
+            show('hotelCheckInPanel', role !== 'internations');
+            show('internationsPaymentPanel', role !== 'hotel');
+        }
+
+        function setStaffLoginError(message) {
+            const error = document.getElementById('staffLoginError');
+            error.textContent = message;
+            error.classList.remove('hidden');
+        }
+
+        function staffAuthErrorMessage(error) {
+            if (error && error.code === 'staff/not-authorized') return error.message;
+            if (error && ['auth/invalid-credential', 'auth/user-not-found', 'auth/wrong-password', 'auth/invalid-email'].includes(error.code)) {
+                return 'Email or password is incorrect.';
+            }
+            if (error && error.code === 'auth/too-many-requests') return 'Too many sign-in attempts. Wait a while and try again.';
+            if (error && error.code === 'auth/unauthorized-domain') return 'This website is not authorized for Firebase sign-in. Add sign-up.partybag.com to Firebase Authentication’s authorized domains.';
+            if (error && error.code === 'auth/network-request-failed') return 'Network error while signing in. Check your connection and retry.';
+            if (error && error.code === 'permission-denied') return 'The staff role could not be checked. Confirm that the Firestore security rules have been published.';
+            return 'Sign-in could not be completed. Check your account setup and try again.';
+        }
+
+        function stopStaffRealtimeListeners() {
+            if (guestlistUnsubscribe) { guestlistUnsubscribe(); guestlistUnsubscribe = null; }
+            if (pricingUnsubscribe) { pricingUnsubscribe(); pricingUnsubscribe = null; }
+            if (drinkRewardsUnsubscribe) { drinkRewardsUnsubscribe(); drinkRewardsUnsubscribe = null; }
+            cachedGuestSnapshot = null;
+            cachedGuestDocs = [];
+            cachedQualifiedInviters = [];
+            unrecognizedDrinkChipStatus = new Map();
+        }
+
+        function showStaffLogin() {
+            activeStaffUid = null;
+            currentStaffRole = null;
+            stopStaffRealtimeListeners();
+            document.getElementById('staffLoginSection').classList.remove('hidden');
+            document.getElementById('guestlistSection').classList.add('hidden');
+            document.getElementById('staffIdentity').textContent = '';
+            document.getElementById('staffPassword').value = '';
+        }
+
+        async function activateStaffSession(user) {
+            if (!user || !db) throw new Error('Firebase Authentication and Firestore must both be available.');
+            if (activeStaffUid === user.uid && !document.getElementById('guestlistSection').classList.contains('hidden')) return;
+            if (staffActivationPromise) {
+                await staffActivationPromise;
+                if (activeStaffUid === user.uid) return;
+            }
+            const activation = (async () => {
+                const roleSnapshot = await db.collection('staff_users').doc(user.uid).get();
+                const profile = roleSnapshot.exists ? roleSnapshot.data() : null;
+                if (!profile || profile.active !== true || !STAFF_ROLES.includes(profile.role)) {
+                    const denied = new Error('This account has no active staff role. Ask the administrator to assign one.');
+                    denied.code = 'staff/not-authorized';
+                    if (auth && auth.currentUser) await auth.signOut().catch(() => {});
+                    throw denied;
+                }
+                applyStaffRole(profile.role);
+                activeStaffUid = user.uid;
+                const roleLabel = profile.role === 'admin' ? 'Admin' : profile.role === 'hotel' ? 'Hotel' : 'InterNations';
+                document.getElementById('staffIdentity').textContent = (user.email || 'Staff account') + ' · ' + roleLabel;
+                document.getElementById('staffLoginSection').classList.add('hidden');
+                document.getElementById('guestlistSection').classList.remove('hidden');
+                document.getElementById('staffLoginError').classList.add('hidden');
+                loadLiveGuestlist();
+            })();
+            staffActivationPromise = activation;
+            try { await activation; }
+            finally { if (staffActivationPromise === activation) staffActivationPromise = null; }
+        }
+
+        async function sendStaffPasswordReset() {
+            const email = document.getElementById('staffEmail').value.trim();
+            if (!email) {
+                setStaffLoginError('Enter your staff email address first, then choose Forgot password.');
+                return;
+            }
+            if (!auth) {
+                setStaffLoginError('Firebase Authentication is not available.');
+                return;
+            }
+            try {
+                await auth.sendPasswordResetEmail(email);
+                setStaffLoginError('If this email belongs to a staff account, Firebase will send a password-reset email.');
+            } catch (error) {
+                setStaffLoginError(staffAuthErrorMessage(error));
+            }
         }
 
         function toggleHostessPortal() {
             const portal = document.getElementById('hostessPortal');
             const opening = portal.classList.contains('hidden');
             const loginSection = document.getElementById('staffLoginSection');
-            const guestlistSection = document.getElementById('guestlistSection');
-
             if (!opening) {
-                // The X button logs out and returns to the public entry page.
-                try { sessionStorage.removeItem(STAFF_SESSION_KEY); } catch (error) {}
-                try { sessionStorage.removeItem(STAFF_ROLE_SESSION_KEY); } catch (error) {}
-                currentStaffRole = "admin";
-                const roleSelector = document.getElementById('staffRole');
-                if (roleSelector) roleSelector.value = 'admin';
-                if (guestlistUnsubscribe) {
-                    guestlistUnsubscribe();
-                    guestlistUnsubscribe = null;
-                }
-                if (pricingUnsubscribe) {
-                    pricingUnsubscribe();
-                    pricingUnsubscribe = null;
-                }
-                if (drinkRewardsUnsubscribe) {
-                    drinkRewardsUnsubscribe();
-                    drinkRewardsUnsubscribe = null;
-                }
-                cachedGuestSnapshot = null;
-                cachedQualifiedInviters = [];
-                unrecognizedDrinkChipStatus = new Map();
+                stopStaffRealtimeListeners();
+                activeStaffUid = null;
+                currentStaffRole = null;
+                if (auth && auth.currentUser) auth.signOut().catch((error) => console.warn('Sign-out failed:', error));
                 portal.classList.add('hidden');
                 document.body.classList.remove('staff-mode');
                 loginSection.classList.remove('hidden');
-                guestlistSection.classList.add('hidden');
+                document.getElementById('guestlistSection').classList.add('hidden');
                 document.getElementById('staffPassword').value = '';
+                document.getElementById('staffLoginError').classList.add('hidden');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 return;
             }
-
             portal.classList.remove('hidden');
             document.body.classList.add('staff-mode');
             document.getElementById('staffLoginError').classList.add('hidden');
-            document.getElementById('portalConfigWarning').classList.toggle('hidden', Boolean(db));
-
-            let activeSession = false;
-            try { activeSession = sessionStorage.getItem(STAFF_SESSION_KEY) === '1'; } catch (error) {}
-            if (activeSession) {
-                try { currentStaffRole = sessionStorage.getItem(STAFF_ROLE_SESSION_KEY) || 'admin'; } catch (error) { currentStaffRole = 'admin'; }
-                applyStaffRole(currentStaffRole);
-                loginSection.classList.add('hidden');
-                guestlistSection.classList.remove('hidden');
-                loadLiveGuestlist();
-            } else {
-                loginSection.classList.remove('hidden');
-                guestlistSection.classList.add('hidden');
-                document.getElementById('staffPassword').value = '';
-                document.getElementById('portalConfigWarning').classList.toggle('hidden', Boolean(db));
+            document.getElementById('portalConfigWarning').classList.toggle('hidden', Boolean(db && auth));
+            loginSection.classList.remove('hidden');
+            document.getElementById('guestlistSection').classList.add('hidden');
+            if (currentAuthUser || (auth && auth.currentUser)) {
+                activateStaffSession(currentAuthUser || auth.currentUser).catch((error) => setStaffLoginError(staffAuthErrorMessage(error)));
             }
             portal.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         document.getElementById('staffLoginForm').addEventListener('submit', async function (event) {
             event.preventDefault();
-            const error = document.getElementById('staffLoginError');
             const loginButton = document.getElementById('staffLoginBtn');
-            const enteredPassword = document.getElementById('staffPassword').value;
-            error.classList.add('hidden');
-
-            if (enteredPassword !== HOSTESS_PASSWORD) {
-                error.textContent = 'Incorrect management password.';
-                error.classList.remove('hidden');
+            const email = document.getElementById('staffEmail').value.trim();
+            const password = document.getElementById('staffPassword').value;
+            document.getElementById('staffLoginError').classList.add('hidden');
+            if (!auth || !db) {
+                setStaffLoginError('Firebase Authentication or Firestore is unavailable.');
                 return;
             }
-
             loginButton.disabled = true;
-            loginButton.textContent = 'UNLOCKING…';
+            loginButton.textContent = 'SIGNING IN…';
             try {
-                currentStaffRole = document.getElementById('staffRole').value || 'admin';
-                try {
-                    sessionStorage.setItem(STAFF_SESSION_KEY, '1');
-                    sessionStorage.setItem(STAFF_ROLE_SESSION_KEY, currentStaffRole);
-                } catch (storageError) {}
-                applyStaffRole(currentStaffRole);
-                document.getElementById('staffLoginSection').classList.add('hidden');
-                document.getElementById('guestlistSection').classList.remove('hidden');
+                const credential = await auth.signInWithEmailAndPassword(email, password);
+                currentAuthUser = credential.user;
+                await activateStaffSession(credential.user);
                 document.getElementById('staffPassword').value = '';
-                if (!db) {
-                    const listError = document.getElementById('guestlistError');
-                    listError.textContent = 'Firebase connection failed. Check the Firebase configuration and database rules.';
-                    listError.classList.remove('hidden');
-                } else {
-                    loadLiveGuestlist();
-                }
+            } catch (error) {
+                setStaffLoginError(staffAuthErrorMessage(error));
             } finally {
                 loginButton.disabled = false;
-                loginButton.textContent = 'UNLOCK GUEST LIST';
+                loginButton.textContent = 'SIGN IN';
             }
         });
+
+        document.getElementById('staffForgotPasswordBtn').addEventListener('click', sendStaffPasswordReset);
+
+        if (auth) {
+            auth.onAuthStateChanged((user) => {
+                currentAuthUser = user;
+                const portalOpen = !document.getElementById('hostessPortal').classList.contains('hidden');
+                if (!user) {
+                    if (activeStaffUid) showStaffLogin();
+                    return;
+                }
+                if (portalOpen) {
+                    activateStaffSession(user).catch((error) => {
+                        if (error && error.code === 'staff/not-authorized') setStaffLoginError(error.message);
+                        else setStaffLoginError(staffAuthErrorMessage(error));
+                    });
+                }
+            });
+        }
 
         function renderUnrecognizedWelcomeDrinkList() {
             const rewardList = document.getElementById('welcomeDrinkList');
@@ -1971,21 +2036,6 @@
             const counts = filterContainerCards(['internationsUnpaidContainer', 'internationsPaidContainer'], query);
             document.getElementById('internationsUnpaidCount').textContent = '(' + counts.internationsUnpaidContainer + ')';
             document.getElementById('internationsPaidCount').textContent = '(' + counts.internationsPaidContainer + ')';
-        }
-
-        // Restore the staff screen after reload for this browser tab. Closing with X clears this session.
-        try {
-            if (sessionStorage.getItem(STAFF_SESSION_KEY) === '1') {
-                currentStaffRole = sessionStorage.getItem(STAFF_ROLE_SESSION_KEY) || 'admin';
-                document.getElementById('hostessPortal').classList.remove('hidden');
-                document.body.classList.add('staff-mode');
-                applyStaffRole(currentStaffRole);
-                document.getElementById('staffLoginSection').classList.add('hidden');
-                document.getElementById('guestlistSection').classList.remove('hidden');
-                loadLiveGuestlist();
-            }
-        } catch (error) {
-            console.warn('Staff session could not be restored in this browser tab.', error);
         }
 
     </script>
