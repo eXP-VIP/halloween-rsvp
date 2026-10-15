@@ -2,6 +2,8 @@
 
 The development page now signs staff in with Firebase Authentication and reads the staff role from `staff_users/{uid}`. The shared PIN and browser-stored role selector have been removed.
 
+**This is not fully secured until `firestore.rules` is published in Firebase Console.** The file in GitHub does not change the active project's rules. Until the rules are published, the browser's role-based UI is not a security boundary; treat this as a login test only.
+
 ## Important before publishing Firestore rules
 
 Firestore rules apply to the entire Firebase project, not just `index-dev.html`. The current public `index.html` still contains the old PIN-based staff login. **Do not publish `firestore.rules` until that live staff portal has also been migrated to Firebase Authentication**, or live staff access to the guest list will be denied. Public RSVP creation is explicitly allowed by these proposed rules and remains available.
