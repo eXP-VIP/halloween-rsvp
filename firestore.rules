@@ -93,6 +93,20 @@ service cloud.firestore {
             && resource.data.get('welcomeDrinkUpgradeSelected', false) != true);
     }
 
+    function adminGuestUpdate() {
+      return isAdmin()
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['checkedIn'])
+          || resource.data.get('checkedIn', false) != true
+          || request.resource.data.get('checkedIn', false) != false
+          || (
+            resource.data.get('paid', false) != true
+            && resource.data.get('welcomeDrinkChipIssued', false) != true
+            && resource.data.get('welcomeDrinkUpgradeSelected', false) != true
+          )
+        );
+    }
+
     function interNationsPaymentUpdate() {
       return isInterNations()
         && resource.data.checkedIn == true
@@ -114,7 +128,7 @@ service cloud.firestore {
     match /halloween_guests/{guestId} {
       allow get, list: if isActiveStaff();
       allow create: if isAdmin() || isPublicRsvpCreate();
-      allow update: if isAdmin() || hotelCheckInUpdate() || interNationsPaymentUpdate();
+      allow update: if adminGuestUpdate() || hotelCheckInUpdate() || interNationsPaymentUpdate();
       allow delete: if isAdmin();
     }
 
