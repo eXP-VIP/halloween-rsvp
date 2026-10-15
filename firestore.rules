@@ -6,7 +6,7 @@ service cloud.firestore {
     }
 
     function staffRecordPath(uid) {
-      return /databases/$(database)/documents/staff_users/$(uid);
+      return /databases/$(database)/documents/event_users/$(uid);
     }
 
     function isActiveStaff() {
@@ -118,7 +118,7 @@ service cloud.firestore {
         ]);
     }
 
-    match /staff_users/{uid} {
+    match /event_users/{uid} {
       // Provision roles in Firebase Console or with a trusted Admin SDK only.
       allow get: if signedIn() && request.auth.uid == uid;
       allow list: if isAdmin();
