@@ -553,11 +553,9 @@
                     </div>
                     <div id="hotelSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort check-in lists">
                         <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
-                        <button type="button" class="sort-option" data-sort-group="hotel" data-sort="firstName" aria-pressed="true" onclick="setHotelSort('firstName')">First name</button>
-                        <button type="button" id="adminGuestSortControls" class="sort-option admin-sort-controls hidden" data-sort-group="admin" data-sort="firstName" aria-pressed="true" onclick="setAdminGuestSort('firstName')">First name</button>
-                        <button type="button" class="sort-option admin-sort-controls hidden" data-sort-group="admin" data-sort="lastName" aria-pressed="false" onclick="setAdminGuestSort('lastName')">Last Name</button>
-                        <button type="button" class="sort-option admin-sort-controls hidden" data-sort-group="admin" data-sort="signupNewest" aria-pressed="false" onclick="setAdminGuestSort('signupNewest')">Signup</button>
-                        <button type="button" class="sort-option" data-sort-group="hotel" data-sort="lastName" aria-pressed="false" onclick="setHotelSort('lastName')">Last Name</button>
+                        <button type="button" class="sort-option" data-sort="firstName" aria-pressed="true" onclick="setGuestListSort('firstName')">First name</button>
+                        <button type="button" class="sort-option" data-sort="lastName" aria-pressed="false" onclick="setGuestListSort('lastName')">Last Name</button>
+                        <button type="button" class="sort-option" data-sort="signupNewest" aria-pressed="false" onclick="setGuestListSort('signupNewest')">Signup</button>
                     </div>
                     <div class="mb-4">
                         <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Not checked in <span id="hotelOpenCount" class="text-amber-100">(0)</span></p>
@@ -2125,7 +2123,7 @@
         }
 
         let hotelSortBy = 'firstName';
-        let adminGuestSortBy = 'firstName';
+        let adminGuestSortBy = 'signupNewest';
         let paymentSortBy = 'timeOrder';
 
         function applySortToContainer(containerId, sortBy, timeKey, timeDirection) {
@@ -2154,26 +2152,24 @@
         }
 
         function updateSortButtonStates() {
-            document.querySelectorAll('.sort-option[data-sort-group="admin"]').forEach((button) => {
-                button.setAttribute('aria-pressed', String(button.dataset.sort === adminGuestSortBy));
-            });
-            document.querySelectorAll('.sort-option[data-sort-group="hotel"]').forEach((button) => {
-                button.setAttribute('aria-pressed', String(button.dataset.sort === hotelSortBy));
+            document.querySelectorAll('#hotelSortControls .sort-option').forEach((button) => {
+                const activeSort = currentStaffRole === 'admin' ? adminGuestSortBy : hotelSortBy;
+                button.classList.toggle('hidden', button.dataset.sort === 'signupNewest' && currentStaffRole !== 'admin');
+                button.setAttribute('aria-pressed', String(button.dataset.sort === activeSort));
             });
             document.querySelectorAll('.sort-option[data-sort-group="payment"]').forEach((button) => {
                 button.setAttribute('aria-pressed', String(button.dataset.sort === paymentSortBy));
             });
         }
 
-        function setAdminGuestSort(sortBy) {
+        function setGuestListSort(sortBy) {
             if (!['signupNewest', 'firstName', 'lastName'].includes(sortBy)) return;
-            adminGuestSortBy = sortBy;
-            applyGuestSorts();
-        }
-
-        function setHotelSort(sortBy) {
-            if (!['firstName', 'lastName'].includes(sortBy)) return;
-            hotelSortBy = sortBy;
+            if (currentStaffRole === 'admin') {
+                adminGuestSortBy = sortBy;
+            } else {
+                if (sortBy === 'signupNewest') return;
+                hotelSortBy = sortBy;
+            }
             applyGuestSorts();
         }
 
