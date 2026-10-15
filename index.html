@@ -554,6 +554,10 @@
                     <div id="hotelSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort check-in lists">
                         <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                         <button type="button" class="sort-option" data-sort-group="hotel" data-sort="firstName" aria-pressed="true" onclick="setHotelSort('firstName')">First name</button>
+                        <span class="admin-sort-controls hidden" id="adminGuestSortControls"><button type="button" class="sort-option" data-sort-group="admin" data-sort="signupNewest" aria-pressed="true" onclick="setAdminGuestSort('signupNewest')">Signup: newest</button>
+                        <button type="button" class="sort-option" data-sort-group="admin" data-sort="signupOldest" aria-pressed="false" onclick="setAdminGuestSort('signupOldest')">Signup: oldest</button>
+                        <button type="button" class="sort-option" data-sort-group="admin" data-sort="firstName" aria-pressed="false" onclick="setAdminGuestSort('firstName')">First name</button>
+                        <button type="button" class="sort-option" data-sort-group="admin" data-sort="lastName" aria-pressed="false" onclick="setAdminGuestSort('lastName')">Last Name</button></span>
                         <button type="button" class="sort-option" data-sort-group="hotel" data-sort="lastName" aria-pressed="false" onclick="setHotelSort('lastName')">Last Name</button>
                     </div>
                     <div class="mb-4">
@@ -1457,8 +1461,8 @@
             section.classList.toggle('hidden', !isAdmin);
             if (!isAdmin) return;
 
-            // Group RSVPs by the unknown inviter name they entered. This view is
-            // about potentially missing welcome drinks, not a list of referred guests.
+            // This is an inviter reconciliation list: aggregate the names entered
+            // in "Invited by", not the identities of guests who entered them.
             const guestRows = cachedGuestDocs.map((doc) => doc.data());
             const knownMemberKeys = new Set(guestRows
                 .filter((data) => isInterNationsMember(data))
@@ -1466,12 +1470,16 @@
                 .filter(Boolean));
             const referralsByInviter = new Map();
             let noInviterCount = 0;
+            let noInviterCheckedIn = 0;
 
             guestRows.forEach((data) => {
+                // Imported members are the inviter pool; they are not RSVP referrals.
+                if (isInterNationsMember(data)) return;
                 const inviterName = String(data.invitedBy || '').trim();
                 const inviterKey = normalizeGuestName(inviterName);
                 if (!inviterKey) {
-                    if (!isInterNationsMember(data)) noInviterCount++;
+                    noInviterCount++;
+                    if (data.checkedIn) noInviterCheckedIn++;
                     return;
                 }
                 if (knownMemberKeys.has(inviterKey)) return;
@@ -1488,7 +1496,7 @@
             if (!entries.length && noInviterCount === 0) {
                 const empty = document.createElement('p');
                 empty.className = 'text-xs text-gray-300 py-2';
-                empty.textContent = 'No unknown inviter names or RSVPs without an inviter.';
+                empty.textContent = 'No unrecognized inviter names or RSVPs without an inviter.';
                 rewardList.appendChild(empty);
                 return;
             }
@@ -1508,7 +1516,7 @@
                 const count = document.createElement('span');
                 count.className = 'shrink-0 rounded border border-amber-400/40 bg-amber-950/40 px-3 py-1 text-sm font-semibold text-amber-100 tabular-nums';
                 count.textContent = String(entry.total);
-                count.title = entry.total + ' RSVP(s) entered this unknown inviter name';
+                count.title = entry.total + ' RSVP(s) entered this unrecognized inviter name';
                 row.append(details, count);
                 rewardList.appendChild(row);
             });
@@ -1516,14 +1524,19 @@
             if (noInviterCount > 0) {
                 const row = document.createElement('div');
                 row.className = 'flex items-center justify-between gap-3 rounded-lg border border-gray-500/40 bg-black/25 px-3 py-2';
+                const details = document.createElement('div');
                 const label = document.createElement('p');
                 label.className = 'font-medium text-gray-200';
                 label.textContent = 'No inviter entered';
+                const meta = document.createElement('p');
+                meta.className = 'text-[10px] text-gray-400 mt-1';
+                meta.textContent = noInviterCheckedIn + ' checked in · ' + (noInviterCount - noInviterCheckedIn) + ' not checked in';
+                details.append(label, meta);
                 const count = document.createElement('span');
                 count.className = 'shrink-0 rounded border border-gray-500/40 bg-gray-900/50 px-3 py-1 text-sm font-semibold text-gray-100 tabular-nums';
                 count.textContent = String(noInviterCount);
                 count.title = noInviterCount + ' RSVP(s) with no inviter entered';
-                row.append(label, count);
+                row.append(details, count);
                 rewardList.appendChild(row);
             }
         }
@@ -1795,13 +1808,14 @@
                         // Drink rewards and collection appear only in the payment-management view.
                         if (welcomeDrinkEarned) {
                             const rewardBadge = document.createElement('span');
-                            rewardBadge.className = 'inline-flex items-center rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[9px] font-semibold tracking-wider text-amber-100';
-                            rewardBadge.textContent = 'DRINK EARNED';
+                            rewardBadge.className = 'inline-flex items-center rounded-full border border-amber-300 bg-amber-300/20 px-2 py-1 text-[9px] font-bold tracking-wider text-amber-100 shadow-sm shadow-amber-400/20';
+                            rewardBadge.textContent = 'GOLDEN DRINK EARNED';
+                            rewardBadge.title = 'Referral-earned welcome drink: issue a drink chip, not a paid upgrade.';
                             titleLine.appendChild(rewardBadge);
                         }
 
-                        if (charge.drinkMode === 'upgrade' && !chipAlreadyIssued &&
-                            (welcomeDrinkEarned ? charge.upgradeSelected : (upgradeCanBeSelected || charge.upgradeSelected))) {
+                        if (charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued &&
+                            (upgradeCanBeSelected || charge.upgradeSelected)) {
                             const upgradeButton = document.createElement('button');
                             upgradeButton.type = 'button';
                             upgradeButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
@@ -1836,7 +1850,7 @@
                             const chipButton = document.createElement('button');
                             chipButton.type = 'button';
                             chipButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
-                                (chipAlreadyIssued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : 'border-amber-500/50 bg-amber-950/40 text-amber-100 hover:bg-amber-900/50');
+                                (chipAlreadyIssued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : (welcomeDrinkEarned ? 'border-amber-300 bg-amber-300/20 text-amber-100 shadow-md shadow-amber-500/20' : 'border-amber-500/50 bg-amber-950/40 text-amber-100 hover:bg-amber-900/50'));
                             chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
                             chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
                             chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
@@ -2105,6 +2119,7 @@
                 if (sortBy === 'firstName') return compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
                 if (sortBy === 'lastName') return compareAlpha(a, b, 'sortLastName') || compareAlpha(a, b, 'sortFirstName');
                 if (sortBy === 'signupNewest') return compareTime(a, b, 'sortSignupOrder', -1) || compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
+                if (sortBy === 'signupOldest') return compareTime(a, b, 'sortSignupOrder', 1) || compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
                 return compareTime(a, b, timeKey, timeDirection) ||
                     compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
             });
@@ -2112,12 +2127,21 @@
         }
 
         function updateSortButtonStates() {
+            document.querySelectorAll('.sort-option[data-sort-group="admin"]').forEach((button) => {
+                button.setAttribute('aria-pressed', String(button.dataset.sort === adminGuestSortBy));
+            });
             document.querySelectorAll('.sort-option[data-sort-group="hotel"]').forEach((button) => {
                 button.setAttribute('aria-pressed', String(button.dataset.sort === hotelSortBy));
             });
             document.querySelectorAll('.sort-option[data-sort-group="payment"]').forEach((button) => {
                 button.setAttribute('aria-pressed', String(button.dataset.sort === paymentSortBy));
             });
+        }
+
+        function setAdminGuestSort(sortBy) {
+            if (!['signupNewest', 'signupOldest', 'firstName', 'lastName'].includes(sortBy)) return;
+            adminGuestSortBy = sortBy;
+            applyGuestSorts();
         }
 
         function setHotelSort(sortBy) {
@@ -2133,6 +2157,8 @@
         }
 
         function applyGuestSorts() {
+            const adminSortControls = document.getElementById('adminGuestSortControls');
+            if (adminSortControls) adminSortControls.classList.toggle('hidden', currentStaffRole !== 'admin');
             const guestListSort = currentStaffRole === 'admin' ? adminGuestSortBy : hotelSortBy;
             applySortToContainer('guestNotCheckedInContainer', guestListSort, '', -1);
             applySortToContainer('guestCheckedInContainer', guestListSort, '', 1);
