@@ -630,7 +630,7 @@
             measurementId: "G-B28F50SQWD"
         };
 
-        // Staff access uses Firebase Authentication plus a server-enforced staff_users/{uid} role record.
+        // Staff access uses Firebase Authentication plus a server-enforced event_users/{uid} role record.
         const WHATSAPP_GROUP_INVITE_URL = "https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58";
         const STAFF_ROLES = ['admin', 'hotel', 'internations'];
         let currentStaffRole = null;
@@ -1287,7 +1287,7 @@
                 if (activeStaffUid === user.uid) return;
             }
             const activation = (async () => {
-                const roleSnapshot = await db.collection('staff_users').doc(user.uid).get();
+                const roleSnapshot = await db.collection('event_users').doc(user.uid).get();
                 const profile = roleSnapshot.exists ? roleSnapshot.data() : null;
                 if (!profile || profile.active !== true || !STAFF_ROLES.includes(profile.role)) {
                     const denied = new Error('This account has no active staff role. Ask the administrator to assign one.');
