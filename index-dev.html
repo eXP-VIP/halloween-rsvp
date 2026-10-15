@@ -1300,9 +1300,6 @@
                     if (auth && auth.currentUser) await auth.signOut().catch(() => {});
                     throw denied;
                 }
-                applyStaffRole(profile.role);
-                activeStaffUid = user.uid;
-                const roleLabel = profile.role === 'admin' ? 'Admin' : profile.role === 'hotel' ? 'Hotel' : 'InterNations';
                 const username = String(profile.username || (user.email || '').split('@')[0] || 'staff').trim().toLowerCase();
                 const authAlias = String(user.email || '').toLowerCase();
                 if (authAlias !== username + '@' + STAFF_AUTH_ALIAS_DOMAIN) {
@@ -1311,6 +1308,9 @@
                     if (auth && auth.currentUser) await auth.signOut().catch(() => {});
                     throw denied;
                 }
+                applyStaffRole(profile.role);
+                activeStaffUid = user.uid;
+                const roleLabel = profile.role === 'admin' ? 'Admin' : profile.role === 'hotel' ? 'Hotel' : 'InterNations';
                 document.getElementById('staffIdentity').textContent = username + ' · ' + roleLabel;
                 document.getElementById('staffLoginSection').classList.add('hidden');
                 document.getElementById('guestlistSection').classList.remove('hidden');
@@ -1605,7 +1605,7 @@
                     const inviterKey = normalizeGuestName(data.name);
                     const invitedCount = checkedInReferralsByInviter.get(inviterKey)?.guestIds.size || 0;
                     const welcomeDrinkEarned = isInterNationsMember(data) && invitedCount >= 2;
-                    const isInterNationsMember = data.guestType === 'internations_member' || data.source === 'internations_import';
+                    const isMemberRecord = isInterNationsMember(data);
                     const isPaymentCard = mode === 'payment';
                     const isPaid = Boolean(data.paid);
                     const tier = getGuestTier(data);
@@ -1642,7 +1642,7 @@
 
                     const typeBadge = document.createElement('span');
                     typeBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
-                        (isInterNationsMember ? 'border-sky-400/50 bg-sky-950/50 text-sky-100' : 'border-gray-500/50 bg-gray-800/60 text-gray-200');
+                        (isMemberRecord ? 'border-sky-400/50 bg-sky-950/50 text-sky-100' : 'border-gray-500/50 bg-gray-800/60 text-gray-200');
                     const memberStatus = String(data.interNationsStatus || '').trim();
                     typeBadge.textContent = isInterNationsMember
                         ? (memberStatus.toLocaleLowerCase().includes('basic') ? 'BASIC MEMBER' : 'PAID MEMBER')
