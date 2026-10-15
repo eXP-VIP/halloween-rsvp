@@ -1461,11 +1461,10 @@
             section.classList.toggle('hidden', !isAdmin);
             if (!isAdmin) return;
 
-            // This is an inviter reconciliation list: aggregate the names entered
-            // in "Invited by", not the identities of guests who entered them.
+            // Show only unknown inviter names: aggregate how many RSVPs used each
+            // name in "Invited by". Never list the RSVP guest records themselves.
             const guestRows = cachedGuestDocs.map((doc) => doc.data());
-            const knownMemberKeys = new Set(guestRows
-                .filter((data) => isInterNationsMember(data))
+            const knownGuestKeys = new Set(guestRows
                 .map((data) => normalizeGuestName(data.name))
                 .filter(Boolean));
             const referralsByInviter = new Map();
@@ -1473,7 +1472,7 @@
             let noInviterCheckedIn = 0;
 
             guestRows.forEach((data) => {
-                // Imported members are the inviter pool; they are not RSVP referrals.
+                // Imported member records are not referral RSVPs.
                 if (isInterNationsMember(data)) return;
                 const inviterName = String(data.invitedBy || '').trim();
                 const inviterKey = normalizeGuestName(inviterName);
@@ -1482,7 +1481,9 @@
                     if (data.checkedIn) noInviterCheckedIn++;
                     return;
                 }
-                if (knownMemberKeys.has(inviterKey)) return;
+                // If the name matches any registered guest (including a member
+                // who also RSVPed), it is not an unknown inviter.
+                if (knownGuestKeys.has(inviterKey)) return;
                 if (!referralsByInviter.has(inviterKey)) {
                     referralsByInviter.set(inviterKey, { name: inviterName, total: 0, checkedIn: 0 });
                 }
@@ -1496,7 +1497,7 @@
             if (!entries.length && noInviterCount === 0) {
                 const empty = document.createElement('p');
                 empty.className = 'text-xs text-gray-300 py-2';
-                empty.textContent = 'No unrecognized inviter names or RSVPs without an inviter.';
+                empty.textContent = 'No unknown inviter names or RSVPs without an inviter.';
                 rewardList.appendChild(empty);
                 return;
             }
@@ -1516,7 +1517,7 @@
                 const count = document.createElement('span');
                 count.className = 'shrink-0 rounded border border-amber-400/40 bg-amber-950/40 px-3 py-1 text-sm font-semibold text-amber-100 tabular-nums';
                 count.textContent = String(entry.total);
-                count.title = entry.total + ' RSVP(s) entered this unrecognized inviter name';
+                count.title = entry.total + ' RSVP(s) entered this unknown inviter name';
                 row.append(details, count);
                 rewardList.appendChild(row);
             });
