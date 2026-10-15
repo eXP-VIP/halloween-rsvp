@@ -437,7 +437,7 @@
                                 </div>
                                 <div class="min-w-0">
                                     <table class="w-fit max-w-full table-auto border-collapse text-[10px] leading-4 text-gray-300 tabular-nums">
-                                        <thead><tr><th class="text-left font-normal pr-2"></th><th class="text-right font-normal text-gray-500">Est.</th><th class="text-center px-1 text-gray-500">/</th><th class="text-right font-normal text-gray-500">Issued</th></tr></thead>
+                                        <thead class="sr-only"><tr><th>Category</th><th>Estimated</th><th>Separator</th><th>Issued</th></tr></thead>
                                         <tbody>
                                             <tr><th scope="row" class="text-left font-normal pr-2">Referrals</th><td id="drinkReferralEstimate" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkReferralIssued" class="text-right">0</td></tr>
                                             <tr><th scope="row" class="text-left font-normal pr-2">Included</th><td id="drinkIncludedEstimate" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkIncludedIssued" class="text-right">0</td></tr>
@@ -615,7 +615,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.15.4</p>
         </div>
     </footer>
 
@@ -757,8 +757,7 @@
         function isReferralDrinkEligible(data) {
             const tier = getGuestTier(data);
             const referralRule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
-            const drinkRule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
-            return Boolean(referralRule.eligible) && drinkRule.mode !== 'included';
+            return Boolean(referralRule.eligible);
         }
 
         function hasEarnedReferralDrink(data, referredGuestCount) {
@@ -1740,7 +1739,7 @@
                     const tier = getGuestTier(data);
                     const charge = calculateGuestCharge(data, welcomeDrinkEarned);
                     const chipAlreadyIssued = isGuestDrinkChipIssued(data);
-                    const drinkIncluded = charge.drinkMode === 'included';
+                    const drinkIncluded = charge.drinkMode === 'included' && !welcomeDrinkEarned;
                     const drinkEntitled = welcomeDrinkEarned || drinkIncluded || charge.upgradeSelected || chipAlreadyIssued;
                     const upgradeCanBeSelected = charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued;
 
@@ -2085,6 +2084,7 @@
         }
 
         let hotelSortBy = 'firstName';
+        let adminGuestSortBy = 'signupNewest';
         let paymentSortBy = 'timeOrder';
 
         function applySortToContainer(containerId, sortBy, timeKey, timeDirection) {
@@ -2104,6 +2104,7 @@
             cards.sort((a, b) => {
                 if (sortBy === 'firstName') return compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
                 if (sortBy === 'lastName') return compareAlpha(a, b, 'sortLastName') || compareAlpha(a, b, 'sortFirstName');
+                if (sortBy === 'signupNewest') return compareTime(a, b, 'sortSignupOrder', -1) || compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
                 return compareTime(a, b, timeKey, timeDirection) ||
                     compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
             });
@@ -2132,8 +2133,9 @@
         }
 
         function applyGuestSorts() {
-            applySortToContainer('guestNotCheckedInContainer', hotelSortBy, '', -1);
-            applySortToContainer('guestCheckedInContainer', hotelSortBy, '', 1);
+            const guestListSort = currentStaffRole === 'admin' ? adminGuestSortBy : hotelSortBy;
+            applySortToContainer('guestNotCheckedInContainer', guestListSort, '', -1);
+            applySortToContainer('guestCheckedInContainer', guestListSort, '', 1);
             applySortToContainer('internationsUnpaidContainer', paymentSortBy, paymentSortBy === 'timeOrder' ? 'sortCheckInOrder' : '', 1);
             applySortToContainer('internationsPaidContainer', paymentSortBy, paymentSortBy === 'timeOrder' ? 'sortPaymentOrder' : '', 1);
             updateSortButtonStates();
