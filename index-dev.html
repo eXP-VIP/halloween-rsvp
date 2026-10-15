@@ -1458,36 +1458,75 @@
             section.classList.toggle('hidden', !isAdmin);
             if (!isAdmin) return;
 
-            if (!cachedUnaccountedReferrals.length) {
+            // Group RSVPs by the unknown inviter name they entered. This view is
+            // about potentially missing welcome drinks, not a list of referred guests.
+            const guestRows = cachedGuestDocs.map((doc) => doc.data());
+            const knownMemberKeys = new Set(guestRows
+                .filter((data) => isInterNationsMember(data))
+                .map((data) => normalizeGuestName(data.name))
+                .filter(Boolean));
+            const referralsByInviter = new Map();
+            let noInviterCount = 0;
+
+            guestRows.forEach((data) => {
+                const inviterName = String(data.invitedBy || '').trim();
+                const inviterKey = normalizeGuestName(inviterName);
+                if (!inviterKey) {
+                    if (!isInterNationsMember(data)) noInviterCount++;
+                    return;
+                }
+                if (knownMemberKeys.has(inviterKey)) return;
+                if (!referralsByInviter.has(inviterKey)) {
+                    referralsByInviter.set(inviterKey, { name: inviterName, total: 0, checkedIn: 0 });
+                }
+                const group = referralsByInviter.get(inviterKey);
+                group.total++;
+                if (data.checkedIn) group.checkedIn++;
+            });
+
+            const entries = Array.from(referralsByInviter.values())
+                .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+            if (!entries.length && noInviterCount === 0) {
                 const empty = document.createElement('p');
                 empty.className = 'text-xs text-gray-300 py-2';
-                empty.textContent = 'No unaccounted referrals or RSVPs without an inviter.';
+                empty.textContent = 'No unknown inviter names or RSVPs without an inviter.';
                 rewardList.appendChild(empty);
                 return;
             }
 
-            cachedUnaccountedReferrals.forEach((entry) => {
+            entries.forEach((entry) => {
                 const row = document.createElement('div');
-                row.className = 'flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 rounded-lg border border-gold/30 bg-black/25 px-3 py-2';
+                row.className = 'flex items-center justify-between gap-3 rounded-lg border border-gold/30 bg-black/25 px-3 py-2';
                 const details = document.createElement('div');
                 details.className = 'min-w-0';
                 const name = document.createElement('p');
                 name.className = 'font-medium break-words';
-                name.textContent = (entry.guestName || '(No name provided)') + ' · ' + entry.category;
+                name.textContent = entry.name;
                 const meta = document.createElement('p');
-                meta.className = 'text-[10px] text-gray-300 break-words mt-1';
-                meta.textContent = entry.invitedBy
-                    ? 'Invited by: ' + entry.invitedBy + (entry.inviterCategory ? ' · ' + entry.inviterCategory : '') +
-                      ' · ' + entry.registeredReferrals + ' referrals / ' + entry.checkedInReferrals + ' checked in' +
-                      ' · ' + entry.guestStatus
-                    : 'No inviter entered · ' + entry.guestStatus;
+                meta.className = 'text-[10px] text-gray-300 mt-1';
+                meta.textContent = entry.checkedIn + ' checked in · ' + (entry.total - entry.checkedIn) + ' not checked in';
                 details.append(name, meta);
-                const reason = document.createElement('span');
-                reason.className = 'shrink-0 self-start rounded border border-amber-400/30 bg-amber-950/30 px-2 py-1 text-[9px] uppercase tracking-wider text-amber-100';
-                reason.textContent = entry.reason;
-                row.append(details, reason);
+                const count = document.createElement('span');
+                count.className = 'shrink-0 rounded border border-amber-400/40 bg-amber-950/40 px-3 py-1 text-sm font-semibold text-amber-100 tabular-nums';
+                count.textContent = String(entry.total);
+                count.title = entry.total + ' RSVP(s) entered this unknown inviter name';
+                row.append(details, count);
                 rewardList.appendChild(row);
             });
+
+            if (noInviterCount > 0) {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between gap-3 rounded-lg border border-gray-500/40 bg-black/25 px-3 py-2';
+                const label = document.createElement('p');
+                label.className = 'font-medium text-gray-200';
+                label.textContent = 'No inviter entered';
+                const count = document.createElement('span');
+                count.className = 'shrink-0 rounded border border-gray-500/40 bg-gray-900/50 px-3 py-1 text-sm font-semibold text-gray-100 tabular-nums';
+                count.textContent = String(noInviterCount);
+                count.title = noInviterCount + ' RSVP(s) with no inviter entered';
+                row.append(label, count);
+                rewardList.appendChild(row);
+            }
         }
 
         async function toggleGuestDrinkUpgrade(id, data, welcomeDrinkEarned) {
@@ -1564,9 +1603,8 @@
                 const nonAlbatrossTotal = categoryTotals.Basics.total + categoryTotals.RSVPs.total;
                 const nonAlbatrossPaid = categoryTotals.Basics.paid + categoryTotals.RSVPs.paid;
                 const formatRate = (albatross, rest) => {
-                    if (albatross === 0) return '—';
-                    if (rest === 0) return '∞ : 1';
-                    return (albatross / rest).toFixed(1) + ' : 1';
+                    if (!rest) return '—';
+                    return (Number(albatross) / Number(rest)).toFixed(1);
                 };
                 document.getElementById('guestTotalCount').textContent = totalGuestRecords;
                 document.getElementById('guestPaidCount').textContent = totalPaidRecords;
