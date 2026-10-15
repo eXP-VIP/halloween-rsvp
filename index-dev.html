@@ -467,7 +467,7 @@
                             <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Admin · Prices</h4>
                             <span class="text-[10px] uppercase tracking-wider text-amber-200">Role-controlled staff access</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-4">Set the admission price and welcome-drink rule for each guest tier. “Included” means one drink is included in the admission price; “Paid upgrade” adds its price; “Unavailable” disables paid upgrades. Earned referral drinks remain available. Only one welcome drink can be collected per guest.</p>
+                        <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules and referral eligibility for each category. Included drinks are already covered; a referral reward does not add a second drink. For eligible categories, set how many referred guests must check in. A qualifying referral drink replaces a paid upgrade.</p>
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
@@ -481,6 +481,11 @@
                                 </select>
                                 <label for="drinkPriceBasics" class="form-label">Upgrade price (€)</label>
                                 <input id="drinkPriceBasics" type="number" min="0" step="1" class="form-field" value="0" disabled>
+                                <div class="mt-4 border-t border-gold/20 pt-3">
+                                    <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligibleBasics" type="checkbox" class="mt-0.5 accent-amber-300" checked> Eligible for referral welcome drink</label>
+                                    <label for="referralThresholdBasics" class="form-label">Required referred guests to check in</label>
+                                    <input id="referralThresholdBasics" type="number" min="1" step="1" class="form-field" value="2">
+                                </div>
                             </div>
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Albatross</h5>
@@ -494,6 +499,11 @@
                                 </select>
                                 <label for="drinkPricePaidMembers" class="form-label">Upgrade price (€)</label>
                                 <input id="drinkPricePaidMembers" type="number" min="0" step="1" class="form-field" value="0" disabled>
+                                <div class="mt-4 border-t border-gold/20 pt-3">
+                                    <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligiblePaidMembers" type="checkbox" class="mt-0.5 accent-amber-300" checked> Eligible for referral welcome drink</label>
+                                    <label for="referralThresholdPaidMembers" class="form-label">Required referred guests to check in</label>
+                                    <input id="referralThresholdPaidMembers" type="number" min="1" step="1" class="form-field" value="2">
+                                </div>
                             </div>
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">RSVPs</h5>
@@ -507,6 +517,11 @@
                                 </select>
                                 <label for="drinkPriceFriends" class="form-label">Upgrade price (€)</label>
                                 <input id="drinkPriceFriends" type="number" min="0" step="1" class="form-field" value="0" disabled>
+                                <div class="mt-4 border-t border-gold/20 pt-3">
+                                    <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligibleFriends" type="checkbox" class="mt-0.5 accent-amber-300"> Eligible for referral welcome drink</label>
+                                    <label for="referralThresholdFriends" class="form-label">Required referred guests to check in</label>
+                                    <input id="referralThresholdFriends" type="number" min="1" step="1" class="form-field" value="2">
+                                </div>
                             </div>
                         </div>
                         <button type="button" id="savePricingButton" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest mt-4">Save pricing</button>
@@ -672,6 +687,11 @@
                 basics: { mode: 'not_allowed', price: 0 },
                 paidMembers: { mode: 'not_allowed', price: 0 },
                 friends: { mode: 'included', price: 0 }
+            },
+            referralRules: {
+                basics: { eligible: true, threshold: 2 },
+                paidMembers: { eligible: true, threshold: 2 },
+                friends: { eligible: false, threshold: 2 }
             }
         };
         let pricingSettings = JSON.parse(JSON.stringify(DEFAULT_PRICING));
@@ -690,6 +710,15 @@
                     price: amount(rule.price, fallback.price)
                 };
             };
+            const normalizeReferralRule = (tier) => {
+                const fallback = DEFAULT_PRICING.referralRules[tier];
+                const rule = (raw.referralRules && raw.referralRules[tier]) || {};
+                const n = Number(rule.threshold);
+                return {
+                    eligible: typeof rule.eligible === 'boolean' ? rule.eligible : fallback.eligible,
+                    threshold: Number.isInteger(n) && n >= 1 ? n : fallback.threshold
+                };
+            };
             return {
                 basePrices: {
                     basics: amount(raw.basePrices && raw.basePrices.basics, 15),
@@ -700,6 +729,11 @@
                     basics: normalizeRule('basics'),
                     paidMembers: normalizeRule('paidMembers'),
                     friends: normalizeRule('friends')
+                },
+                referralRules: {
+                    basics: normalizeReferralRule('basics'),
+                    paidMembers: normalizeReferralRule('paidMembers'),
+                    friends: normalizeReferralRule('friends')
                 }
             };
         }
@@ -718,6 +752,19 @@
         function getGuestCategory(data) {
             const tier = getGuestTier(data);
             return tier === 'basics' ? 'Basics' : tier === 'paidMembers' ? 'Albatross' : 'RSVPs';
+        }
+
+        function isReferralDrinkEligible(data) {
+            const tier = getGuestTier(data);
+            const referralRule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
+            const drinkRule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+            return Boolean(referralRule.eligible) && drinkRule.mode !== 'included';
+        }
+
+        function hasEarnedReferralDrink(data, referredGuestCount) {
+            const tier = getGuestTier(data);
+            const referralRule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
+            return isReferralDrinkEligible(data) && Number(referredGuestCount || 0) >= referralRule.threshold;
         }
 
         function isGuestDrinkChipIssued(data) {
@@ -758,13 +805,22 @@
                 drinkPriceFriends: pricingSettings.drinkRules.friends.price,
                 drinkModeBasics: pricingSettings.drinkRules.basics.mode,
                 drinkModePaidMembers: pricingSettings.drinkRules.paidMembers.mode,
-                drinkModeFriends: pricingSettings.drinkRules.friends.mode
+                drinkModeFriends: pricingSettings.drinkRules.friends.mode,
+                referralEligibleBasics: pricingSettings.referralRules.basics.eligible,
+                referralEligiblePaidMembers: pricingSettings.referralRules.paidMembers.eligible,
+                referralEligibleFriends: pricingSettings.referralRules.friends.eligible,
+                referralThresholdBasics: pricingSettings.referralRules.basics.threshold,
+                referralThresholdPaidMembers: pricingSettings.referralRules.paidMembers.threshold,
+                referralThresholdFriends: pricingSettings.referralRules.friends.threshold
             };
             Object.entries(fields).forEach(([id, value]) => {
                 const el = document.getElementById(id);
-                if (el) el.value = String(value);
+                if (el) {
+                    if (el.type === 'checkbox') el.checked = Boolean(value);
+                    else el.value = String(value);
+                }
             });
-            ['Basics', 'PaidMembers', 'RSVPs'].forEach((tier) => {
+            ['Basics', 'PaidMembers', 'Friends'].forEach((tier) => {
                 const mode = document.getElementById('drinkMode' + tier);
                 const price = document.getElementById('drinkPrice' + tier);
                 if (mode && price) price.disabled = mode.value !== 'upgrade';
@@ -780,18 +836,37 @@
                 if (!Number.isFinite(n) || n < 0) throw new Error(label + ' must be zero or a positive amount.');
                 return Math.round(n);
             };
+            const readPositiveInteger = (id, label) => {
+                const n = Number(document.getElementById(id).value);
+                if (!Number.isInteger(n) || n < 1) throw new Error(label + ' must be a whole number of at least 1.');
+                return n;
+            };
             let next;
             try {
                 next = {
                     basePrices: {
                         basics: readAmount('basePriceBasics', 'Basics admission price'),
-                        paidMembers: readAmount('basePricePaidMembers', 'Paid Members admission price'),
+                        paidMembers: readAmount('basePricePaidMembers', 'Albatross admission price'),
                         friends: readAmount('basePriceFriends', 'RSVPs admission price')
                     },
                     drinkRules: {
                         basics: { mode: document.getElementById('drinkModeBasics').value, price: readAmount('drinkPriceBasics', 'Basics drink upgrade') },
-                        paidMembers: { mode: document.getElementById('drinkModePaidMembers').value, price: readAmount('drinkPricePaidMembers', 'Paid Members drink upgrade') },
+                        paidMembers: { mode: document.getElementById('drinkModePaidMembers').value, price: readAmount('drinkPricePaidMembers', 'Albatross drink upgrade') },
                         friends: { mode: document.getElementById('drinkModeFriends').value, price: readAmount('drinkPriceFriends', 'RSVPs drink upgrade') }
+                    },
+                    referralRules: {
+                        basics: {
+                            eligible: document.getElementById('referralEligibleBasics').checked,
+                            threshold: readPositiveInteger('referralThresholdBasics', 'Basics referral threshold')
+                        },
+                        paidMembers: {
+                            eligible: document.getElementById('referralEligiblePaidMembers').checked,
+                            threshold: readPositiveInteger('referralThresholdPaidMembers', 'Albatross referral threshold')
+                        },
+                        friends: {
+                            eligible: document.getElementById('referralEligibleFriends').checked,
+                            threshold: readPositiveInteger('referralThresholdFriends', 'RSVP referral threshold')
+                        }
                     }
                 };
             } catch (error) {
@@ -799,7 +874,7 @@
                 return;
             }
             if (Object.values(next.drinkRules).some((rule) => !['included', 'upgrade', 'not_allowed'].includes(rule.mode))) {
-                status.textContent = 'Select a valid welcome-drink rule for each tier.';
+                status.textContent = 'Select a valid welcome-drink rule for each category.';
                 return;
             }
             button.disabled = true;
