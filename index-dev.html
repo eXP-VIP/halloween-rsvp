@@ -680,7 +680,7 @@
         let pendingInternationsNameColumn = '';
         let cachedGuestDocs = [];
         let pricingUnsubscribe = null;
-        let cachedUnaccountedInviters = [];
+        let cachedUnaccountedReferrals = [];
         const DEFAULT_PRICING = {
             basePrices: { basics: 15, paidMembers: 5, friends: 20 },
             drinkRules: {
@@ -1326,7 +1326,7 @@
             if (pricingUnsubscribe) { pricingUnsubscribe(); pricingUnsubscribe = null; }
             cachedGuestSnapshot = null;
             cachedGuestDocs = [];
-            cachedUnaccountedInviters = [];
+            cachedUnaccountedReferrals = [];
         }
 
         function showStaffLogin() {
@@ -1454,25 +1454,38 @@
             const section = document.getElementById('unrecognizedWelcomeDrinkSection');
             if (!rewardList || !section) return;
             rewardList.replaceChildren();
+            const isAdmin = currentStaffRole === 'admin';
+            section.classList.toggle('hidden', !isAdmin);
+            if (!isAdmin) return;
 
-            const memberKeys = new Set(cachedGuestDocs
-                .filter((doc) => isInterNationsMember(doc.data()))
-                .map((doc) => normalizeGuestName(doc.data().name))
-                .filter(Boolean));
-            const unaccounted = cachedUnaccountedInviters.filter((inviter) => !memberKeys.has(inviter.key));
-            section.classList.toggle('hidden', currentStaffRole !== 'admin' || unaccounted.length === 0);
-            if (currentStaffRole !== 'admin' || !unaccounted.length) return;
+            if (!cachedUnaccountedReferrals.length) {
+                const empty = document.createElement('p');
+                empty.className = 'text-xs text-gray-300 py-2';
+                empty.textContent = 'No unaccounted referrals or RSVPs without an inviter.';
+                rewardList.appendChild(empty);
+                return;
+            }
 
-            unaccounted.forEach((inviter) => {
+            cachedUnaccountedReferrals.forEach((entry) => {
                 const row = document.createElement('div');
-                row.className = 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-gold/30 bg-black/25 px-3 py-2';
-                const inviterName = document.createElement('span');
-                inviterName.className = 'font-medium break-words';
-                inviterName.textContent = inviter.name;
-                const count = document.createElement('span');
-                count.className = 'text-[10px] text-gray-300 tabular-nums whitespace-nowrap';
-                count.textContent = inviter.registeredCount + ' referred · ' + inviter.count + ' checked in';
-                row.append(inviterName, count);
+                row.className = 'flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 rounded-lg border border-gold/30 bg-black/25 px-3 py-2';
+                const details = document.createElement('div');
+                details.className = 'min-w-0';
+                const name = document.createElement('p');
+                name.className = 'font-medium break-words';
+                name.textContent = entry.guestName || '(No name provided)';
+                const meta = document.createElement('p');
+                meta.className = 'text-[10px] text-gray-300 break-words mt-1';
+                meta.textContent = entry.invitedBy
+                    ? 'Invited by: ' + entry.invitedBy + (entry.inviterCategory ? ' · ' + entry.inviterCategory : '') +
+                      ' · ' + entry.registeredReferrals + ' referrals / ' + entry.checkedInReferrals + ' checked in' +
+                      ' · ' + entry.guestStatus
+                    : 'No inviter entered · ' + entry.guestStatus;
+                details.append(name, meta);
+                const reason = document.createElement('span');
+                reason.className = 'shrink-0 self-start rounded border border-amber-400/30 bg-amber-950/30 px-2 py-1 text-[9px] uppercase tracking-wider text-amber-100';
+                reason.textContent = entry.reason;
+                row.append(details, reason);
                 rewardList.appendChild(row);
             });
         }
@@ -1550,8 +1563,8 @@
                 const nonAlbatrossPaid = categoryTotals.Basics.paid + categoryTotals.RSVPs.paid;
                 const formatRate = (albatross, rest) => {
                     if (albatross === 0) return '—';
-                    if (rest === 0) return '∞';
-                    return (albatross / rest).toFixed(1);
+                    if (rest === 0) return '∞ : 1';
+                    return (albatross / rest).toFixed(1) + ' : 1';
                 };
                 document.getElementById('guestTotalCount').textContent = totalGuestRecords;
                 document.getElementById('guestPaidCount').textContent = totalPaidRecords;
@@ -1563,6 +1576,8 @@
                 document.getElementById('guestFriendsPaid').textContent = categoryTotals.RSVPs.paid;
                 document.getElementById('guestMixRatio').textContent = formatRate(categoryTotals.Albatross.total, nonAlbatrossTotal);
                 document.getElementById('guestPaidMixRatio').textContent = formatRate(categoryTotals.Albatross.paid, nonAlbatrossPaid);
+                document.getElementById('guestStandardMixRatio').textContent = formatRate(categoryTotals.Albatross.total, categoryTotals.Basics.total);
+                document.getElementById('guestPaidStandardMixRatio').textContent = formatRate(categoryTotals.Albatross.paid, categoryTotals.Basics.paid);
                 const issuedNameKeys = new Set(snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
 
                 // Count checked-in referrals for live rewards, plus all referral names for the admin reconciliation list.
@@ -1589,17 +1604,7 @@
                     }
                 });
 
-                cachedUnaccountedInviters = Array.from(referralTrackingByInviter.entries())
-                    .filter(([key]) => !memberNameKeys.has(key))
-                    .map(([key, value]) => ({
-                        key,
-                        name: value.name,
-                        registeredCount: value.guestIds.size,
-                        count: value.checkedInGuestIds.size
-                    }))
-                    .sort((a, b) => b.registeredCount - a.registeredCount || b.count - a.count || a.name.localeCompare(b.name));
                 renderInternationsImportPreview();
-                renderUnrecognizedWelcomeDrinkList();
 
                 const hotelOpenContainer = document.getElementById('guestNotCheckedInContainer');
                 const hotelCheckedContainer = document.getElementById('guestCheckedInContainer');
@@ -1611,6 +1616,66 @@
                 paidContainer.replaceChildren();
 
                 const guestDocs = snapshot.docs.map((doc) => ({ doc, data: doc.data() }));
+                const guestByNameKey = new Map();
+                guestDocs.forEach((item) => {
+                    const key = normalizeGuestName(item.data.name);
+                    if (!key) return;
+                    const current = guestByNameKey.get(key);
+                    if (!current || (!isInterNationsMember(current.data) && isInterNationsMember(item.data))) {
+                        guestByNameKey.set(key, item);
+                    }
+                });
+
+                cachedUnaccountedReferrals = [];
+                guestDocs.forEach((item) => {
+                    const guestData = item.data;
+                    const inviteName = String(guestData.invitedBy || '').trim();
+                    const inviterKey = normalizeGuestName(inviteName);
+                    let reason = '';
+                    let inviter = null;
+                    let referralTracking = null;
+
+                    if (inviterKey) {
+                        inviter = guestByNameKey.get(inviterKey) || null;
+                        referralTracking = referralTrackingByInviter.get(inviterKey) || null;
+                        if (!inviter) {
+                            reason = 'Inviter not found in guest list';
+                        } else {
+                            const tier = getGuestTier(inviter.data);
+                            const drinkRule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+                            const referralRule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
+                            const checkedReferrals = checkedInReferralsByInviter.get(inviterKey)?.guestIds.size || 0;
+                            // Included drinks are already accounted for; qualifying referral rewards are accounted separately.
+                            if (drinkRule.mode === 'included') return;
+                            if (hasEarnedReferralDrink(inviter.data, checkedReferrals)) return;
+                            reason = !referralRule.eligible
+                                ? 'Referral drinks disabled for ' + getGuestCategory(inviter.data)
+                                : 'Needs ' + Math.max(0, referralRule.threshold - checkedReferrals) + ' more checked-in referral(s)';
+                        }
+                    } else {
+                        // Do not list imported membership rows as RSVPs without an inviter.
+                        if (isInterNationsMember(guestData)) return;
+                        reason = 'No inviter entered';
+                    }
+
+                    cachedUnaccountedReferrals.push({
+                        guestName: String(guestData.name || '').trim() || '(No name provided)',
+                        category: getGuestCategory(guestData),
+                        invitedBy: inviter ? String(inviter.data.name || inviteName).trim() : inviteName,
+                        inviterCategory: inviter ? getGuestCategory(inviter.data) : '',
+                        registeredReferrals: referralTracking ? referralTracking.guestIds.size : 0,
+                        checkedInReferrals: referralTracking ? referralTracking.checkedInGuestIds.size : 0,
+                        guestStatus: guestData.checkedIn ? 'Checked in' : 'Not checked in',
+                        reason
+                    });
+                });
+                cachedUnaccountedReferrals.sort((a, b) =>
+                    a.reason.localeCompare(b.reason) ||
+                    String(a.invitedBy || '').localeCompare(String(b.invitedBy || '')) ||
+                    a.guestName.localeCompare(b.guestName, undefined, { sensitivity: 'base' })
+                );
+                renderUnrecognizedWelcomeDrinkList();
+
                 const checkedInGuests = guestDocs.filter((item) => Boolean(item.data.checkedIn));
                 const compareNames = (a, b) => String(a.data.name || '').localeCompare(String(b.data.name || ''), undefined, { sensitivity: 'base' });
                 const timestampMillis = (value) => {
@@ -1628,7 +1693,7 @@
                     const checkedIn = Boolean(data.checkedIn);
                     const inviterKey = normalizeGuestName(data.name);
                     const invitedCount = checkedInReferralsByInviter.get(inviterKey)?.guestIds.size || 0;
-                    const welcomeDrinkEarned = isInterNationsMember(data) && invitedCount >= 2;
+                    const welcomeDrinkEarned = hasEarnedReferralDrink(data, invitedCount);
                     const isMemberRecord = isInterNationsMember(data);
                     const isPaymentCard = mode === 'payment';
                     const isPaid = Boolean(data.paid);
@@ -1794,7 +1859,10 @@
                 });
                 const estimatedEarnedKeys = new Set(
                     Array.from(potentialReferralCounts.entries())
-                        .filter(([key, record]) => record.guestIds.size >= 2 && memberNameKeys.has(key))
+                        .filter(([key, record]) => {
+                            const inviter = guestByNameKey.get(key);
+                            return Boolean(inviter) && hasEarnedReferralDrink(inviter.data, record.guestIds.size);
+                        })
                         .map(([key]) => key)
                 );
                 const estimatedDrinksByPerson = new Map();
@@ -1830,7 +1898,7 @@
                     if (item.data.amountPaid != null && Number.isFinite(Number(item.data.amountPaid))) return sum + Number(item.data.amountPaid);
                     const key = normalizeGuestName(item.data.name);
                     const referrals = checkedInReferralsByInviter.get(key)?.guestIds.size || 0;
-                    return sum + calculateGuestCharge(item.data, isInterNationsMember(item.data) && referrals >= 2).total;
+                    return sum + calculateGuestCharge(item.data, hasEarnedReferralDrink(item.data, referrals)).total;
                 }, 0);
                 const maxFullAttendance = guestDocs.reduce((sum, item) => {
                     const key = normalizeGuestName(item.data.name);
