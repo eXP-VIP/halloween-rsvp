@@ -1641,11 +1641,11 @@
                     if (!inviterKey) return;
 
                     if (!referralTrackingByInviter.has(inviterKey)) {
-                        referralTrackingByInviter.set(inviterKey, { name: inviterName, guestIds: new Set(), checkedInGuestIds: new Set() });
+                        referralTrackingByInviter.set(inviterKey, { name: inviterName, guestIds: new Set(), paidGuestIds: new Set() });
                     }
                     const tracking = referralTrackingByInviter.get(inviterKey);
                     tracking.guestIds.add(guestDoc.id);
-                    if (referredGuest.checkedIn) tracking.checkedInGuestIds.add(guestDoc.id);
+                    if (referredGuest.paid) tracking.paidGuestIds.add(guestDoc.id);
 
                     if (referredGuest.checkedIn) {
                         if (!checkedInReferralsByInviter.has(inviterKey)) {
@@ -1792,13 +1792,13 @@
                     // Referral status badges are separate from the uniform chip action.
                     const cardInviterKey = normalizeGuestName(data.name);
                     const cardReferralTracking = referralTrackingByInviter.get(cardInviterKey);
-                    const checkedInReferralCount = cardReferralTracking?.checkedInGuestIds?.size || 0;
+                    const paidReferralCount = cardReferralTracking?.paidGuestIds?.size || 0;
                     const registeredReferralCount = cardReferralTracking?.guestIds?.size || 0;
                     const referralRule = pricingSettings.referralRules[getGuestTier(data)] || { eligible: false, threshold: 2 };
-                    const referralDrinkEarned = hasEarnedReferralDrink(data, checkedInReferralCount);
+                    const referralDrinkEarned = hasEarnedReferralDrink(data, paidReferralCount);
                     const hasPendingReferrals = isReferralDrinkEligible(data) &&
                         registeredReferralCount > 0 && !referralDrinkEarned &&
-                        Number(referralRule.threshold || 2) > checkedInReferralCount &&
+                        Number(referralRule.threshold || 2) > paidReferralCount &&
                         calculateGuestCharge(data, false).drinkMode !== 'included';
                     if (referralDrinkEarned) {
                         const referralBadge = document.createElement('span');
