@@ -896,7 +896,7 @@
             }
         });
 
-        ['Basics', 'PaidMembers', 'RSVPs'].forEach((tier) => {
+        ['Basics', 'PaidMembers', 'Friends'].forEach((tier) => {
             const mode = document.getElementById('drinkMode' + tier);
             if (mode) mode.addEventListener('change', () => {
                 const price = document.getElementById('drinkPrice' + tier);
@@ -1473,7 +1473,7 @@
                 details.className = 'min-w-0';
                 const name = document.createElement('p');
                 name.className = 'font-medium break-words';
-                name.textContent = entry.guestName || '(No name provided)';
+                name.textContent = (entry.guestName || '(No name provided)') + ' · ' + entry.category;
                 const meta = document.createElement('p');
                 meta.className = 'text-[10px] text-gray-300 break-words mt-1';
                 meta.textContent = entry.invitedBy
@@ -1494,9 +1494,11 @@
             if (!db || !id) return;
             const tier = getGuestTier(data);
             const rule = pricingSettings.drinkRules[tier];
-            if (!rule || rule.mode !== 'upgrade' || welcomeDrinkEarned) return;
-            const nextSelected = !Boolean(data.welcomeDrinkUpgradeSelected);
-            if (nextSelected && isGuestDrinkChipIssued(data)) return;
+            if (!rule || rule.mode !== 'upgrade') return;
+            const currentlySelected = Boolean(data.welcomeDrinkUpgradeSelected);
+            if (welcomeDrinkEarned && !currentlySelected) return;
+            const nextSelected = !currentlySelected;
+            if (nextSelected && (welcomeDrinkEarned || isGuestDrinkChipIssued(data))) return;
             try {
                 const update = {
                     welcomeDrinkUpgradeSelected: nextSelected,
@@ -1761,8 +1763,8 @@
                             titleLine.appendChild(rewardBadge);
                         }
 
-                        if (charge.drinkMode === 'upgrade' && !welcomeDrinkEarned &&
-                            (upgradeCanBeSelected || (charge.upgradeSelected && !chipAlreadyIssued))) {
+                        if (charge.drinkMode === 'upgrade' && !chipAlreadyIssued &&
+                            (welcomeDrinkEarned ? charge.upgradeSelected : (upgradeCanBeSelected || charge.upgradeSelected))) {
                             const upgradeButton = document.createElement('button');
                             upgradeButton.type = 'button';
                             upgradeButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
