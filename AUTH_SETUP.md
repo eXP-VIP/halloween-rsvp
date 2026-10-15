@@ -1,6 +1,6 @@
 # Staff login setup
 
-The development page now presents a **username + password** login and reads the assigned role from `staff_users/{uid}`. It does not ask staff for an email address and has no password-reset email workflow.
+The development page now presents a **username + password** login and reads the assigned role from `event_users/{uid}`. It does not ask staff for an email address and has no password-reset email workflow.
 
 Firebase's built-in Email/Password provider internally requires an email-shaped sign-in ID. The page maps a username such as `ari` to a fixed, synthetic alias such as `ari@staff.partybag.com`; this is an authentication identifier, not a mailbox. No messages are sent to it. Users always enter only their username and password on the page.
 
@@ -17,7 +17,7 @@ Project: `the-dean-munich-halloween`
 1. Open **Firebase Console → Authentication → Sign-in method** and enable **Email/Password**. The page itself accepts usernames only; do not enable public registration in the page.
 2. In **Authentication → Settings → Authorized domains**, ensure the hosting domain `sign-up.partybag.com` is listed. Add `exp-vip.github.io` if you test via GitHub Pages.
 3. Under **Authentication → Users**, create each staff user with the synthetic sign-in ID `<username>@staff.partybag.com` and a password. For example, a staff username of `ari` must be created with sign-in ID `ari@staff.partybag.com`. No real mailbox is required; the app never sends email to this alias.
-4. Copy the Authentication user's **UID**. In **Firestore Database → Data**, create a `staff_users` document whose **document ID is exactly that UID**. Add these fields:
+4. Copy the Authentication user's **UID**. In **Firestore Database → Data**, create a `event_users` document whose **document ID is exactly that UID**. Add these fields:
    - `username` — the lowercase username used on the login page (e.g. `ari`)
    - `active` — boolean `true`
    - `role` — string `admin`, `hotel`, or `internations`
