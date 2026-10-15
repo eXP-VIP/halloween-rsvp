@@ -437,7 +437,7 @@
                                 </div>
                                 <div class="min-w-0">
                                     <table class="w-fit max-w-full table-auto border-collapse text-[10px] leading-4 text-gray-300 tabular-nums">
-                                        <thead class="sr-only"><tr><th>Category</th><th>Estimated</th><th>Separator</th><th>Issued</th></tr></thead>
+                                        <thead class="sr-only"><tr><th>Category</th><th>Total</th><th>Separator</th><th>Issued</th></tr></thead>
                                         <tbody>
                                             <tr><th scope="row" class="text-left font-normal pr-2">Referrals</th><td id="drinkReferralEstimate" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkReferralIssued" class="text-right">0</td></tr>
                                             <tr><th scope="row" class="text-left font-normal pr-2">Included</th><td id="drinkIncludedEstimate" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkIncludedIssued" class="text-right">0</td></tr>
@@ -618,7 +618,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.15.4</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.1</p>
         </div>
     </footer>
 
@@ -1805,14 +1805,14 @@
                     if (referralDrinkEarned) {
                         const referralBadge = document.createElement('span');
                         referralBadge.className = 'inline-flex items-center rounded-full border border-amber-300/80 bg-amber-300/15 px-2 py-1 text-[9px] font-bold tracking-wider text-amber-200 shadow-sm shadow-amber-400/10';
-                        referralBadge.textContent = 'REFERRAL DRINK';
-                        referralBadge.title = 'Eligible for a referral-earned welcome drink based on checked-in referrals.';
+                        referralBadge.textContent = 'REFERRALS DRINK';
+                        referralBadge.title = 'Earned a welcome drink through checked-in referrals.';
                         titleLine.appendChild(referralBadge);
                     } else if (hasPendingReferrals) {
                         const pendingBadge = document.createElement('span');
                         pendingBadge.className = 'inline-flex items-center rounded-full border border-slate-300/60 bg-slate-300/10 px-2 py-1 text-[9px] font-semibold tracking-wider text-slate-200';
                         pendingBadge.textContent = 'REFERRALS PENDING';
-                        pendingBadge.title = 'Referrals are registered, but not enough have checked in yet to earn a welcome drink.';
+                        pendingBadge.title = 'Has referrals, but the required number of referred guests have not checked in yet.';
                         titleLine.appendChild(pendingBadge);
                     }
 
@@ -1877,7 +1877,7 @@
                         if (drinkEntitled) {
                             const chipButton = document.createElement('button');
                             chipButton.type = 'button';
-                            chipButton.className = 'shrink-0 rounded border border-amber-500/50 bg-amber-950/40 px-3 py-2 text-xs font-semibold tracking-wider text-amber-100 hover:bg-amber-900/50';
+                            chipButton.className = 'shrink-0 rounded border border-emerald-500/50 bg-emerald-900/30 px-3 py-2 text-xs font-semibold tracking-wider text-emerald-100 hover:bg-emerald-900/50';
                             chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
                             chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
                             chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
@@ -2184,8 +2184,7 @@
         }
 
         function applyGuestSorts() {
-            const adminSortControls = document.getElementById('adminGuestSortControls');
-            if (adminSortControls) adminSortControls.classList.toggle('hidden', currentStaffRole !== 'admin');
+            document.querySelectorAll('.admin-sort-controls').forEach((button) => button.classList.toggle('hidden', currentStaffRole !== 'admin'));
             const guestListSort = currentStaffRole === 'admin' ? adminGuestSortBy : hotelSortBy;
             applySortToContainer('guestNotCheckedInContainer', guestListSort, '', -1);
             applySortToContainer('guestCheckedInContainer', guestListSort, '', 1);
