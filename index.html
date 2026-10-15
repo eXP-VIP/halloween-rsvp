@@ -554,9 +554,9 @@
                     <div id="hotelSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort check-in lists">
                         <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                         <button type="button" class="sort-option" data-sort-group="hotel" data-sort="firstName" aria-pressed="true" onclick="setHotelSort('firstName')">First name</button>
-                        <span class="admin-sort-controls hidden" id="adminGuestSortControls"><button type="button" class="sort-option" data-sort-group="admin" data-sort="firstName" aria-pressed="true" onclick="setAdminGuestSort('firstName')">First name</button>
-                        <button type="button" class="sort-option" data-sort-group="admin" data-sort="lastName" aria-pressed="false" onclick="setAdminGuestSort('lastName')">Last Name</button>
-                        <button type="button" class="sort-option" data-sort-group="admin" data-sort="signupNewest" aria-pressed="false" onclick="setAdminGuestSort('signupNewest')">Signup</button></span>
+                        <button type="button" id="adminGuestSortControls" class="sort-option admin-sort-controls hidden" data-sort-group="admin" data-sort="firstName" aria-pressed="true" onclick="setAdminGuestSort('firstName')">First name</button>
+                        <button type="button" class="sort-option admin-sort-controls hidden" data-sort-group="admin" data-sort="lastName" aria-pressed="false" onclick="setAdminGuestSort('lastName')">Last Name</button>
+                        <button type="button" class="sort-option admin-sort-controls hidden" data-sort-group="admin" data-sort="signupNewest" aria-pressed="false" onclick="setAdminGuestSort('signupNewest')">Signup</button>
                         <button type="button" class="sort-option" data-sort-group="hotel" data-sort="lastName" aria-pressed="false" onclick="setHotelSort('lastName')">Last Name</button>
                     </div>
                     <div class="mb-4">
@@ -597,7 +597,7 @@
                         <section id="unrecognizedWelcomeDrinkSection" class="hidden rounded-xl border border-gold/40 bg-amber-950/25 p-4 mt-5" aria-labelledby="welcomeDrinkHeading">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
                             <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Unaccounted referrals</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-gray-300">Guests whose referral drinks are not yet accounted for, plus RSVPs without an inviter</span>
+                            <span class="text-[10px] uppercase tracking-wider text-gray-300">Unknown inviter names entered on RSVPs, plus RSVPs without an inviter</span>
                         </div>
                         
                         <div id="welcomeDrinkList" class="space-y-2 text-sm text-gray-100">
@@ -1791,6 +1791,31 @@
                     typeBadge.textContent = getGuestCategory(data).toLocaleUpperCase();
                     if (currentStaffRole === 'admin') titleLine.appendChild(typeBadge);
 
+                    // Referral status badges are separate from the uniform chip action.
+                    const cardInviterKey = normalizeGuestName(data.name);
+                    const cardReferralTracking = referralTrackingByInviter.get(cardInviterKey);
+                    const checkedInReferralCount = cardReferralTracking?.checkedInGuestIds?.size || 0;
+                    const registeredReferralCount = cardReferralTracking?.guestIds?.size || 0;
+                    const referralRule = pricingSettings.referralRules[getGuestTier(data)] || { eligible: false, threshold: 2 };
+                    const referralDrinkEarned = hasEarnedReferralDrink(data, checkedInReferralCount);
+                    const hasPendingReferrals = isReferralDrinkEligible(data) &&
+                        registeredReferralCount > 0 && !referralDrinkEarned &&
+                        Number(referralRule.threshold || 2) > checkedInReferralCount &&
+                        calculateGuestCharge(data, false).drinkMode !== 'included';
+                    if (referralDrinkEarned) {
+                        const referralBadge = document.createElement('span');
+                        referralBadge.className = 'inline-flex items-center rounded-full border border-amber-300/80 bg-amber-300/15 px-2 py-1 text-[9px] font-bold tracking-wider text-amber-200 shadow-sm shadow-amber-400/10';
+                        referralBadge.textContent = 'REFERRAL DRINK';
+                        referralBadge.title = 'Eligible for a referral-earned welcome drink based on checked-in referrals.';
+                        titleLine.appendChild(referralBadge);
+                    } else if (hasPendingReferrals) {
+                        const pendingBadge = document.createElement('span');
+                        pendingBadge.className = 'inline-flex items-center rounded-full border border-slate-300/60 bg-slate-300/10 px-2 py-1 text-[9px] font-semibold tracking-wider text-slate-200';
+                        pendingBadge.textContent = 'REFERRALS PENDING';
+                        pendingBadge.title = 'Referrals are registered, but not enough have checked in yet to earn a welcome drink.';
+                        titleLine.appendChild(pendingBadge);
+                    }
+
                     const guestMeta = document.createElement('p');
                     guestMeta.className = 'text-xs text-gray-300 break-words mt-1';
                     const displayDateMillis = isInterNationsMember
@@ -1852,8 +1877,7 @@
                         if (drinkEntitled) {
                             const chipButton = document.createElement('button');
                             chipButton.type = 'button';
-                            chipButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
-                                (chipAlreadyIssued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : (welcomeDrinkEarned ? 'border-amber-300 bg-amber-300/20 text-amber-100 shadow-md shadow-amber-500/20' : 'border-amber-500/50 bg-amber-950/40 text-amber-100 hover:bg-amber-900/50'));
+                            chipButton.className = 'shrink-0 rounded border border-amber-500/50 bg-amber-950/40 px-3 py-2 text-xs font-semibold tracking-wider text-amber-100 hover:bg-amber-900/50';
                             chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
                             chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
                             chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
