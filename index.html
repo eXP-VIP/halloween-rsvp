@@ -555,7 +555,6 @@
                         <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                         <button type="button" class="sort-option" data-sort-group="hotel" data-sort="firstName" aria-pressed="true" onclick="setHotelSort('firstName')">First name</button>
                         <span class="admin-sort-controls hidden" id="adminGuestSortControls"><button type="button" class="sort-option" data-sort-group="admin" data-sort="signupNewest" aria-pressed="true" onclick="setAdminGuestSort('signupNewest')">Signup: newest</button>
-                        <button type="button" class="sort-option" data-sort-group="admin" data-sort="signupOldest" aria-pressed="false" onclick="setAdminGuestSort('signupOldest')">Signup: oldest</button>
                         <button type="button" class="sort-option" data-sort-group="admin" data-sort="firstName" aria-pressed="false" onclick="setAdminGuestSort('firstName')">First name</button>
                         <button type="button" class="sort-option" data-sort-group="admin" data-sort="lastName" aria-pressed="false" onclick="setAdminGuestSort('lastName')">Last Name</button></span>
                         <button type="button" class="sort-option" data-sort-group="hotel" data-sort="lastName" aria-pressed="false" onclick="setHotelSort('lastName')">Last Name</button>
@@ -1461,10 +1460,11 @@
             section.classList.toggle('hidden', !isAdmin);
             if (!isAdmin) return;
 
-            // Show only unknown inviter names: aggregate how many RSVPs used each
-            // name in "Invited by". Never list the RSVP guest records themselves.
+            // Reconcile unknown inviter names only. Members who also RSVP'd
+            // remain known members for referral matching and calculations.
             const guestRows = cachedGuestDocs.map((doc) => doc.data());
-            const knownGuestKeys = new Set(guestRows
+            const knownMemberKeys = new Set(guestRows
+                .filter((data) => isInterNationsMember(data))
                 .map((data) => normalizeGuestName(data.name))
                 .filter(Boolean));
             const referralsByInviter = new Map();
@@ -1483,7 +1483,7 @@
                 }
                 // If the name matches any registered guest (including a member
                 // who also RSVPed), it is not an unknown inviter.
-                if (knownGuestKeys.has(inviterKey)) return;
+                if (knownMemberKeys.has(inviterKey)) return;
                 if (!referralsByInviter.has(inviterKey)) {
                     referralsByInviter.set(inviterKey, { name: inviterName, total: 0, checkedIn: 0 });
                 }
@@ -1745,7 +1745,9 @@
                     const data = item.data;
                     const checkedIn = Boolean(data.checkedIn);
                     const inviterKey = normalizeGuestName(data.name);
-                    const invitedCount = checkedInReferralsByInviter.get(inviterKey)?.guestIds.size || 0;
+                    // Qualification uses registered referrals, matching the dashboard
+                    // forecast; check-in status is tracked separately for operations.
+                    const invitedCount = referralTrackingByInviter.get(inviterKey)?.guestIds.size || 0;
                     const welcomeDrinkEarned = hasEarnedReferralDrink(data, invitedCount);
                     const isMemberRecord = isInterNationsMember(data);
                     const isPaymentCard = mode === 'payment';
@@ -2140,7 +2142,7 @@
         }
 
         function setAdminGuestSort(sortBy) {
-            if (!['signupNewest', 'signupOldest', 'firstName', 'lastName'].includes(sortBy)) return;
+            if (!['signupNewest', 'firstName', 'lastName'].includes(sortBy)) return;
             adminGuestSortBy = sortBy;
             applyGuestSorts();
         }
