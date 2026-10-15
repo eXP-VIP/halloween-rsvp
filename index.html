@@ -17,7 +17,7 @@
     <meta property="og:image:width" content="1689" />
     <meta property="og:image:height" content=1399" />
 
-    <title>The Dean After Dark | Private Halloween Soirée</title>
+    <title>The Dean After Dark — Staff Tools Development</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -34,7 +34,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
@@ -224,6 +225,8 @@
             transition: border-color .2s ease, box-shadow .2s ease;
         }
         .form-field:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212,175,55,.10); }
+        .sort-option { border: 1px solid rgba(212,175,55,.35); border-radius: 7px; color: #d8d3c8; padding: 7px 11px; font-size: 10px; letter-spacing: .04em; background: rgba(8,8,10,.55); }
+        .sort-option[aria-pressed="true"] { color: #08080a; background: var(--gold); border-color: var(--gold); font-weight: 700; }
         .form-field::placeholder { color: #85818a; }
         .form-label { display: block; margin-bottom: 8px; color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
         @media (max-width: 640px) {
@@ -321,8 +324,7 @@
                 <h2 class="font-serif text-2xl sm:text-3xl text-white uppercase tracking-wider mb-3">Join the Guest List</h2>
                 <p class="text-gray-200 text-sm leading-relaxed max-w-2xl mx-auto">This is a private, guest-list-only event, so please register in advance. The hostess will welcome you and check your name at the entrance.</p>
             </div>
-            <form id="rsvpForm" action="https://formspree.io/f/mbgdopnl" method="POST" class="space-y-5">
-                <input type="hidden" name="VIP Group Link" value="https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58">
+            <form id="rsvpForm" class="space-y-5">
                 <div>
                     <label for="guestName" class="form-label">Full name</label>
                     <input id="guestName" type="text" name="Full Name" autocomplete="name" required class="form-field" placeholder="Name used at the entrance">
@@ -347,10 +349,10 @@
                     <section id="postRegistrationActions" class="hidden w-full max-w-xl rounded-xl border-2 border-emerald-500/50 bg-emerald-950/40 p-5 sm:p-6 text-center shadow-lg shadow-black/20" aria-labelledby="futurePartyHeading">
                         <p class="text-emerald-300 text-xs font-bold uppercase tracking-[0.2em] mb-2"><i class="fa-solid fa-calendar-check mr-2"></i>Keep the date</p>
                         <h3 id="futurePartyHeading" class="font-serif text-base sm:text-lg uppercase tracking-wider text-white mb-3">Want a reminder and future invitations?</h3>
-                        <p class="text-sm text-gray-100 leading-relaxed">Join the private Exclusive Parties (eXP-VIP) WhatsApp group for a reminder a few days before this party and occasional invitations to future events. It is announcement-only: no member chat, members cannot post or see one another. Prefer not to join? Add the event to your calendar for a personal reminder.</p>
+                        <p class="text-sm text-gray-100 leading-relaxed">Join the private Exclusive Parties (eXP) WhatsApp group for a reminder a few days before the party and invitations to future events. Leave anytime. Admin-only announcements, maximum 2 posts per month, no chat and a hidden members list. No WhatsApp? Add a calendar reminder instead.</p>
                         <div class="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 mt-5">
-                            <a href="#" id="groupInviteLink" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn hidden inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-whatsapp"></i> Join WhatsApp Secret Group</a>
-                            <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=The%20Dean%20After%20Dark%20%E2%80%93%20Halloween%20Soir%C3%A9e&amp;dates=20261031T180000/20261101T020000&amp;ctz=Europe%2FBerlin&amp;details=Private%20Halloween%20soir%C3%A9e.%20%E2%82%AC20%20cash%20at%20the%20door%2C%20including%20one%20welcome%20drink.%20Event%20details%20and%20guest%20list%3A%20https%3A%2F%2Fexp-vip.github.io%2Fhalloween-rsvp%2F&amp;location=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" id="googleCalendarLink" target="_blank" rel="noopener noreferrer" class="calendar-option-btn"><i class="fa-brands fa-google"></i> Add to Google Calendar</a>
+                            <a href="#" id="groupInviteLink" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn hidden inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-whatsapp"></i> Join WhatsApp Group</a>
+                            <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=The%20Dean%20After%20Dark%20%E2%80%93%20Halloween%20Soir%C3%A9e&amp;dates=20261031T180000/20261101T020000&amp;ctz=Europe%2FBerlin&amp;details=Private%20Halloween%20soir%C3%A9e.%20%E2%82%AC20%20cash%20at%20the%20door%2C%20including%20one%20welcome%20drink.%20Event%20details%20and%20guest%20list%3A%20https%3A%2F%2Fexp-vip.github.io%2Fhalloween-rsvp%2F&amp;location=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" id="googleCalendarLink" target="_blank" rel="noopener noreferrer" class="calendar-option-btn"><i class="fa-brands fa-google"></i> Add Calendar Reminder</a>
                             <button type="button" id="calendarDownloadBtn" class="calendar-option-btn"><i class="fa-solid fa-calendar-plus"></i> Other calendars (.ics)</button>
                         </div>
                         <p class="text-xs text-emerald-100 leading-relaxed mt-4">The calendar file includes the venue, event details and a reminder three days before the party.</p>
@@ -365,56 +367,240 @@
         <div id="hostessPortal" class="hidden relative z-20 w-full mt-8 mb-8">
             <div class="glass-panel rounded-2xl p-5 sm:p-8 max-w-3xl w-full mx-auto gold-border-glow">
                 <div class="flex justify-between items-center mb-5 border-b border-gold/20 pb-4">
-                    <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Guest Check-in</h3>
-                    <button type="button" onclick="toggleHostessPortal()" aria-label="Close staff check-in" class="text-gray-300 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                    <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Check-in</h3>
+                    <button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
                 <div id="staffLoginSection" class="space-y-4 py-5">
                     <div class="text-center mb-5">
-                        <p class="text-sm text-gray-200">Enter the management password to view and manage the guest list.</p>
+                        <p class="text-sm text-gray-200">Sign in with your assigned username and password.</p>
+                        <p class="text-xs text-amber-200 mt-2">The administrator creates accounts and assigns roles. No email address is needed.</p>
                     </div>
                     <form id="staffLoginForm" class="space-y-4 max-w-md mx-auto">
                         <div>
-                            <label for="staffPassword" class="form-label">Management password</label>
-                            <input type="password" id="staffPassword" autocomplete="current-password" required class="form-field" placeholder="Enter management password">
+                            <label for="staffUsername" class="form-label">Username</label>
+                            <input type="text" id="staffUsername" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required minlength="3" maxlength="32" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}" class="form-field" placeholder="Your username">
                         </div>
-                        <button type="submit" id="staffLoginBtn" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Unlock Guest List</button>
+                        <div>
+                            <label for="staffPassword" class="form-label">Password</label>
+                            <input type="password" id="staffPassword" name="password" autocomplete="current-password" required class="form-field" placeholder="Your staff password">
+                        </div>
+                        <button type="submit" id="staffLoginBtn" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Sign In</button>
                     </form>
                     <p id="staffLoginError" role="alert" class="text-red-300 text-xs text-center hidden"></p>
-                    <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">The live guest list is not connected. Configure the real Firebase settings and Firestore access rules before using check-in.</p>
+                    <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">Firebase Authentication or Firestore is unavailable. Check the project configuration and security rules.</p>
                 </div>
                 <div id="guestlistSection" class="hidden">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                        <div class="rounded-lg border border-gold/25 bg-black/35 p-3">
-                            <p class="text-[10px] uppercase tracking-wider text-gray-300">Total guests</p>
-                            <p id="totalCount" class="text-2xl font-semibold text-gold tabular-nums">0</p>
+                    <div id="staffIdentityBar" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gold/20 bg-black/30 px-3 py-2 mb-4">
+                        <p id="staffIdentity" class="text-[10px] text-gray-300 break-all">Signed in</p>
+                        <span class="text-[9px] text-emerald-200 uppercase tracking-wider">Authenticated</span>
+                    </div>
+                    <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
+                        <div class="rounded-lg border border-gold/25 bg-black/35 p-3 min-w-0">
+                            <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="min-w-0">
+                                        <p id="guestTotalCount" class="text-3xl font-semibold text-gold tabular-nums">0</p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Total</p>
+                                    </div>
+                                    <span class="text-2xl text-gray-500">/</span>
+                                    <div class="min-w-0">
+                                        <p id="guestPaidCount" class="text-3xl font-semibold text-sky-200 tabular-nums">0</p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Paid</p>
+                                    </div>
+                                </div>
+                                <table class="w-fit max-w-full table-auto border-collapse text-[10px] leading-4 text-gray-300 tabular-nums">
+                                    <thead class="sr-only"><tr><th>Category</th><th>Total</th><th>Separator</th><th>Paid</th></tr></thead>
+                                    <tbody>
+                                        <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Albatross</th><td id="guestAlbatrossTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestAlbatrossPaid" class="text-right">0</td></tr>
+                                        <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Basics</th><td id="guestBasicsTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestBasicsPaid" class="text-right">0</td></tr>
+                                        <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">RSVPs</th><td id="guestFriendsTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestFriendsPaid" class="text-right">0</td></tr>
+                                        <tr><th scope="row" class="text-left font-semibold text-gold pr-2 whitespace-nowrap">Rate Full</th><td id="guestMixRatio" class="text-right font-semibold text-gold">—</td><td class="text-center px-1 text-gray-500">/</td><td id="guestPaidMixRatio" class="text-right font-semibold text-gold">—</td></tr>
+                                        <tr><th scope="row" class="text-left font-semibold text-gray-300 pr-2 whitespace-nowrap">Rate Std.</th><td id="guestStandardMixRatio" class="text-right font-semibold text-gray-300">—</td><td class="text-center px-1 text-gray-500">/</td><td id="guestPaidStandardMixRatio" class="text-right font-semibold text-gray-300">—</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="rounded-lg border border-emerald-500/30 bg-emerald-950/25 p-3">
-                            <p class="text-[10px] uppercase tracking-wider text-gray-300">Checked in</p>
-                            <p id="checkedInCount" class="text-2xl font-semibold text-emerald-300 tabular-nums">0</p>
+                                                <div class="rounded-lg border border-amber-400/40 bg-amber-950/30 p-3 min-w-0">
+                            <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Welcome drinks</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="min-w-0">
+                                        <p id="drinkEstimateTotal" class="text-3xl font-semibold text-amber-200 tabular-nums">0</p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Estimated</p>
+                                    </div>
+                                    <span class="text-2xl text-gray-500">/</span>
+                                    <div class="min-w-0">
+                                        <p id="welcomeDrinkChipCount" class="text-3xl font-semibold text-emerald-200 tabular-nums">0</p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Issued</p>
+                                    </div>
+                                </div>
+                                <div class="min-w-0">
+                                    <table class="w-fit max-w-full table-auto border-collapse text-[10px] leading-4 text-gray-300 tabular-nums">
+                                        <thead><tr><th class="text-left font-normal pr-2"></th><th class="text-right font-normal text-gray-500">Est.</th><th class="text-center px-1 text-gray-500">/</th><th class="text-right font-normal text-gray-500">Issued</th></tr></thead>
+                                        <tbody>
+                                            <tr><th scope="row" class="text-left font-normal pr-2">Referrals</th><td id="drinkReferralEstimate" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkReferralIssued" class="text-right">0</td></tr>
+                                            <tr><th scope="row" class="text-left font-normal pr-2">Included</th><td id="drinkIncludedEstimate" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkIncludedIssued" class="text-right">0</td></tr>
+                                            <tr><th scope="row" class="text-left font-normal pr-2">Upgrades</th><td id="drinkUpgradeEstimate" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkUpgradeIssued" class="text-right">0</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
-                        <div class="rounded-lg border border-amber-400/40 bg-amber-950/30 p-3">
-                            <p class="text-[10px] uppercase tracking-wider text-gray-300">Welcome drinks earned</p>
-                            <p id="welcomeDrinkCount" class="text-2xl font-semibold text-amber-200 tabular-nums">0</p>
+                        <div id="collectedMetric" class="rounded-lg border border-sky-400/30 bg-sky-950/25 p-3 min-w-0">
+                            <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Payments</p>
+                            <div class="flex items-start gap-3 mt-2">
+                                <div class="min-w-0">
+                                    <p id="fullAttendanceAmount" class="text-xl sm:text-2xl font-semibold text-white tabular-nums">€0</p>
+                                    <p class="text-[10px] uppercase tracking-wider text-gray-400">Gross Potential</p>
+                                </div>
+                                <span class="text-xl text-gray-500">/</span>
+                                <div class="min-w-0">
+                                    <p id="collectedAmount" class="text-xl sm:text-2xl font-semibold text-sky-200 tabular-nums">€0</p>
+                                    <p class="text-[10px] uppercase tracking-wider text-gray-400">Paid</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <section class="rounded-xl border border-gold/40 bg-amber-950/25 p-4 mb-5" aria-labelledby="welcomeDrinkHeading">
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
-                            <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Welcome drinks earned</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-gray-300">2 or more invited guests checked in</span>
+                    <section id="adminPricingPanel" class="rounded-xl border border-gold/40 bg-black/30 p-4 mb-5">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-3">
+                            <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Admin · Prices</h4>
+                            <span class="text-[10px] uppercase tracking-wider text-amber-200">Role-controlled staff access</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-3">A welcome drink is earned only when at least two guests invited by that person have checked in. This list counts checked-in referrals, even if the inviter is not registered as a guest.</p>
+                        <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules and referral eligibility for each category. Included drinks are already covered; a referral reward does not add a second drink. For eligible categories, set how many referred guests must check in. A qualifying referral drink replaces a paid upgrade.</p>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                            <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
+                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
+                                <label for="basePriceBasics" class="form-label">Admission price (€)</label>
+                                <input id="basePriceBasics" type="number" min="0" step="1" class="form-field mb-3" value="15">
+                                <label for="drinkModeBasics" class="form-label">Welcome-drink rule</label>
+                                <select id="drinkModeBasics" class="form-field mb-3">
+                                    <option value="included">Included</option>
+                                    <option value="upgrade">Paid upgrade</option>
+                                    <option value="not_allowed" selected>Unavailable</option>
+                                </select>
+                                <label for="drinkPriceBasics" class="form-label">Upgrade price (€)</label>
+                                <input id="drinkPriceBasics" type="number" min="0" step="1" class="form-field" value="0" disabled>
+                                <div class="mt-4 border-t border-gold/20 pt-3">
+                                    <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligibleBasics" type="checkbox" class="mt-0.5 accent-amber-300" checked> Eligible for referral welcome drink</label>
+                                    <label for="referralThresholdBasics" class="form-label">Required referred guests to check in</label>
+                                    <input id="referralThresholdBasics" type="number" min="1" step="1" class="form-field" value="2">
+                                </div>
+                            </div>
+                            <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
+                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Albatross</h5>
+                                <label for="basePricePaidMembers" class="form-label">Admission price (€)</label>
+                                <input id="basePricePaidMembers" type="number" min="0" step="1" class="form-field mb-3" value="5">
+                                <label for="drinkModePaidMembers" class="form-label">Welcome-drink rule</label>
+                                <select id="drinkModePaidMembers" class="form-field mb-3">
+                                    <option value="included">Included</option>
+                                    <option value="upgrade">Paid upgrade</option>
+                                    <option value="not_allowed" selected>Unavailable</option>
+                                </select>
+                                <label for="drinkPricePaidMembers" class="form-label">Upgrade price (€)</label>
+                                <input id="drinkPricePaidMembers" type="number" min="0" step="1" class="form-field" value="0" disabled>
+                                <div class="mt-4 border-t border-gold/20 pt-3">
+                                    <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligiblePaidMembers" type="checkbox" class="mt-0.5 accent-amber-300" checked> Eligible for referral welcome drink</label>
+                                    <label for="referralThresholdPaidMembers" class="form-label">Required referred guests to check in</label>
+                                    <input id="referralThresholdPaidMembers" type="number" min="1" step="1" class="form-field" value="2">
+                                </div>
+                            </div>
+                            <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
+                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">RSVPs</h5>
+                                <label for="basePriceFriends" class="form-label">Admission price (€)</label>
+                                <input id="basePriceFriends" type="number" min="0" step="1" class="form-field mb-3" value="20">
+                                <label for="drinkModeFriends" class="form-label">Welcome-drink rule</label>
+                                <select id="drinkModeFriends" class="form-field mb-3">
+                                    <option value="included" selected>Included</option>
+                                    <option value="upgrade">Paid upgrade</option>
+                                    <option value="not_allowed">Unavailable</option>
+                                </select>
+                                <label for="drinkPriceFriends" class="form-label">Upgrade price (€)</label>
+                                <input id="drinkPriceFriends" type="number" min="0" step="1" class="form-field" value="0" disabled>
+                                <div class="mt-4 border-t border-gold/20 pt-3">
+                                    <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligibleFriends" type="checkbox" class="mt-0.5 accent-amber-300"> Eligible for referral welcome drink</label>
+                                    <label for="referralThresholdFriends" class="form-label">Required referred guests to check in</label>
+                                    <input id="referralThresholdFriends" type="number" min="1" step="1" class="form-field" value="2">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" id="savePricingButton" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest mt-4">Save pricing</button>
+                        <p id="pricingSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-3"></p>
+                    </section>
+                    <section id="internationsImportPanel" class="rounded-xl border border-sky-400/40 bg-sky-950/20 p-4 mb-5">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
+                            <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">Import InterNations guest list</h4>
+                            <span class="text-[10px] uppercase tracking-wider text-sky-200">CSV / Excel · repeatable import</span>
+                        </div>
+                        <p class="text-xs text-gray-300 mb-3">Choose the latest InterNations export. First and last names are combined automatically; the Status field is saved as the InterNations member type/status. Existing check-in, payment and chip status are preserved.</p>
+                        <label for="internationsFileInput" class="form-label">Guest-list spreadsheet</label>
+                        <input id="internationsFileInput" type="file" accept=".xlsx,.xls,.csv,.ods" class="form-field text-sm mb-3">
+                        <div id="internationsImportOptions" class="hidden space-y-3">
+                            <p class="text-xs text-sky-100">Names are combined automatically from First Name + Last Name. The Status field is imported as the member type/status.</p>
+                            <div id="internationsImportPreview" class="rounded-lg border border-sky-400/20 bg-black/30 p-3 text-xs text-gray-200"></div>
+                            <button type="button" id="confirmInternationsImport" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Import / Update InterNations Names</button>
+                        </div>
+                        <p id="internationsImportStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-3"></p>
+                    </section>
+                    
+                    <p id="guestlistError" class="text-red-300 text-sm hidden mb-3">Could not load the guest list. Check the database connection and access rules.</p>
+                    <section id="hotelCheckInPanel">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
+                        <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Check-in</h4>
+                        <div class="flex w-full sm:w-auto">
+                            <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
+                        </div>
+                    </div>
+                    <div id="hotelSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort check-in lists">
+                        <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
+                        <button type="button" class="sort-option" data-sort-group="hotel" data-sort="firstName" aria-pressed="true" onclick="setHotelSort('firstName')">First name</button>
+                        <button type="button" class="sort-option" data-sort-group="hotel" data-sort="lastName" aria-pressed="false" onclick="setHotelSort('lastName')">Last Name</button>
+                    </div>
+                    <div class="mb-4">
+                        <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Not checked in <span id="hotelOpenCount" class="text-amber-100">(0)</span></p>
+                        <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestNotCheckedInContainer"></div>
+                        <p id="noUncheckGuests" class="text-xs text-gray-500 py-2 hidden">Everyone is checked in.</p>
+                    </div>
+                    <div class="mb-6">
+                        <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Checked in <span id="hotelCheckedCount" class="text-emerald-200">(0)</span></p>
+                        <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestCheckedInContainer"></div>
+                        <p id="noCheckedGuests" class="text-xs text-gray-500 py-2 hidden">No guests checked in yet.</p>
+                    </div>
+                    </section>
+                    <section id="internationsPaymentPanel" class="rounded-xl border border-sky-400/40 bg-sky-950/20 p-4 mt-6">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
+                            <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">Checked-in guests · Payment status</h4>
+                            <div class="flex w-full sm:w-auto">
+                                <input type="search" id="paymentSearchInput" oninput="filterPaymentGuests()" aria-label="Search payment list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
+                            </div>
+                        </div>
+                        <div id="paymentSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort payment lists">
+                            <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
+                            <button type="button" class="sort-option" data-sort-group="payment" data-sort="firstName" aria-pressed="false" onclick="setPaymentSort('firstName')">First name</button>
+                            <button type="button" class="sort-option" data-sort-group="payment" data-sort="lastName" aria-pressed="false" onclick="setPaymentSort('lastName')">Last Name</button>
+                            <button type="button" class="sort-option" data-sort-group="payment" data-sort="timeOrder" aria-pressed="true" onclick="setPaymentSort('timeOrder')">Check-in order</button>
+                        </div>
+                        <div class="mb-4">
+                            <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Awaiting payment <span id="internationsUnpaidCount" class="text-amber-200">(0)</span></p>
+                            <div class="space-y-2 max-h-80 overflow-y-auto pr-1" id="internationsUnpaidContainer"></div>
+                            <p id="noInternationsUnpaid" class="text-xs text-gray-500 py-2 hidden">No checked-in guests are awaiting payment.</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Paid <span id="internationsPaidCount" class="text-emerald-200">(0)</span></p>
+                            <div class="space-y-2 max-h-80 overflow-y-auto pr-1" id="internationsPaidContainer"></div>
+                            <p id="noInternationsPaid" class="text-xs text-gray-500 py-2 hidden">No checked-in guests have been marked paid yet.</p>
+                        </div>
+                    
+                        <section id="unrecognizedWelcomeDrinkSection" class="hidden rounded-xl border border-gold/40 bg-amber-950/25 p-4 mt-5" aria-labelledby="welcomeDrinkHeading">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
+                            <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Unaccounted referrals</h4>
+                            <span class="text-[10px] uppercase tracking-wider text-gray-300">Guests whose referral drinks are not yet accounted for, plus RSVPs without an inviter</span>
+                        </div>
+                        
                         <div id="welcomeDrinkList" class="space-y-2 text-sm text-gray-100">
-                            <p class="text-xs text-gray-400">No inviter has two checked-in referrals yet.</p>
                         </div>
                     </section>
-                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-                        <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Guest list</h4>
-                        <div class="flex w-full sm:w-auto">
-                            <input type="search" id="searchInput" oninput="filterGuests()" aria-label="Search guest list" placeholder="Search guest name..." class="form-field w-full sm:max-w-xs text-sm">
-                        </div>
-                    </div>
-                    <p id="guestlistError" class="text-red-300 text-sm hidden mb-3">Could not load the guest list. Check the database connection and access rules.</p>
-                    <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestListContainer"></div>
+                    </section>
                 </div>
             </div>
         </div>
@@ -428,7 +614,8 @@
         <p class="mt-1">The Dean Munich, Autograph Collection by Marriott <span class="text-gold">·</span> Landsberger Straße 68, Munich</p>
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
-            <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Staff check-in</button>
+            <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
+            
         </div>
     </footer>
 
@@ -444,9 +631,15 @@
             measurementId: "G-B28F50SQWD"
         };
 
-        // Keep the Exclusive Parties group invitation and original single-password hostess gate.
+        // Staff access uses Firebase Authentication plus a server-enforced event_users/{uid} role record.
         const WHATSAPP_GROUP_INVITE_URL = "https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58";
-        const HOSTESS_PASSWORD = "1800";
+        const STAFF_ROLES = ['admin', 'hotel', 'internations'];
+        let currentStaffRole = null;
+        let currentAuthUser = null;
+        let activeStaffUid = null;
+        let staffActivationPromise = null;
+        let guestlistUnsubscribe = null;
+        let cachedGuestSnapshot = null;
 
         const firebaseConfigured = Boolean(
             firebaseConfig.apiKey &&
@@ -482,6 +675,430 @@
             }
         }
         configureGroupInviteButton();
+        let pendingInternationsRows = [];
+        let pendingInternationsHeaders = [];
+        let pendingInternationsNameColumn = '';
+        let cachedGuestDocs = [];
+        let pricingUnsubscribe = null;
+        let cachedUnaccountedReferrals = [];
+        const DEFAULT_PRICING = {
+            basePrices: { basics: 15, paidMembers: 5, friends: 20 },
+            drinkRules: {
+                basics: { mode: 'not_allowed', price: 0 },
+                paidMembers: { mode: 'not_allowed', price: 0 },
+                friends: { mode: 'included', price: 0 }
+            },
+            referralRules: {
+                basics: { eligible: true, threshold: 2 },
+                paidMembers: { eligible: true, threshold: 2 },
+                friends: { eligible: false, threshold: 2 }
+            }
+        };
+        let pricingSettings = JSON.parse(JSON.stringify(DEFAULT_PRICING));
+
+        function normalizePricingSettings(value) {
+            const raw = value || {};
+            const amount = (candidate, fallback) => {
+                const n = Number(candidate);
+                return Number.isFinite(n) && n >= 0 ? Math.round(n) : fallback;
+            };
+            const normalizeRule = (tier) => {
+                const fallback = DEFAULT_PRICING.drinkRules[tier];
+                const rule = (raw.drinkRules && raw.drinkRules[tier]) || {};
+                return {
+                    mode: ['included', 'upgrade', 'not_allowed'].includes(rule.mode) ? rule.mode : fallback.mode,
+                    price: amount(rule.price, fallback.price)
+                };
+            };
+            const normalizeReferralRule = (tier) => {
+                const fallback = DEFAULT_PRICING.referralRules[tier];
+                const rule = (raw.referralRules && raw.referralRules[tier]) || {};
+                const n = Number(rule.threshold);
+                return {
+                    eligible: typeof rule.eligible === 'boolean' ? rule.eligible : fallback.eligible,
+                    threshold: Number.isInteger(n) && n >= 1 ? n : fallback.threshold
+                };
+            };
+            return {
+                basePrices: {
+                    basics: amount(raw.basePrices && raw.basePrices.basics, 15),
+                    paidMembers: amount(raw.basePrices && raw.basePrices.paidMembers, 5),
+                    friends: amount(raw.basePrices && raw.basePrices.friends, 20)
+                },
+                drinkRules: {
+                    basics: normalizeRule('basics'),
+                    paidMembers: normalizeRule('paidMembers'),
+                    friends: normalizeRule('friends')
+                },
+                referralRules: {
+                    basics: normalizeReferralRule('basics'),
+                    paidMembers: normalizeReferralRule('paidMembers'),
+                    friends: normalizeReferralRule('friends')
+                }
+            };
+        }
+
+        function isInterNationsMember(data) {
+            return Boolean(data && (data.guestType === 'internations_member' || data.source === 'internations_import'));
+        }
+
+        function getGuestTier(data) {
+            if (isInterNationsMember(data)) {
+                return String(data.interNationsStatus || '').toLocaleLowerCase().includes('basic') ? 'basics' : 'paidMembers';
+            }
+            return 'friends';
+        }
+
+        function getGuestCategory(data) {
+            const tier = getGuestTier(data);
+            return tier === 'basics' ? 'Basics' : tier === 'paidMembers' ? 'Albatross' : 'RSVPs';
+        }
+
+        function isReferralDrinkEligible(data) {
+            const tier = getGuestTier(data);
+            const referralRule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
+            const drinkRule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+            return Boolean(referralRule.eligible) && drinkRule.mode !== 'included';
+        }
+
+        function hasEarnedReferralDrink(data, referredGuestCount) {
+            const tier = getGuestTier(data);
+            const referralRule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
+            return isReferralDrinkEligible(data) && Number(referredGuestCount || 0) >= referralRule.threshold;
+        }
+
+        function isGuestDrinkChipIssued(data) {
+            const key = normalizeGuestName(data && data.name);
+            if (key && cachedGuestDocs.some((doc) => normalizeGuestName(doc.data().name) === key && Boolean(doc.data().welcomeDrinkChipIssued))) return true;
+            return Boolean(data && data.welcomeDrinkChipIssued);
+        }
+
+        function formatEuro(value) {
+            return Math.round(Number(value || 0)).toLocaleString('de-DE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
+        function calculateGuestCharge(data, welcomeDrinkEarned) {
+            const tier = getGuestTier(data);
+            const basePrice = Number(pricingSettings.basePrices[tier] || 0);
+            const drinkRule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+            const upgradeSelected = Boolean(data && data.welcomeDrinkUpgradeSelected);
+            const upgradeCharge = drinkRule.mode === 'upgrade' && upgradeSelected && !welcomeDrinkEarned
+                ? Number(drinkRule.price || 0) : 0;
+            return {
+                tier,
+                basePrice,
+                drinkMode: drinkRule.mode,
+                upgradePrice: Number(drinkRule.price || 0),
+                upgradeSelected,
+                upgradeCharge,
+                total: basePrice + upgradeCharge
+            };
+        }
+
+        function renderPricingForm() {
+            const fields = {
+                basePriceBasics: pricingSettings.basePrices.basics,
+                basePricePaidMembers: pricingSettings.basePrices.paidMembers,
+                basePriceFriends: pricingSettings.basePrices.friends,
+                drinkPriceBasics: pricingSettings.drinkRules.basics.price,
+                drinkPricePaidMembers: pricingSettings.drinkRules.paidMembers.price,
+                drinkPriceFriends: pricingSettings.drinkRules.friends.price,
+                drinkModeBasics: pricingSettings.drinkRules.basics.mode,
+                drinkModePaidMembers: pricingSettings.drinkRules.paidMembers.mode,
+                drinkModeFriends: pricingSettings.drinkRules.friends.mode,
+                referralEligibleBasics: pricingSettings.referralRules.basics.eligible,
+                referralEligiblePaidMembers: pricingSettings.referralRules.paidMembers.eligible,
+                referralEligibleFriends: pricingSettings.referralRules.friends.eligible,
+                referralThresholdBasics: pricingSettings.referralRules.basics.threshold,
+                referralThresholdPaidMembers: pricingSettings.referralRules.paidMembers.threshold,
+                referralThresholdFriends: pricingSettings.referralRules.friends.threshold
+            };
+            Object.entries(fields).forEach(([id, value]) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (el.type === 'checkbox') el.checked = Boolean(value);
+                    else el.value = String(value);
+                }
+            });
+            ['Basics', 'PaidMembers', 'Friends'].forEach((tier) => {
+                const mode = document.getElementById('drinkMode' + tier);
+                const price = document.getElementById('drinkPrice' + tier);
+                if (mode && price) price.disabled = mode.value !== 'upgrade';
+            });
+        }
+
+        document.getElementById('savePricingButton').addEventListener('click', async () => {
+            const button = document.getElementById('savePricingButton');
+            const status = document.getElementById('pricingSaveStatus');
+            if (!db) { status.textContent = 'The database is not connected.'; return; }
+            const readAmount = (id, label) => {
+                const n = Number(document.getElementById(id).value);
+                if (!Number.isFinite(n) || n < 0) throw new Error(label + ' must be zero or a positive amount.');
+                return Math.round(n);
+            };
+            const readPositiveInteger = (id, label) => {
+                const n = Number(document.getElementById(id).value);
+                if (!Number.isInteger(n) || n < 1) throw new Error(label + ' must be a whole number of at least 1.');
+                return n;
+            };
+            let next;
+            try {
+                next = {
+                    basePrices: {
+                        basics: readAmount('basePriceBasics', 'Basics admission price'),
+                        paidMembers: readAmount('basePricePaidMembers', 'Albatross admission price'),
+                        friends: readAmount('basePriceFriends', 'RSVPs admission price')
+                    },
+                    drinkRules: {
+                        basics: { mode: document.getElementById('drinkModeBasics').value, price: readAmount('drinkPriceBasics', 'Basics drink upgrade') },
+                        paidMembers: { mode: document.getElementById('drinkModePaidMembers').value, price: readAmount('drinkPricePaidMembers', 'Albatross drink upgrade') },
+                        friends: { mode: document.getElementById('drinkModeFriends').value, price: readAmount('drinkPriceFriends', 'RSVPs drink upgrade') }
+                    },
+                    referralRules: {
+                        basics: {
+                            eligible: document.getElementById('referralEligibleBasics').checked,
+                            threshold: readPositiveInteger('referralThresholdBasics', 'Basics referral threshold')
+                        },
+                        paidMembers: {
+                            eligible: document.getElementById('referralEligiblePaidMembers').checked,
+                            threshold: readPositiveInteger('referralThresholdPaidMembers', 'Albatross referral threshold')
+                        },
+                        friends: {
+                            eligible: document.getElementById('referralEligibleFriends').checked,
+                            threshold: readPositiveInteger('referralThresholdFriends', 'RSVP referral threshold')
+                        }
+                    }
+                };
+            } catch (error) {
+                status.textContent = error.message;
+                return;
+            }
+            if (Object.values(next.drinkRules).some((rule) => !['included', 'upgrade', 'not_allowed'].includes(rule.mode))) {
+                status.textContent = 'Select a valid welcome-drink rule for each category.';
+                return;
+            }
+            button.disabled = true;
+            status.textContent = 'Saving pricing settings…';
+            try {
+                await db.collection('event_settings').doc('pricing').set({
+                    ...next,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                pricingSettings = normalizePricingSettings(next);
+                renderPricingForm();
+                status.textContent = 'Pricing saved. Guest totals are updating.';
+                if (document.getElementById('guestlistSection') && !document.getElementById('guestlistSection').classList.contains('hidden')) loadLiveGuestlist();
+            } catch (error) {
+                console.error('Pricing settings save failed:', error);
+                status.textContent = 'Could not save pricing. Check database permissions and try again.';
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        ['Basics', 'PaidMembers', 'Friends'].forEach((tier) => {
+            const mode = document.getElementById('drinkMode' + tier);
+            if (mode) mode.addEventListener('change', () => {
+                const price = document.getElementById('drinkPrice' + tier);
+                if (price) price.disabled = mode.value !== 'upgrade';
+            });
+        });
+        renderPricingForm();
+
+        function normalizeGuestName(value) {
+            return String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+        }
+
+        function readImportedNameParts(row) {
+            const firstHeader = pendingInternationsHeaders.find((header) => /^(first|given)\s*name$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
+            const lastHeader = pendingInternationsHeaders.find((header) => /^(last|family|sur)\s*name$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
+            const statusHeader = pendingInternationsHeaders.find((header) => /^(status|membership status|member status)$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
+            const firstName = firstHeader ? String(row[firstHeader] || '').replace(/\s+/g, ' ').trim() : '';
+            const lastName = lastHeader ? String(row[lastHeader] || '').replace(/\s+/g, ' ').trim() : '';
+            return {
+                name: [firstName, lastName].filter(Boolean).join(' ').trim(),
+                firstName,
+                lastName,
+                membershipStatus: statusHeader ? String(row[statusHeader] || '').trim() : ''
+            };
+        }
+
+        function readImportedGuestName(row) {
+            return readImportedNameParts(row).name;
+        }
+
+        function getUniqueImportedNames() {
+            const seen = new Map();
+            let blankRows = 0;
+            pendingInternationsRows.forEach((row) => {
+                const parts = readImportedNameParts(row);
+                const key = normalizeGuestName(parts.name);
+                if (!key) { blankRows++; return; }
+                if (!seen.has(key)) {
+                    seen.set(key, { ...parts, key });
+                } else if (!seen.get(key).membershipStatus && parts.membershipStatus) {
+                    seen.get(key).membershipStatus = parts.membershipStatus;
+                }
+            });
+            return { entries: Array.from(seen.values()), blankRows, duplicateRows: pendingInternationsRows.length - seen.size - blankRows };
+        }
+
+        function renderInternationsImportPreview() {
+            const preview = document.getElementById('internationsImportPreview');
+            const confirm = document.getElementById('confirmInternationsImport');
+            if (!pendingInternationsRows.length || !pendingInternationsNameColumn) {
+                preview.textContent = '';
+                confirm.disabled = true;
+                return;
+            }
+            const result = getUniqueImportedNames();
+            const existingKeys = new Set(cachedGuestDocs.map((doc) => normalizeGuestName(doc.data().name)).filter(Boolean));
+            const newNames = result.entries.filter((item) => !existingKeys.has(item.key));
+            const matchingNames = result.entries.length - newNames.length;
+            preview.replaceChildren();
+            const summary = document.createElement('p');
+            summary.className = 'font-semibold text-sm text-white mb-2';
+            summary.textContent = result.entries.length + ' unique names · ' + newNames.length + ' new · ' + matchingNames + ' already listed · ' + result.duplicateRows + ' repeated rows ignored';
+            preview.appendChild(summary);
+            const note = document.createElement('p');
+            note.className = 'text-gray-300 mb-2';
+            note.textContent = 'Matching names will be labelled InterNations member. Their existing check-in and welcome-drink chip status will be preserved.';
+            preview.appendChild(note);
+            const previewNames = document.createElement('p');
+            previewNames.className = 'text-gray-400 break-words';
+            previewNames.textContent = 'New names: ' + (newNames.slice(0, 8).map((item) => item.name).join(', ') || 'none') + (newNames.length > 8 ? ' …' : '');
+            preview.appendChild(previewNames);
+            confirm.disabled = result.entries.length === 0;
+            confirm.textContent = newNames.length ? 'Import ' + newNames.length + ' new name(s) and update matches' : 'Update matching InterNations names';
+        }
+
+        document.getElementById('internationsFileInput').addEventListener('change', async (event) => {
+            const status = document.getElementById('internationsImportStatus');
+            const options = document.getElementById('internationsImportOptions');
+            const file = event.target.files && event.target.files[0];
+            pendingInternationsRows = [];
+            pendingInternationsHeaders = [];
+            pendingInternationsNameColumn = '';
+            options.classList.add('hidden');
+            status.textContent = '';
+            if (!file) return;
+            try {
+                if (!window.XLSX) throw new Error('Spreadsheet reader could not be loaded. Check the network connection and reload this page.');
+                const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const grid = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '', raw: false, blankrows: false });
+                if (!grid.length) throw new Error('No data rows were found in the first worksheet.');
+
+                const normaliseHeader = (value) => String(value || '').replace(/^\uFEFF/, '').trim().toLocaleLowerCase().replace(/[\s_-]+/g, ' ');
+                const headerIndex = grid.slice(0, 15).findIndex((row) => {
+                    const headers = row.map(normaliseHeader);
+                    return headers.some((h) => /^(first|given) name$/.test(h)) && headers.some((h) => /^(last|family|sur) name$/.test(h));
+                });
+                if (headerIndex < 0) throw new Error('Could not find both First Name and Last Name columns in the first 15 rows.');
+
+                pendingInternationsHeaders = grid[headerIndex].map((value, index) => String(value || '').replace(/^\uFEFF/, '').trim() || ('Column ' + (index + 1)));
+                const normalizedHeaders = pendingInternationsHeaders.map(normaliseHeader);
+                const firstIndex = normalizedHeaders.findIndex((h) => /^(first|given) name$/.test(h));
+                const lastIndex = normalizedHeaders.findIndex((h) => /^(last|family|sur) name$/.test(h));
+                if (firstIndex < 0 || lastIndex < 0) throw new Error('Both First Name and Last Name columns are required.');
+                pendingInternationsNameColumn = '__combined_first_last__';
+
+                pendingInternationsRows = grid.slice(headerIndex + 1)
+                    .filter((row) => row.some((cell) => String(cell == null ? '' : cell).trim() !== ''))
+                    .map((cells) => {
+                        const record = {};
+                        pendingInternationsHeaders.forEach((header, index) => { record[header] = cells[index] == null ? '' : cells[index]; });
+                        return record;
+                    });
+                if (!pendingInternationsRows.length) throw new Error('The header row was found, but no guest rows followed it.');
+
+                options.classList.remove('hidden');
+                renderInternationsImportPreview();
+                status.textContent = 'Loaded ' + pendingInternationsRows.length + ' guest row(s) from ' + file.name + '. Names and member status will be detected automatically.';
+            } catch (error) {
+                console.error('InterNations spreadsheet import preparation failed:', error);
+                status.textContent = error.message || 'Could not read this spreadsheet.';
+            }
+        });
+
+        document.getElementById('confirmInternationsImport').addEventListener('click', async () => {
+            const button = document.getElementById('confirmInternationsImport');
+            const status = document.getElementById('internationsImportStatus');
+            if (!db) { status.textContent = 'The guest database is not connected.'; return; }
+            const result = getUniqueImportedNames();
+            if (!result.entries.length) { status.textContent = 'No valid guest names found.'; return; }
+            button.disabled = true;
+            const oldText = button.textContent;
+            button.textContent = 'IMPORTING…';
+            status.textContent = 'Checking the current guest list and preparing changes…';
+            try {
+                const current = await db.collection('halloween_guests').get();
+                const byName = new Map();
+                current.forEach((doc) => {
+                    const key = normalizeGuestName(doc.data().name);
+                    if (key && !byName.has(key)) byName.set(key, doc);
+                });
+                let added = 0, matched = 0;
+                const operations = [];
+                result.entries.forEach((entry) => {
+                    const existing = byName.get(entry.key);
+                    if (existing) {
+                        matched++;
+                        const updateData = {
+                            guestType: 'internations_member',
+                            source: 'internations_import',
+                            importNameKey: entry.key,
+                            importedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            firstName: entry.firstName,
+                            lastName: entry.lastName
+                        };
+                        if (entry.membershipStatus) updateData.interNationsStatus = entry.membershipStatus;
+                        operations.push({ type: 'update', ref: existing.ref, data: updateData });
+                    } else {
+                        added++;
+                        const ref = db.collection('halloween_guests').doc();
+                        operations.push({ type: 'set', ref, data: {
+                            name: entry.name,
+                            firstName: entry.firstName,
+                            lastName: entry.lastName,
+                            invitedBy: '',
+                            checkedIn: false,
+                            checkedInAt: null,
+                            paid: false,
+                            paidAt: null,
+                            guestType: 'internations_member',
+                            source: 'internations_import',
+                            importNameKey: entry.key,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            importedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            welcomeDrinkChipIssued: false,
+                            ...(entry.membershipStatus ? { interNationsStatus: entry.membershipStatus } : {})
+                        }});
+                    }
+                });
+                for (let start = 0; start < operations.length; start += 400) {
+                    const batch = db.batch();
+                    operations.slice(start, start + 400).forEach((op) => {
+                        if (op.type === 'update') batch.update(op.ref, op.data);
+                        else batch.set(op.ref, op.data);
+                    });
+                    await batch.commit();
+                }
+                status.textContent = 'Import complete: ' + added + ' new guest(s) added, ' + matched + ' existing name(s) matched. Member status was updated where provided; existing check-in, payment and chip status were preserved.';
+                pendingInternationsRows = [];
+                pendingInternationsHeaders = [];
+                pendingInternationsNameColumn = '';
+                document.getElementById('internationsImportOptions').classList.add('hidden');
+                document.getElementById('internationsFileInput').value = '';
+            } catch (error) {
+                console.error('InterNations import failed:', error);
+                status.textContent = 'Import failed. No success was reported; check the guest list and database access rules before retrying. ' + (error.message || '');
+            } finally {
+                button.disabled = false;
+                button.textContent = oldText;
+            }
+        });
+
 
         function escapeIcsText(value) {
             return String(value)
@@ -576,6 +1193,7 @@
         const statusMessage = document.getElementById('statusMessage');
         const statusText = document.getElementById('statusText');
         const errorMessage = document.getElementById('errorMessage');
+        let lastSubmittedGuest = null;
 
         function showSubmittedGuest(guest) {
             document.getElementById('summaryName').textContent = guest.name;
@@ -589,70 +1207,51 @@
             if (!form.reportValidity()) return;
 
             submitBtn.disabled = true;
-            submitBtn.textContent = 'SENDING DETAILS…';
+            submitBtn.textContent = 'SAVING…';
             statusMessage.classList.add('hidden');
             errorMessage.classList.add('hidden');
 
-            const fields = form.elements;
+            const fullName = document.getElementById('guestName').value.trim().replace(/\s+/g, ' ');
+            const nameParts = fullName.split(/\s+/).filter(Boolean);
             const guest = {
-                name: document.getElementById('guestName').value.trim(),
+                name: fullName,
+                firstName: nameParts.shift() || '',
+                lastName: nameParts.join(' '),
                 invitedBy: document.getElementById('guestInviter').value.trim(),
-                checkedIn: false
+                checkedIn: false,
+                checkedInAt: null,
+                paid: false,
+                paidAt: null,
+                welcomeDrinkChipIssued: false,
+                guestType: 'friend',
+                source: 'website'
             };
 
-            const databaseTask = db
-                ? db.collection('halloween_guests').add({
-                    ...guest,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(() => true).catch((error) => {
-                    console.error('Guest-list database save failed:', error);
-                    return false;
-                })
-                : Promise.resolve(false);
-
-            const formspreeTask = fetch(form.action, {
-                method: 'POST',
-                body: new FormData(form),
-                headers: { 'Accept': 'application/json' }
-            }).then((response) => {
-                if (!response.ok) throw new Error('Formspree returned an error.');
-                return true;
-            }).catch((error) => {
-                console.error('Formspree submission failed:', error);
-                return false;
-            });
+            if (!db) {
+                errorMessage.textContent = 'Registration could not be saved because the guest database is unavailable. Please retry later or contact Ari.';
+                errorMessage.classList.remove('hidden');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'ADD ME TO THE GUEST LIST';
+                return;
+            }
 
             try {
-                const [savedToDatabase, sentToHost] = await Promise.all([databaseTask, formspreeTask]);
+                await db.collection('halloween_guests').add({
+                    ...guest,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                lastSubmittedGuest = guest;
                 showSubmittedGuest(guest);
-
+                statusText.textContent = 'Thank you — your registration has been saved to the guest list. Please use the same full name when you arrive so the hotel can find you.';
                 statusMessage.classList.remove('hidden');
-
-                if (savedToDatabase && sentToHost) {
-                    statusText.textContent = 'Thank you — your details have been sent to the host and added to the guest list. The hostess will check your name at the entrance, so please use the same full name when you arrive.';
-                } else if (sentToHost && !savedToDatabase) {
-                    statusText.textContent = 'Your details have reached the host by email, but the live check-in list could not be updated. Please contact Ari before the event to make sure your name is on the door list.';
-                } else if (!sentToHost && savedToDatabase) {
-                    statusText.textContent = 'Your details are on the live guest list, but the host email notification could not be sent. Your registration is saved; please contact Ari if you need confirmation.';
-                } else {
-                    statusText.textContent = 'We could not confirm the registration with either service. Your details are shown below; please retry or contact Ari using the WhatsApp link at the bottom of the invitation.';
-                }
-
-                // The submitted record stays visible in the summary. Clear the form when at least one
-                // delivery path succeeded so the page is ready to register the next guest.
-                const deliverySucceeded = savedToDatabase || sentToHost;
-                document.getElementById('postRegistrationActions').classList.toggle('hidden', !deliverySucceeded);
-                if (deliverySucceeded) {
-                    document.body.classList.add('confirmation-mode');
-                    form.reset();
-                    form.classList.add('hidden');
-                    document.getElementById('registerAnotherBtn').textContent = 'Register another guest';
-                } else {
-                    document.getElementById('registerAnotherBtn').textContent = 'Return to form and retry';
-                }
+                document.getElementById('postRegistrationActions').classList.remove('hidden');
+                document.body.classList.add('confirmation-mode');
+                form.reset();
+                form.classList.add('hidden');
+                document.getElementById('registerAnotherBtn').textContent = 'Register another guest';
             } catch (error) {
-                console.error('Unexpected registration error:', error);
-                errorMessage.textContent = 'The submission could not be completed. Your entries have been kept in the form so you can retry.';
+                console.error('Guest-list database save failed:', error);
+                errorMessage.textContent = 'Registration could not be saved. Your entries are still in the form; please retry or contact Ari.';
                 errorMessage.classList.remove('hidden');
             } finally {
                 submitBtn.disabled = false;
@@ -670,169 +1269,691 @@
             document.getElementById('guestName').focus({ preventScroll: true });
         });
 
+        function applyStaffRole(role) {
+            if (!STAFF_ROLES.includes(role)) throw new Error('The account does not have a valid staff role.');
+            currentStaffRole = role;
+            const show = (id, visible) => {
+                const element = document.getElementById(id);
+                if (element) element.classList.toggle('hidden', !visible);
+            };
+            show('staffSummaryStats', role !== 'hotel');
+            show('unrecognizedWelcomeDrinkSection', role === 'admin');
+            show('collectedMetric', role === 'admin');
+            const statsGrid = document.getElementById('staffSummaryStats');
+            if (statsGrid) {
+                statsGrid.classList.toggle('xl:grid-cols-3', role === 'admin');
+                statsGrid.classList.toggle('xl:grid-cols-2', role !== 'admin');
+            }
+            show('adminPricingPanel', role === 'admin');
+            show('internationsImportPanel', role === 'admin');
+            show('hotelCheckInPanel', role !== 'internations');
+            show('internationsPaymentPanel', role !== 'hotel');
+        }
+
+        function setStaffLoginError(message) {
+            const error = document.getElementById('staffLoginError');
+            error.textContent = message;
+            error.classList.remove('hidden');
+        }
+
+        const STAFF_AUTH_ALIAS_DOMAIN = 'staff.partybag.com';
+
+        function staffUsernameToAuthEmail(value) {
+            const username = String(value || '').trim().toLowerCase();
+            if (!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username)) {
+                const invalid = new Error('Use 3–32 characters: letters, numbers, dots, underscores or hyphens. The first character must be a letter or number.');
+                invalid.code = 'staff/invalid-username';
+                throw invalid;
+            }
+            return username + '@' + STAFF_AUTH_ALIAS_DOMAIN;
+        }
+
+        function staffAuthErrorMessage(error) {
+            if (error && error.code === 'staff/not-authorized') return error.message;
+            if (error && error.code === 'staff/invalid-username') return error.message;
+            if (error && ['auth/invalid-credential', 'auth/user-not-found', 'auth/wrong-password', 'auth/invalid-email'].includes(error.code)) {
+                return 'Username or password is incorrect.';
+            }
+            if (error && error.code === 'auth/too-many-requests') return 'Too many sign-in attempts. Wait a while and try again.';
+            if (error && error.code === 'auth/unauthorized-domain') return 'This website is not authorized for Firebase sign-in. Add sign-up.partybag.com to Firebase Authentication’s authorized domains.';
+            if (error && error.code === 'auth/network-request-failed') return 'Network error while signing in. Check your connection and retry.';
+            if (error && error.code === 'permission-denied') return 'The staff role could not be checked. Confirm that the Firestore security rules have been published.';
+            return 'Sign-in could not be completed. Check your account setup and try again.';
+        }
+
+        function stopStaffRealtimeListeners() {
+            if (guestlistUnsubscribe) { guestlistUnsubscribe(); guestlistUnsubscribe = null; }
+            if (pricingUnsubscribe) { pricingUnsubscribe(); pricingUnsubscribe = null; }
+            cachedGuestSnapshot = null;
+            cachedGuestDocs = [];
+            cachedUnaccountedReferrals = [];
+        }
+
+        function showStaffLogin() {
+            activeStaffUid = null;
+            currentStaffRole = null;
+            stopStaffRealtimeListeners();
+            document.getElementById('staffLoginSection').classList.remove('hidden');
+            document.getElementById('guestlistSection').classList.add('hidden');
+            document.getElementById('staffIdentity').textContent = '';
+            document.getElementById('staffPassword').value = '';
+        }
+
+        async function activateStaffSession(user) {
+            if (!user || !db) throw new Error('Firebase Authentication and Firestore must both be available.');
+            if (activeStaffUid === user.uid && !document.getElementById('guestlistSection').classList.contains('hidden')) return;
+            if (staffActivationPromise) {
+                await staffActivationPromise;
+                if (activeStaffUid === user.uid) return;
+            }
+            const activation = (async () => {
+                const roleSnapshot = await db.collection('event_users').doc(user.uid).get();
+                const profile = roleSnapshot.exists ? roleSnapshot.data() : null;
+                if (!profile || profile.active !== true || !STAFF_ROLES.includes(profile.role)) {
+                    const denied = new Error('This account has no active staff role. Ask the administrator to assign one.');
+                    denied.code = 'staff/not-authorized';
+                    if (auth && auth.currentUser) await auth.signOut().catch(() => {});
+                    throw denied;
+                }
+                const username = String(profile.username || (user.email || '').split('@')[0] || 'staff').trim().toLowerCase();
+                const authAlias = String(user.email || '').toLowerCase();
+                if (authAlias !== username + '@' + STAFF_AUTH_ALIAS_DOMAIN) {
+                    const denied = new Error('This account is not configured for username sign-in. Ask the administrator to create the matching staff alias and role record.');
+                    denied.code = 'staff/not-authorized';
+                    if (auth && auth.currentUser) await auth.signOut().catch(() => {});
+                    throw denied;
+                }
+                applyStaffRole(profile.role);
+                activeStaffUid = user.uid;
+                document.getElementById('staffIdentity').textContent = profile.role === 'admin' ? username + ' · Admin' : username;
+                document.getElementById('staffLoginSection').classList.add('hidden');
+                document.getElementById('guestlistSection').classList.remove('hidden');
+                document.getElementById('staffLoginError').classList.add('hidden');
+                loadLiveGuestlist();
+            })();
+            staffActivationPromise = activation;
+            try { await activation; }
+            finally { if (staffActivationPromise === activation) staffActivationPromise = null; }
+        }
+
         function toggleHostessPortal() {
             const portal = document.getElementById('hostessPortal');
             const opening = portal.classList.contains('hidden');
-            portal.classList.toggle('hidden');
-            document.body.classList.toggle('staff-mode', opening);
+            const loginSection = document.getElementById('staffLoginSection');
+            if (!opening) {
+                stopStaffRealtimeListeners();
+                activeStaffUid = null;
+                currentStaffRole = null;
+                if (auth && auth.currentUser) auth.signOut().catch((error) => console.warn('Sign-out failed:', error));
+                portal.classList.add('hidden');
+                document.body.classList.remove('staff-mode');
+                loginSection.classList.remove('hidden');
+                document.getElementById('guestlistSection').classList.add('hidden');
+                document.getElementById('staffPassword').value = '';
+                document.getElementById('staffLoginError').classList.add('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+            portal.classList.remove('hidden');
+            document.body.classList.add('staff-mode');
             document.getElementById('staffLoginError').classList.add('hidden');
             document.getElementById('portalConfigWarning').classList.toggle('hidden', Boolean(db && auth));
-            if (!opening) return;
-
-            document.getElementById('staffLoginSection').classList.remove('hidden');
+            loginSection.classList.remove('hidden');
             document.getElementById('guestlistSection').classList.add('hidden');
-            document.getElementById('staffPassword').value = '';
-            document.getElementById('portalConfigWarning').classList.toggle('hidden', Boolean(db));
+            if (currentAuthUser || (auth && auth.currentUser)) {
+                activateStaffSession(currentAuthUser || auth.currentUser).catch((error) => setStaffLoginError(staffAuthErrorMessage(error)));
+            }
             portal.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         document.getElementById('staffLoginForm').addEventListener('submit', async function (event) {
             event.preventDefault();
-            const error = document.getElementById('staffLoginError');
             const loginButton = document.getElementById('staffLoginBtn');
-            const enteredPassword = document.getElementById('staffPassword').value;
-            error.classList.add('hidden');
-
-            if (enteredPassword !== HOSTESS_PASSWORD) {
-                error.textContent = 'Incorrect management password.';
-                error.classList.remove('hidden');
+            const username = document.getElementById('staffUsername').value;
+            const password = document.getElementById('staffPassword').value;
+            document.getElementById('staffLoginError').classList.add('hidden');
+            if (!auth || !db) {
+                setStaffLoginError('Firebase Authentication or Firestore is unavailable.');
                 return;
             }
-
             loginButton.disabled = true;
-            loginButton.textContent = 'UNLOCKING…';
+            loginButton.textContent = 'SIGNING IN…';
             try {
-                document.getElementById('staffLoginSection').classList.add('hidden');
-                document.getElementById('guestlistSection').classList.remove('hidden');
+                const authAlias = staffUsernameToAuthEmail(username);
+                const credential = await auth.signInWithEmailAndPassword(authAlias, password);
+                currentAuthUser = credential.user;
+                await activateStaffSession(credential.user);
                 document.getElementById('staffPassword').value = '';
-                if (!db) {
-                    const listError = document.getElementById('guestlistError');
-                    listError.textContent = 'Firebase connection failed. Check the Firebase configuration and database rules.';
-                    listError.classList.remove('hidden');
-                } else {
-                    loadLiveGuestlist();
-                }
+            } catch (error) {
+                setStaffLoginError(staffAuthErrorMessage(error));
             } finally {
                 loginButton.disabled = false;
-                loginButton.textContent = 'UNLOCK GUEST LIST';
+                loginButton.textContent = 'SIGN IN';
             }
         });
 
+        if (auth) {
+            auth.onAuthStateChanged((user) => {
+                currentAuthUser = user;
+                const portalOpen = !document.getElementById('hostessPortal').classList.contains('hidden');
+                if (!user) {
+                    if (activeStaffUid) showStaffLogin();
+                    return;
+                }
+                if (portalOpen) {
+                    activateStaffSession(user).catch((error) => {
+                        if (error && error.code === 'staff/not-authorized') setStaffLoginError(error.message);
+                        else setStaffLoginError(staffAuthErrorMessage(error));
+                    });
+                }
+            });
+        }
+
+        function renderUnrecognizedWelcomeDrinkList() {
+            const rewardList = document.getElementById('welcomeDrinkList');
+            const section = document.getElementById('unrecognizedWelcomeDrinkSection');
+            if (!rewardList || !section) return;
+            rewardList.replaceChildren();
+            const isAdmin = currentStaffRole === 'admin';
+            section.classList.toggle('hidden', !isAdmin);
+            if (!isAdmin) return;
+
+            if (!cachedUnaccountedReferrals.length) {
+                const empty = document.createElement('p');
+                empty.className = 'text-xs text-gray-300 py-2';
+                empty.textContent = 'No unaccounted referrals or RSVPs without an inviter.';
+                rewardList.appendChild(empty);
+                return;
+            }
+
+            cachedUnaccountedReferrals.forEach((entry) => {
+                const row = document.createElement('div');
+                row.className = 'flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 rounded-lg border border-gold/30 bg-black/25 px-3 py-2';
+                const details = document.createElement('div');
+                details.className = 'min-w-0';
+                const name = document.createElement('p');
+                name.className = 'font-medium break-words';
+                name.textContent = (entry.guestName || '(No name provided)') + ' · ' + entry.category;
+                const meta = document.createElement('p');
+                meta.className = 'text-[10px] text-gray-300 break-words mt-1';
+                meta.textContent = entry.invitedBy
+                    ? 'Invited by: ' + entry.invitedBy + (entry.inviterCategory ? ' · ' + entry.inviterCategory : '') +
+                      ' · ' + entry.registeredReferrals + ' referrals / ' + entry.checkedInReferrals + ' checked in' +
+                      ' · ' + entry.guestStatus
+                    : 'No inviter entered · ' + entry.guestStatus;
+                details.append(name, meta);
+                const reason = document.createElement('span');
+                reason.className = 'shrink-0 self-start rounded border border-amber-400/30 bg-amber-950/30 px-2 py-1 text-[9px] uppercase tracking-wider text-amber-100';
+                reason.textContent = entry.reason;
+                row.append(details, reason);
+                rewardList.appendChild(row);
+            });
+        }
+
+        async function toggleGuestDrinkUpgrade(id, data, welcomeDrinkEarned) {
+            if (!db || !id) return;
+            const tier = getGuestTier(data);
+            const rule = pricingSettings.drinkRules[tier];
+            if (!rule || rule.mode !== 'upgrade') return;
+            const currentlySelected = Boolean(data.welcomeDrinkUpgradeSelected);
+            if (welcomeDrinkEarned && !currentlySelected) return;
+            const nextSelected = !currentlySelected;
+            if (nextSelected && (welcomeDrinkEarned || isGuestDrinkChipIssued(data))) return;
+            try {
+                const update = {
+                    welcomeDrinkUpgradeSelected: nextSelected,
+                    welcomeDrinkUpgradePrice: nextSelected ? Number(rule.price || 0) : null,
+                    welcomeDrinkUpgradeUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                if (data.paid) {
+                    update.paid = false;
+                    update.paidAt = null;
+                    update.amountPaid = null;
+                    update.paymentStatusUpdatedAt = firebase.firestore.FieldValue.serverTimestamp();
+                }
+                await db.collection('halloween_guests').doc(id).update(update);
+            } catch (error) {
+                console.error('Welcome-drink upgrade update failed:', error);
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Could not save the drink upgrade. Check database permissions and try again.';
+                listError.classList.remove('hidden');
+            }
+        }
+
         function loadLiveGuestlist() {
-            const container = document.getElementById('guestListContainer');
             const listError = document.getElementById('guestlistError');
             if (!db) {
                 listError.textContent = 'Firebase could not connect. Check the Firebase project configuration and Firestore rules.';
                 listError.classList.remove('hidden');
                 return;
             }
-            db.collection('halloween_guests').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+            if (!pricingUnsubscribe) {
+                pricingUnsubscribe = db.collection('event_settings').doc('pricing').onSnapshot((doc) => {
+                    if (doc.exists) {
+                        pricingSettings = normalizePricingSettings(doc.data());
+                        renderPricingForm();
+                        if (document.getElementById('guestlistSection') && !document.getElementById('guestlistSection').classList.contains('hidden')) loadLiveGuestlist();
+                    }
+                }, (error) => {
+                    console.error('Pricing settings listener failed:', error);
+                    const status = document.getElementById('pricingSaveStatus');
+                    if (status) status.textContent = 'Pricing could not be read. Check the database permissions.';
+                });
+            }
+            if (guestlistUnsubscribe) {
+                guestlistUnsubscribe();
+                guestlistUnsubscribe = null;
+            }
+            guestlistUnsubscribe = db.collection('halloween_guests').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+                cachedGuestSnapshot = snapshot;
+                cachedGuestDocs = snapshot.docs;
                 listError.classList.add('hidden');
-                document.getElementById('totalCount').textContent = snapshot.size;
-                const checkedInTotal = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().checkedIn)).length;
-                document.getElementById('checkedInCount').textContent = checkedInTotal;
-                container.replaceChildren();
+                const categoryTotals = {
+                    Albatross: { total: 0, paid: 0 },
+                    Basics: { total: 0, paid: 0 },
+                    RSVPs: { total: 0, paid: 0 }
+                };
+                snapshot.docs.forEach((guestDoc) => {
+                    const data = guestDoc.data();
+                    const category = getGuestCategory(data);
+                    categoryTotals[category].total++;
+                    if (data.paid) categoryTotals[category].paid++;
+                });
+                const totalGuestRecords = snapshot.size;
+                const totalPaidRecords = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().paid)).length;
+                const nonAlbatrossTotal = categoryTotals.Basics.total + categoryTotals.RSVPs.total;
+                const nonAlbatrossPaid = categoryTotals.Basics.paid + categoryTotals.RSVPs.paid;
+                const formatRate = (albatross, rest) => {
+                    if (albatross === 0) return '—';
+                    if (rest === 0) return '∞ : 1';
+                    return (albatross / rest).toFixed(1) + ' : 1';
+                };
+                document.getElementById('guestTotalCount').textContent = totalGuestRecords;
+                document.getElementById('guestPaidCount').textContent = totalPaidRecords;
+                document.getElementById('guestAlbatrossTotal').textContent = categoryTotals.Albatross.total;
+                document.getElementById('guestAlbatrossPaid').textContent = categoryTotals.Albatross.paid;
+                document.getElementById('guestBasicsTotal').textContent = categoryTotals.Basics.total;
+                document.getElementById('guestBasicsPaid').textContent = categoryTotals.Basics.paid;
+                document.getElementById('guestFriendsTotal').textContent = categoryTotals.RSVPs.total;
+                document.getElementById('guestFriendsPaid').textContent = categoryTotals.RSVPs.paid;
+                document.getElementById('guestMixRatio').textContent = formatRate(categoryTotals.Albatross.total, nonAlbatrossTotal);
+                document.getElementById('guestPaidMixRatio').textContent = formatRate(categoryTotals.Albatross.paid, nonAlbatrossPaid);
+                document.getElementById('guestStandardMixRatio').textContent = formatRate(categoryTotals.Albatross.total, categoryTotals.Basics.total);
+                document.getElementById('guestPaidStandardMixRatio').textContent = formatRate(categoryTotals.Albatross.paid, categoryTotals.Basics.paid);
+                const issuedNameKeys = new Set(snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
 
-                // A welcome drink is earned only after at least two invited guest records have checked in.
-                // Each checked-in Firestore record counts once; inviter names are normalised for matching.
-                const normalizeGuestName = (value) => String(value || '')
-                    .normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+                // Count checked-in referrals for live rewards, plus all referral names for the admin reconciliation list.
                 const checkedInReferralsByInviter = new Map();
+                const referralTrackingByInviter = new Map();
                 snapshot.forEach((guestDoc) => {
                     const referredGuest = guestDoc.data();
-                    if (!referredGuest.checkedIn) return;
                     const inviterName = String(referredGuest.invitedBy || '').trim();
                     const inviterKey = normalizeGuestName(inviterName);
                     if (!inviterKey) return;
-                    if (!checkedInReferralsByInviter.has(inviterKey)) {
-                        checkedInReferralsByInviter.set(inviterKey, { name: inviterName, guestIds: new Set() });
+
+                    if (!referralTrackingByInviter.has(inviterKey)) {
+                        referralTrackingByInviter.set(inviterKey, { name: inviterName, guestIds: new Set(), checkedInGuestIds: new Set() });
                     }
-                    checkedInReferralsByInviter.get(inviterKey).guestIds.add(guestDoc.id);
+                    const tracking = referralTrackingByInviter.get(inviterKey);
+                    tracking.guestIds.add(guestDoc.id);
+                    if (referredGuest.checkedIn) tracking.checkedInGuestIds.add(guestDoc.id);
+
+                    if (referredGuest.checkedIn) {
+                        if (!checkedInReferralsByInviter.has(inviterKey)) {
+                            checkedInReferralsByInviter.set(inviterKey, { name: inviterName, guestIds: new Set() });
+                        }
+                        checkedInReferralsByInviter.get(inviterKey).guestIds.add(guestDoc.id);
+                    }
                 });
 
-                // Include qualifying inviters even when they have no registration of their own.
-                const qualifiedInviters = Array.from(checkedInReferralsByInviter.entries())
-                    .map(([key, value]) => ({ key, name: value.name, count: value.guestIds.size }))
-                    .filter((inviter) => inviter.count >= 2)
-                    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-                document.getElementById('welcomeDrinkCount').textContent = qualifiedInviters.length;
-                const rewardList = document.getElementById('welcomeDrinkList');
-                rewardList.replaceChildren();
-                if (!qualifiedInviters.length) {
-                    const empty = document.createElement('p');
-                    empty.className = 'text-xs text-gray-400';
-                    empty.textContent = 'No inviter has two checked-in referrals yet.';
-                    rewardList.appendChild(empty);
-                } else {
-                    qualifiedInviters.forEach((inviter) => {
-                        const row = document.createElement('div');
-                        row.className = 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-gold/30 bg-black/25 px-3 py-2';
-                        const inviterName = document.createElement('span');
-                        inviterName.className = 'font-medium break-words';
-                        inviterName.textContent = inviter.name;
-                        const reward = document.createElement('span');
-                        reward.className = 'inline-flex self-start sm:self-auto rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[10px] font-semibold tracking-wider text-amber-100';
-                        reward.textContent = `WELCOME DRINK EARNED · ${inviter.count} CHECKED IN`; 
-                        row.append(inviterName, reward);
-                        rewardList.appendChild(row);
-                    });
-                }
+                renderInternationsImportPreview();
 
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
+                const hotelOpenContainer = document.getElementById('guestNotCheckedInContainer');
+                const hotelCheckedContainer = document.getElementById('guestCheckedInContainer');
+                const unpaidContainer = document.getElementById('internationsUnpaidContainer');
+                const paidContainer = document.getElementById('internationsPaidContainer');
+                hotelOpenContainer.replaceChildren();
+                hotelCheckedContainer.replaceChildren();
+                unpaidContainer.replaceChildren();
+                paidContainer.replaceChildren();
+
+                const guestDocs = snapshot.docs.map((doc) => ({ doc, data: doc.data() }));
+                const guestByNameKey = new Map();
+                guestDocs.forEach((item) => {
+                    const key = normalizeGuestName(item.data.name);
+                    if (!key) return;
+                    const current = guestByNameKey.get(key);
+                    if (!current || (!isInterNationsMember(current.data) && isInterNationsMember(item.data))) {
+                        guestByNameKey.set(key, item);
+                    }
+                });
+
+                cachedUnaccountedReferrals = [];
+                guestDocs.forEach((item) => {
+                    const guestData = item.data;
+                    const inviteName = String(guestData.invitedBy || '').trim();
+                    const inviterKey = normalizeGuestName(inviteName);
+                    let reason = '';
+                    let inviter = null;
+                    let referralTracking = null;
+
+                    if (inviterKey) {
+                        inviter = guestByNameKey.get(inviterKey) || null;
+                        referralTracking = referralTrackingByInviter.get(inviterKey) || null;
+                        if (!inviter) {
+                            reason = 'Inviter not found in guest list';
+                        } else {
+                            const tier = getGuestTier(inviter.data);
+                            const drinkRule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+                            const referralRule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
+                            const checkedReferrals = checkedInReferralsByInviter.get(inviterKey)?.guestIds.size || 0;
+                            // Included drinks are already accounted for; qualifying referral rewards are accounted separately.
+                            if (drinkRule.mode === 'included') return;
+                            if (hasEarnedReferralDrink(inviter.data, checkedReferrals)) return;
+                            reason = !referralRule.eligible
+                                ? 'Referral drinks disabled for ' + getGuestCategory(inviter.data)
+                                : 'Needs ' + Math.max(0, referralRule.threshold - checkedReferrals) + ' more checked-in referral(s)';
+                        }
+                    } else {
+                        // Do not list imported membership rows as RSVPs without an inviter.
+                        if (isInterNationsMember(guestData)) return;
+                        reason = 'No inviter entered';
+                    }
+
+                    cachedUnaccountedReferrals.push({
+                        guestName: String(guestData.name || '').trim() || '(No name provided)',
+                        category: getGuestCategory(guestData),
+                        invitedBy: inviter ? String(inviter.data.name || inviteName).trim() : inviteName,
+                        inviterCategory: inviter ? getGuestCategory(inviter.data) : '',
+                        registeredReferrals: referralTracking ? referralTracking.guestIds.size : 0,
+                        checkedInReferrals: referralTracking ? referralTracking.checkedInGuestIds.size : 0,
+                        guestStatus: guestData.checkedIn ? 'Checked in' : 'Not checked in',
+                        reason
+                    });
+                });
+                cachedUnaccountedReferrals.sort((a, b) =>
+                    a.reason.localeCompare(b.reason) ||
+                    String(a.invitedBy || '').localeCompare(String(b.invitedBy || '')) ||
+                    a.guestName.localeCompare(b.guestName, undefined, { sensitivity: 'base' })
+                );
+                renderUnrecognizedWelcomeDrinkList();
+
+                const checkedInGuests = guestDocs.filter((item) => Boolean(item.data.checkedIn));
+                const compareNames = (a, b) => String(a.data.name || '').localeCompare(String(b.data.name || ''), undefined, { sensitivity: 'base' });
+                const timestampMillis = (value) => {
+                    if (!value) return null;
+                    if (typeof value.toMillis === 'function') return value.toMillis();
+                    if (value instanceof Date) return value.getTime();
+                    const parsed = Date.parse(value);
+                    return Number.isFinite(parsed) ? parsed : null;
+                };
+                const checkInTime = (item) => timestampMillis(item.data.checkedInAt);
+
+                function makeGuestCard(item, mode) {
+                    const doc = item.doc;
+                    const data = item.data;
                     const checkedIn = Boolean(data.checkedIn);
                     const inviterKey = normalizeGuestName(data.name);
                     const invitedCount = checkedInReferralsByInviter.get(inviterKey)?.guestIds.size || 0;
-                    const welcomeDrinkEarned = invitedCount >= 2;
+                    const welcomeDrinkEarned = hasEarnedReferralDrink(data, invitedCount);
+                    const isMemberRecord = isInterNationsMember(data);
+                    const isPaymentCard = mode === 'payment';
+                    const isPaid = Boolean(data.paid);
+                    const tier = getGuestTier(data);
+                    const charge = calculateGuestCharge(data, welcomeDrinkEarned);
+                    const chipAlreadyIssued = isGuestDrinkChipIssued(data);
+                    const drinkIncluded = charge.drinkMode === 'included';
+                    const drinkEntitled = welcomeDrinkEarned || drinkIncluded || charge.upgradeSelected || chipAlreadyIssued;
+                    const upgradeCanBeSelected = charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued;
+
                     const card = document.createElement('div');
-                    card.className = `p-3 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${welcomeDrinkEarned ? 'bg-amber-950/50 border-gold/80 border-l-4' : checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'}`;
-                    if (welcomeDrinkEarned) card.style.borderLeftWidth = '5px';
+                    card.className = 'guest-card p-3 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ' +
+                        (isPaymentCard ? (isPaid ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-sky-950/30 border-sky-400/40') :
+                        (checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'));
+                    card.dataset.guestId = doc.id;
+                    card.dataset.listType = isPaymentCard ? 'payment' : 'hotel';
+                    const nameParts = String(data.name || '').trim().split(/\s+/).filter(Boolean);
+                    card.dataset.sortFirstName = String(data.firstName || nameParts[0] || '').toLocaleLowerCase();
+                    card.dataset.sortLastName = String(data.lastName || nameParts.slice(1).join(' ') || '').toLocaleLowerCase();
+                    const signupMillis = timestampMillis(data.createdAt);
+                    const checkInMillis = timestampMillis(data.checkedInAt);
+                    const paymentMillis = timestampMillis(data.paidAt);
+                    card.dataset.sortSignupOrder = signupMillis == null ? '' : String(signupMillis);
+                    card.dataset.sortCheckInOrder = checkInMillis == null ? '' : String(checkInMillis);
+                    card.dataset.sortPaymentOrder = paymentMillis == null ? '' : String(paymentMillis);
 
                     const details = document.createElement('div');
-                    details.className = 'min-w-0';
+                    details.className = 'min-w-0 flex-1';
                     const titleLine = document.createElement('div');
                     titleLine.className = 'flex flex-wrap items-center gap-2';
                     const name = document.createElement('p');
                     name.className = 'font-medium text-sm text-white break-words';
                     name.textContent = data.name || '(No name provided)';
                     titleLine.appendChild(name);
-                    if (welcomeDrinkEarned) {
-                        const rewardBadge = document.createElement('span');
-                        rewardBadge.className = 'inline-flex items-center rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[9px] font-semibold tracking-wider text-amber-100';
-                        rewardBadge.textContent = `WELCOME DRINK EARNED · ${invitedCount} INVITED GUESTS CHECKED IN`;
-                        rewardBadge.title = `${invitedCount} guests invited by ${data.name} have checked in.`;
-                        titleLine.appendChild(rewardBadge);
-                    }
-                    const meta = document.createElement('p');
-                    meta.className = 'text-xs text-gray-300 break-words mt-1';
-                    meta.textContent = `Invited by: ${data.invitedBy || 'Not specified'}`;
-                    details.append(titleLine, meta);
 
-                    const checkInButton = document.createElement('button');
-                    checkInButton.type = 'button';
-                    checkInButton.className = `shrink-0 px-3 py-2 text-xs font-serif rounded ${checkedIn ? 'bg-emerald-700 text-white' : 'bg-gold/15 text-gold border border-gold/40'}`;
-                    checkInButton.textContent = checkedIn ? 'Checked In' : 'Check In';
-                    checkInButton.setAttribute('aria-pressed', String(checkedIn));
-                    checkInButton.addEventListener('click', () => toggleCheckIn(doc.id, checkedIn));
+                    const typeBadge = document.createElement('span');
+                    typeBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
+                        (isMemberRecord ? 'border-sky-400/50 bg-sky-950/50 text-sky-100' : 'border-gray-500/50 bg-gray-800/60 text-gray-200');
+                    const memberStatus = String(data.interNationsStatus || '').trim();
+                    typeBadge.textContent = getGuestCategory(data).toLocaleUpperCase();
+                    if (currentStaffRole === 'admin') titleLine.appendChild(typeBadge);
 
-                    const deleteButton = document.createElement('button');
-                    deleteButton.type = 'button';
-                    deleteButton.className = 'shrink-0 rounded border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200 hover:bg-red-900/70 transition-colors';
-                    deleteButton.innerHTML = '<i class="fa-solid fa-trash-can mr-1" aria-hidden="true"></i>Delete';
-                    deleteButton.setAttribute('aria-label', `Delete guest ${data.name || ''}`);
-                    deleteButton.addEventListener('click', () => deleteGuest(doc.id, data.name));
+                    const guestMeta = document.createElement('p');
+                    guestMeta.className = 'text-xs text-gray-300 break-words mt-1';
+                    const displayDateMillis = isInterNationsMember
+                        ? timestampMillis(data.importedAt)
+                        : timestampMillis(data.createdAt);
+                    const displayDate = displayDateMillis == null
+                        ? ''
+                        : new Date(displayDateMillis).toLocaleDateString([], { day: '2-digit', month: 'short' });
+                    guestMeta.textContent = isInterNationsMember
+                        ? (displayDate ? 'Imported: ' + displayDate : '')
+                        : 'Invited by: ' + (String(data.invitedBy || '').trim() || 'Not specified') +
+                          (displayDate ? ' · Signed up: ' + displayDate : '');
 
                     const actions = document.createElement('div');
-                    actions.className = 'flex shrink-0 flex-wrap items-center gap-2 self-end sm:self-auto';
-                    actions.append(checkInButton, deleteButton);
+                    actions.className = 'flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center';
+
+                    if (isPaymentCard) {
+                        // Drink rewards and collection appear only in the payment-management view.
+                        if (welcomeDrinkEarned) {
+                            const rewardBadge = document.createElement('span');
+                            rewardBadge.className = 'inline-flex items-center rounded-full border border-gold/70 bg-gold/15 px-2 py-1 text-[9px] font-semibold tracking-wider text-amber-100';
+                            rewardBadge.textContent = 'DRINK EARNED';
+                            titleLine.appendChild(rewardBadge);
+                        }
+
+                        if (charge.drinkMode === 'upgrade' && !chipAlreadyIssued &&
+                            (welcomeDrinkEarned ? charge.upgradeSelected : (upgradeCanBeSelected || charge.upgradeSelected))) {
+                            const upgradeButton = document.createElement('button');
+                            upgradeButton.type = 'button';
+                            upgradeButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
+                                (charge.upgradeSelected ? 'border-sky-400/50 bg-sky-900/40 text-sky-100' : 'border-sky-400/40 bg-sky-950/30 text-sky-100 hover:bg-sky-900/50');
+                            upgradeButton.textContent = charge.upgradeSelected
+                                ? 'UNDO UPGRADE'
+                                : 'ADD DRINK +' + formatEuro(charge.upgradePrice);
+                            upgradeButton.title = 'Paid upgrade: ' + formatEuro(charge.upgradePrice);
+                            upgradeButton.addEventListener('click', () => toggleGuestDrinkUpgrade(doc.id, data, welcomeDrinkEarned));
+                            actions.appendChild(upgradeButton);
+                        }
+
+                        details.appendChild(titleLine);
+                        if (currentStaffRole === 'admin' && guestMeta.textContent) details.appendChild(guestMeta);
+
+                        const amount = document.createElement('span');
+                        amount.className = 'text-sm font-semibold text-white tabular-nums whitespace-nowrap';
+                        const paidAmount = data.amountPaid != null ? Number(data.amountPaid) : charge.total;
+                        amount.textContent = formatEuro(isPaid ? paidAmount : charge.total);
+                        actions.appendChild(amount);
+
+                        const paymentButton = document.createElement('button');
+                        paymentButton.type = 'button';
+                        paymentButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
+                            (isPaid ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : 'border-gold/50 bg-gold/15 text-amber-100 hover:bg-gold/25');
+                        paymentButton.textContent = isPaid ? 'MARK UNPAID' : 'MARK PAID';
+                        paymentButton.setAttribute('aria-pressed', String(isPaid));
+                        paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned));
+                        actions.appendChild(paymentButton);
+
+                        if (drinkEntitled) {
+                            const chipButton = document.createElement('button');
+                            chipButton.type = 'button';
+                            chipButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
+                                (chipAlreadyIssued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : 'border-amber-500/50 bg-amber-950/40 text-amber-100 hover:bg-amber-900/50');
+                            chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
+                            chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
+                            chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
+                            actions.appendChild(chipButton);
+                        }
+                    } else {
+                        // Hotel sees only the guest identity and check-in control.
+                        details.appendChild(titleLine);
+                        if (currentStaffRole === 'admin' && guestMeta.textContent) details.appendChild(guestMeta);
+                        const checkInButton = document.createElement('button');
+                        checkInButton.type = 'button';
+                        checkInButton.className = 'shrink-0 px-3 py-2 text-xs font-serif rounded ' + (checkedIn ? 'bg-emerald-700 text-white' : 'bg-gold/15 text-gold border border-gold/40');
+                        const checkInUndoBlocked = checkedIn && (isPaid || chipAlreadyIssued || Boolean(data.welcomeDrinkUpgradeSelected));
+                        checkInButton.textContent = checkedIn ? 'UNDO CHECK-IN' : 'CHECK IN';
+                        checkInButton.title = checkInUndoBlocked
+                            ? 'First mark the guest unpaid, undo the issued drink chip and remove any selected upgrade in Payment status.'
+                            : (checkedIn ? 'Undo check-in. This is not a check-out.' : 'Mark this guest as checked in.');
+                        checkInButton.disabled = checkInUndoBlocked;
+                        if (checkInUndoBlocked) checkInButton.className += ' opacity-40 cursor-not-allowed';
+                        checkInButton.setAttribute('aria-pressed', String(checkedIn));
+                        checkInButton.setAttribute('aria-label', checkInUndoBlocked
+                            ? 'Cannot undo check-in for ' + (data.name || 'this guest') + ' until payment, chip and upgrade are reversed'
+                            : (checkedIn ? 'Undo check-in for ' + (data.name || 'this guest') : 'Check in ' + (data.name || 'this guest')));
+                        checkInButton.addEventListener('click', () => toggleCheckIn(doc.id, checkedIn));
+                        actions.appendChild(checkInButton);
+
+                        if (currentStaffRole === 'admin') {
+                            const deleteButton = document.createElement('button');
+                            deleteButton.type = 'button';
+                            deleteButton.className = 'shrink-0 rounded border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200 hover:bg-red-900/70 transition-colors';
+                            deleteButton.textContent = 'DELETE';
+                            deleteButton.setAttribute('aria-label', 'Delete guest ' + (data.name || ''));
+                            deleteButton.addEventListener('click', () => deleteGuest(doc.id, data.name));
+                            actions.appendChild(deleteButton);
+                        }
+                    }
+
                     card.append(details, actions);
-                    container.appendChild(card);
+                    return card;
+                }
+
+                const notCheckedIn = guestDocs.filter((item) => !item.data.checkedIn).sort(compareNames);
+                const checkedIn = guestDocs.filter((item) => Boolean(item.data.checkedIn)).sort(compareNames);
+                notCheckedIn.forEach((item) => hotelOpenContainer.appendChild(makeGuestCard(item, 'hotel')));
+                checkedIn.forEach((item) => hotelCheckedContainer.appendChild(makeGuestCard(item, 'hotel')));
+                document.getElementById('noUncheckGuests').classList.toggle('hidden', notCheckedIn.length > 0);
+                document.getElementById('noCheckedGuests').classList.toggle('hidden', checkedIn.length > 0);
+
+                // Estimate drink entitlements for full attendance. Each normalized guest name can receive one chip.
+                const potentialReferralCounts = new Map();
+                guestDocs.forEach((item) => {
+                    const inviterName = String(item.data.invitedBy || '').trim();
+                    const inviterKey = normalizeGuestName(inviterName);
+                    if (!inviterKey) return;
+                    if (!potentialReferralCounts.has(inviterKey)) {
+                        potentialReferralCounts.set(inviterKey, { name: inviterName, guestIds: new Set() });
+                    }
+                    potentialReferralCounts.get(inviterKey).guestIds.add(item.doc.id);
                 });
-                filterGuests();
+                const estimatedEarnedKeys = new Set(
+                    Array.from(potentialReferralCounts.entries())
+                        .filter(([key, record]) => {
+                            const inviter = guestByNameKey.get(key);
+                            return Boolean(inviter) && hasEarnedReferralDrink(inviter.data, record.guestIds.size);
+                        })
+                        .map(([key]) => key)
+                );
+                const estimatedDrinksByPerson = new Map();
+                guestDocs.forEach((item) => {
+                    const key = normalizeGuestName(item.data.name);
+                    if (!key) return;
+                    const tier = getGuestTier(item.data);
+                    const rule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+                    let kind = '';
+                    if (estimatedEarnedKeys.has(key)) kind = 'referrals';
+                    else if (rule.mode === 'included') kind = 'included';
+                    else if (rule.mode === 'upgrade' && Boolean(item.data.welcomeDrinkUpgradeSelected)) kind = 'upgrades';
+                    if (kind && !estimatedDrinksByPerson.has(key)) estimatedDrinksByPerson.set(key, kind);
+                });
+                const drinkForecastCounts = { referrals: 0, included: 0, upgrades: 0 };
+                const drinkIssuedCounts = { referrals: 0, included: 0, upgrades: 0 };
+                estimatedDrinksByPerson.forEach((kind, key) => {
+                    drinkForecastCounts[kind]++;
+                    if (issuedNameKeys.has(key)) drinkIssuedCounts[kind]++;
+                });
+                const estimatedDrinkTotal = estimatedDrinksByPerson.size;
+                document.getElementById('drinkEstimateTotal').textContent = estimatedDrinkTotal;
+                const issuedEligibleDrinkTotal = Object.values(drinkIssuedCounts).reduce((sum, count) => sum + count, 0);
+                document.getElementById('welcomeDrinkChipCount').textContent = issuedEligibleDrinkTotal;
+                document.getElementById('drinkReferralEstimate').textContent = drinkForecastCounts.referrals;
+                document.getElementById('drinkReferralIssued').textContent = drinkIssuedCounts.referrals;
+                document.getElementById('drinkIncludedEstimate').textContent = drinkForecastCounts.included;
+                document.getElementById('drinkIncludedIssued').textContent = drinkIssuedCounts.included;
+                document.getElementById('drinkUpgradeEstimate').textContent = drinkForecastCounts.upgrades;
+                document.getElementById('drinkUpgradeIssued').textContent = drinkIssuedCounts.upgrades;
+
+                const totalCollected = guestDocs.filter((item) => Boolean(item.data.paid)).reduce((sum, item) => {
+                    if (item.data.amountPaid != null && Number.isFinite(Number(item.data.amountPaid))) return sum + Number(item.data.amountPaid);
+                    const key = normalizeGuestName(item.data.name);
+                    const referrals = checkedInReferralsByInviter.get(key)?.guestIds.size || 0;
+                    return sum + calculateGuestCharge(item.data, hasEarnedReferralDrink(item.data, referrals)).total;
+                }, 0);
+                const maxFullAttendance = guestDocs.reduce((sum, item) => {
+                    const key = normalizeGuestName(item.data.name);
+                    return sum + calculateGuestCharge(item.data, estimatedEarnedKeys.has(key)).total;
+                }, 0);
+                document.getElementById('collectedAmount').textContent = formatEuro(totalCollected);
+                document.getElementById('fullAttendanceAmount').textContent = formatEuro(maxFullAttendance);
+
+                const unpaidGuests = checkedInGuests.filter((item) => !item.data.paid).sort((a, b) => {
+                    const timeA = checkInTime(a), timeB = checkInTime(b);
+                    if (timeA == null && timeB != null) return 1;
+                    if (timeA != null && timeB == null) return -1;
+                    if (timeA != null && timeB != null && timeA !== timeB) return timeA - timeB;
+                    return compareNames(a, b);
+                });
+                const paidGuests = checkedInGuests.filter((item) => Boolean(item.data.paid)).sort(compareNames);
+                unpaidGuests.forEach((item) => unpaidContainer.appendChild(makeGuestCard(item, 'payment')));
+                paidGuests.forEach((item) => paidContainer.appendChild(makeGuestCard(item, 'payment')));
+                document.getElementById('internationsUnpaidCount').textContent = '(' + unpaidGuests.length + ')';
+                document.getElementById('internationsPaidCount').textContent = '(' + paidGuests.length + ')';
+                document.getElementById('noInternationsUnpaid').classList.toggle('hidden', unpaidGuests.length > 0);
+                document.getElementById('noInternationsPaid').classList.toggle('hidden', paidGuests.length > 0);
+                renderInternationsImportPreview();
+                applyGuestSorts();
+                filterHotelGuests();
+                filterPaymentGuests();
+
             }, (error) => {
                 console.error('Guest list subscription failed:', error);
                 listError.classList.remove('hidden');
             });
+        }
+
+        async function markWelcomeDrinkChipIssued(id, guestName, currentlyIssued) {
+            if (!db || !id) {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Could not record the chip status because the guest database is not connected.';
+                listError.classList.remove('hidden');
+                return;
+            }
+            const nextIssued = !currentlyIssued;
+            try {
+                await db.collection('halloween_guests').doc(id).update({
+                    welcomeDrinkChipIssued: nextIssued,
+                    welcomeDrinkChipIssuedAt: nextIssued ? firebase.firestore.FieldValue.serverTimestamp() : null,
+                    welcomeDrinkChipIssuedBy: nextIssued ? 'staff' : null
+                });
+            } catch (error) {
+                console.error('Welcome-drink chip update failed:', error);
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Could not save the chip status. Check Firebase access rules and try again.';
+                listError.classList.remove('hidden');
+            }
         }
 
         async function toggleCheckIn(id, currentState) {
@@ -843,11 +1964,65 @@
                 return;
             }
             try {
-                await db.collection('halloween_guests').doc(id).update({ checkedIn: !currentState });
+                const guestRef = db.collection('halloween_guests').doc(id);
+                if (currentState) {
+                    const latest = await guestRef.get();
+                    if (!latest.exists) return;
+                    const latestData = latest.data() || {};
+                    const latestNameKey = normalizeGuestName(latestData.name);
+                    const hasIssuedChip = Boolean(latestData.welcomeDrinkChipIssued ||
+                        cachedGuestDocs.some((guestDoc) => normalizeGuestName(guestDoc.data().name) === latestNameKey && Boolean(guestDoc.data().welcomeDrinkChipIssued)));
+                    if (latestData.paid || hasIssuedChip || Boolean(latestData.welcomeDrinkUpgradeSelected)) {
+                        const listError = document.getElementById('guestlistError');
+                        listError.textContent = 'Undo check-in blocked. First mark this guest unpaid, undo the issued drink chip and remove any selected upgrade in Payment status.';
+                        listError.classList.remove('hidden');
+                        return;
+                    }
+                }
+                const update = {
+                    checkedIn: !currentState,
+                    checkedInAt: currentState ? null : firebase.firestore.FieldValue.serverTimestamp()
+                };
+                await guestRef.update(update);
             } catch (error) {
                 console.error('Check-in update failed:', error);
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'Could not save the check-in. Check the database access rules and try again.';
+                listError.classList.remove('hidden');
+            }
+        }
+
+        async function toggleGuestPayment(id, guestName, currentlyPaid, data, welcomeDrinkEarned) {
+            if (!db) {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'The payment update cannot be saved because the guest database is not connected.';
+                listError.classList.remove('hidden');
+                return;
+            }
+            const nextPaid = !currentlyPaid;
+            try {
+                const charge = calculateGuestCharge(data, welcomeDrinkEarned);
+                const update = {
+                    paid: nextPaid,
+                    paidAt: nextPaid ? firebase.firestore.FieldValue.serverTimestamp() : null,
+                    amountPaid: nextPaid ? charge.total : null,
+                    paymentStatusUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                const tier = getGuestTier(data);
+                const rule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+                const paidUpgrade = rule.mode === 'upgrade' && Boolean(data.welcomeDrinkUpgradeSelected) && !welcomeDrinkEarned;
+                // Payment automatically collects an included or paid-upgrade drink chip.
+                // An earned referral drink remains manually checked as collected.
+                if (nextPaid && !welcomeDrinkEarned && (rule.mode === 'included' || paidUpgrade) && !isGuestDrinkChipIssued(data)) {
+                    update.welcomeDrinkChipIssued = true;
+                    update.welcomeDrinkChipIssuedAt = firebase.firestore.FieldValue.serverTimestamp();
+                    update.welcomeDrinkChipIssuedBy = 'payment';
+                }
+                await db.collection('halloween_guests').doc(id).update(update);
+            } catch (error) {
+                console.error('Guest payment status update failed:', error);
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Could not save the payment status. Check the database access rules and try again.';
                 listError.classList.remove('hidden');
             }
         }
@@ -871,13 +2046,94 @@
             }
         }
 
-        function filterGuests() {
-            const query = document.getElementById('searchInput').value.trim().toLowerCase();
-            const cards = document.getElementById('guestListContainer').children;
-            Array.from(cards).forEach((card) => {
-                card.style.display = card.innerText.toLowerCase().includes(query) ? 'flex' : 'none';
+        let hotelSortBy = 'firstName';
+        let paymentSortBy = 'timeOrder';
+
+        function applySortToContainer(containerId, sortBy, timeKey, timeDirection) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const cards = Array.from(container.children).filter((card) => card.classList.contains('guest-card'));
+            const compareAlpha = (a, b, key) => (a.dataset[key] || '').localeCompare(b.dataset[key] || '', undefined, { numeric: true, sensitivity: 'base' });
+            const compareTime = (a, b, key, direction) => {
+                const rawA = a.dataset[key], rawB = b.dataset[key];
+                const timeA = rawA === '' || rawA == null ? null : Number(rawA);
+                const timeB = rawB === '' || rawB == null ? null : Number(rawB);
+                if (timeA == null && timeB != null) return 1;
+                if (timeA != null && timeB == null) return -1;
+                if (timeA == null && timeB == null) return 0;
+                return (timeA - timeB) * direction;
+            };
+            cards.sort((a, b) => {
+                if (sortBy === 'firstName') return compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
+                if (sortBy === 'lastName') return compareAlpha(a, b, 'sortLastName') || compareAlpha(a, b, 'sortFirstName');
+                return compareTime(a, b, timeKey, timeDirection) ||
+                    compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
+            });
+            cards.forEach((card) => container.appendChild(card));
+        }
+
+        function updateSortButtonStates() {
+            document.querySelectorAll('.sort-option[data-sort-group="hotel"]').forEach((button) => {
+                button.setAttribute('aria-pressed', String(button.dataset.sort === hotelSortBy));
+            });
+            document.querySelectorAll('.sort-option[data-sort-group="payment"]').forEach((button) => {
+                button.setAttribute('aria-pressed', String(button.dataset.sort === paymentSortBy));
             });
         }
+
+        function setHotelSort(sortBy) {
+            if (!['firstName', 'lastName'].includes(sortBy)) return;
+            hotelSortBy = sortBy;
+            applyGuestSorts();
+        }
+
+        function setPaymentSort(sortBy) {
+            if (!['firstName', 'lastName', 'timeOrder'].includes(sortBy)) return;
+            paymentSortBy = sortBy;
+            applyGuestSorts();
+        }
+
+        function applyGuestSorts() {
+            applySortToContainer('guestNotCheckedInContainer', hotelSortBy, '', -1);
+            applySortToContainer('guestCheckedInContainer', hotelSortBy, '', 1);
+            applySortToContainer('internationsUnpaidContainer', paymentSortBy, paymentSortBy === 'timeOrder' ? 'sortCheckInOrder' : '', 1);
+            applySortToContainer('internationsPaidContainer', paymentSortBy, paymentSortBy === 'timeOrder' ? 'sortPaymentOrder' : '', 1);
+            updateSortButtonStates();
+        }
+
+        function filterContainerCards(containerIds, query) {
+            const counts = {};
+            containerIds.forEach((containerId) => {
+                const container = document.getElementById(containerId);
+                if (!container) { counts[containerId] = 0; return; }
+                let matched = 0;
+                Array.from(container.children).forEach((card) => {
+                    if (!card.classList.contains('guest-card')) return;
+                    const visible = card.innerText.toLocaleLowerCase().includes(query);
+                    card.style.display = visible ? 'flex' : 'none';
+                    if (visible) matched++;
+                });
+                counts[containerId] = matched;
+            });
+            return counts;
+        }
+
+        function filterHotelGuests() {
+            const input = document.getElementById('hotelSearchInput');
+            const query = (input ? input.value : '').trim().toLocaleLowerCase();
+            const counts = filterContainerCards(['guestNotCheckedInContainer', 'guestCheckedInContainer'], query);
+            document.getElementById('hotelOpenCount').textContent = '(' + counts.guestNotCheckedInContainer + ')';
+            document.getElementById('hotelCheckedCount').textContent = '(' + counts.guestCheckedInContainer + ')';
+        }
+
+        function filterPaymentGuests() {
+            const input = document.getElementById('paymentSearchInput');
+            const query = (input ? input.value : '').trim().toLocaleLowerCase();
+            const counts = filterContainerCards(['internationsUnpaidContainer', 'internationsPaidContainer'], query);
+            document.getElementById('internationsUnpaidCount').textContent = '(' + counts.internationsUnpaidContainer + ')';
+            document.getElementById('internationsPaidCount').textContent = '(' + counts.internationsPaidContainer + ')';
+        }
+
     </script>
 </body>
 </html>
