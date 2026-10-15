@@ -34,8 +34,7 @@ service cloud.firestore {
     }
 
     function isLegacyPublicRsvpCreate() {
-      return request.auth == null
-        && request.resource.data.keys().hasAll(['name', 'invitedBy', 'checkedIn', 'createdAt'])
+      return request.resource.data.keys().hasAll(['name', 'invitedBy', 'checkedIn', 'createdAt'])
         && request.resource.data.keys().hasOnly(['name', 'invitedBy', 'checkedIn', 'createdAt'])
         && request.resource.data.name is string
         && request.resource.data.name.size() >= 2
@@ -47,8 +46,7 @@ service cloud.firestore {
     }
 
     function isFullPublicRsvpCreate() {
-      return request.auth == null
-        && request.resource.data.keys().hasAll([
+      return request.resource.data.keys().hasAll([
           'name', 'firstName', 'lastName', 'invitedBy',
           'checkedIn', 'checkedInAt', 'paid', 'paidAt',
           'welcomeDrinkChipIssued', 'guestType', 'source', 'createdAt'
