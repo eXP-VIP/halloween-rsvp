@@ -1596,7 +1596,8 @@
                 guestlistUnsubscribe();
                 guestlistUnsubscribe = null;
             }
-            guestlistUnsubscribe = db.collection('halloween_guests').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+            guestlistUnsubscribe = db.collection('halloween_guests').onSnapshot((snapshot) => {
+                try {
                 cachedGuestSnapshot = snapshot;
                 cachedGuestDocs = snapshot.docs;
                 listError.classList.add('hidden');
@@ -1793,13 +1794,13 @@
 
                     const guestMeta = document.createElement('p');
                     guestMeta.className = 'text-xs text-gray-300 break-words mt-1';
-                    const displayDateMillis = isInterNationsMember
+                    const displayDateMillis = isInterNationsMember(data)
                         ? timestampMillis(data.importedAt)
                         : timestampMillis(data.createdAt);
                     const displayDate = displayDateMillis == null
                         ? ''
                         : new Date(displayDateMillis).toLocaleDateString([], { day: '2-digit', month: 'short' });
-                    guestMeta.textContent = isInterNationsMember
+                    guestMeta.textContent = isInterNationsMember(data)
                         ? (displayDate ? 'Imported: ' + displayDate : '')
                         : 'Invited by: ' + (String(data.invitedBy || '').trim() || 'Not specified') +
                           (displayDate ? ' · Signed up: ' + displayDate : '');
@@ -1981,9 +1982,14 @@
                 applyGuestSorts();
                 filterHotelGuests();
                 filterPaymentGuests();
-
+                } catch (error) {
+                    console.error('Guest list render failed:', error);
+                    listError.textContent = 'The guest records were received but the list could not be rendered: ' + (error && error.message ? error.message : String(error));
+                    listError.classList.remove('hidden');
+                }
             }, (error) => {
                 console.error('Guest list subscription failed:', error);
+                listError.textContent = 'Could not load the guest list: ' + (error && error.code ? error.code + ' — ' : '') + (error && error.message ? error.message : 'Check the database connection and access rules.');
                 listError.classList.remove('hidden');
             });
         }
