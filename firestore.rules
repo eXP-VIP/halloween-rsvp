@@ -137,9 +137,9 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Legacy unregistered-inviter reward records are retired: referral drinks are for members only.
     match /welcome_drink_rewards/{rewardId} {
-      allow read, create, update: if isAdmin() || isInterNations();
-      allow delete: if isAdmin();
+      allow read, write: if false;
     }
   }
 }
