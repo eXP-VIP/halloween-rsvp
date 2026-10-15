@@ -33,7 +33,20 @@ service cloud.firestore {
       return hasRole('internations');
     }
 
-    function isPublicRsvpCreate() {
+    function isLegacyPublicRsvpCreate() {
+      return request.auth == null
+        && request.resource.data.keys().hasAll(['name', 'invitedBy', 'checkedIn', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['name', 'invitedBy', 'checkedIn', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.invitedBy is string
+        && request.resource.data.invitedBy.size() <= 120
+        && request.resource.data.checkedIn == false
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function isFullPublicRsvpCreate() {
       return request.auth == null
         && request.resource.data.keys().hasAll([
           'name', 'firstName', 'lastName', 'invitedBy',
@@ -65,16 +78,21 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
     }
 
+    function isPublicRsvpCreate() {
+      return isLegacyPublicRsvpCreate() || isFullPublicRsvpCreate();
+    }
+
     function hotelCheckInUpdate() {
       return isHotel()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkedIn', 'checkedInAt'])
         && request.resource.data.checkedIn is bool
         && (request.resource.data.checkedIn
-          ? request.resource.data.checkedInAt == request.time
-          : request.resource.data.checkedInAt == null
-            && resource.data.paid != true
-            && resource.data.welcomeDrinkChipIssued != true
-            && resource.data.welcomeDrinkUpgradeSelected != true);
+          ? (request.resource.data.get('checkedInAt', null) == request.time
+              || request.resource.data.get('checkedInAt', null) == resource.data.get('checkedInAt', null))
+          : request.resource.data.get('checkedInAt', null) == null
+            && resource.data.get('paid', false) != true
+            && resource.data.get('welcomeDrinkChipIssued', false) != true
+            && resource.data.get('welcomeDrinkUpgradeSelected', false) != true);
     }
 
     function interNationsPaymentUpdate() {
