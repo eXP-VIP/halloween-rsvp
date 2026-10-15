@@ -414,27 +414,14 @@
                                     <tbody>
                                         <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Albatross</th><td id="guestAlbatrossTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestAlbatrossPaid" class="text-right">0</td></tr>
                                         <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Basics</th><td id="guestBasicsTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestBasicsPaid" class="text-right">0</td></tr>
-                                        <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Friends</th><td id="guestFriendsTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestFriendsPaid" class="text-right">0</td></tr>
-                                        <tr><th scope="row" class="text-left font-semibold text-gold pr-2 whitespace-nowrap">Rate</th><td id="guestMixRatio" class="text-right font-semibold text-gold">2.3 : 1</td><td class="text-center px-1 text-gray-500">/</td><td id="guestPaidMixRatio" class="text-right font-semibold text-gold">—</td></tr>
+                                        <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">RSVPs</th><td id="guestFriendsTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestFriendsPaid" class="text-right">0</td></tr>
+                                        <tr><th scope="row" class="text-left font-semibold text-gold pr-2 whitespace-nowrap">Rate Full</th><td id="guestMixRatio" class="text-right font-semibold text-gold">—</td><td class="text-center px-1 text-gray-500">/</td><td id="guestPaidMixRatio" class="text-right font-semibold text-gold">—</td></tr>
+                                        <tr><th scope="row" class="text-left font-semibold text-gray-300 pr-2 whitespace-nowrap">Rate Std.</th><td id="guestStandardMixRatio" class="text-right font-semibold text-gray-300">—</td><td class="text-center px-1 text-gray-500">/</td><td id="guestPaidStandardMixRatio" class="text-right font-semibold text-gray-300">—</td></tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-                        <div id="memberReferralsMetric" class="rounded-lg border border-violet-400/30 bg-violet-950/20 p-3 min-w-0">
-                            <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Member referrals</p>
-                            <div class="flex items-start gap-3 mt-2">
-                                <div class="min-w-0">
-                                    <p id="memberReferralTotalCount" class="text-3xl font-semibold text-violet-200 tabular-nums">0</p>
-                                    <p class="text-[10px] uppercase tracking-wider text-gray-400">Registered</p>
-                                </div>
-                                <span class="text-2xl text-gray-500">/</span>
-                                <div class="min-w-0">
-                                    <p id="memberReferralCheckedInCount" class="text-3xl font-semibold text-white tabular-nums">0</p>
-                                    <p class="text-[10px] uppercase tracking-wider text-gray-400">Checked in</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="rounded-lg border border-amber-400/40 bg-amber-950/30 p-3 min-w-0">
+                                                <div class="rounded-lg border border-amber-400/40 bg-amber-950/30 p-3 min-w-0">
                             <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Welcome drinks</p>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                                 <div class="flex items-center gap-2">
@@ -496,7 +483,7 @@
                                 <input id="drinkPriceBasics" type="number" min="0" step="1" class="form-field" value="0" disabled>
                             </div>
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
-                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Paid Members</h5>
+                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Albatross</h5>
                                 <label for="basePricePaidMembers" class="form-label">Admission price (€)</label>
                                 <input id="basePricePaidMembers" type="number" min="0" step="1" class="form-field mb-3" value="5">
                                 <label for="drinkModePaidMembers" class="form-label">Welcome-drink rule</label>
@@ -509,7 +496,7 @@
                                 <input id="drinkPricePaidMembers" type="number" min="0" step="1" class="form-field" value="0" disabled>
                             </div>
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
-                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Friends</h5>
+                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">RSVPs</h5>
                                 <label for="basePriceFriends" class="form-label">Admission price (€)</label>
                                 <input id="basePriceFriends" type="number" min="0" step="1" class="form-field mb-3" value="20">
                                 <label for="drinkModeFriends" class="form-label">Welcome-drink rule</label>
@@ -552,8 +539,7 @@
                     <div id="hotelSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort check-in lists">
                         <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                         <button type="button" class="sort-option" data-sort-group="hotel" data-sort="firstName" aria-pressed="true" onclick="setHotelSort('firstName')">First name</button>
-                        <button type="button" class="sort-option" data-sort-group="hotel" data-sort="lastName" aria-pressed="false" onclick="setHotelSort('lastName')">Family name</button>
-                        <button type="button" class="sort-option" data-sort-group="hotel" data-sort="timeOrder" aria-pressed="false" onclick="setHotelSort('timeOrder')">Sign-up order</button>
+                        <button type="button" class="sort-option" data-sort-group="hotel" data-sort="lastName" aria-pressed="false" onclick="setHotelSort('lastName')">Last Name</button>
                     </div>
                     <div class="mb-4">
                         <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Not checked in <span id="hotelOpenCount" class="text-amber-100">(0)</span></p>
@@ -576,7 +562,7 @@
                         <div id="paymentSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort payment lists">
                             <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                             <button type="button" class="sort-option" data-sort-group="payment" data-sort="firstName" aria-pressed="false" onclick="setPaymentSort('firstName')">First name</button>
-                            <button type="button" class="sort-option" data-sort-group="payment" data-sort="lastName" aria-pressed="false" onclick="setPaymentSort('lastName')">Family name</button>
+                            <button type="button" class="sort-option" data-sort-group="payment" data-sort="lastName" aria-pressed="false" onclick="setPaymentSort('lastName')">Last Name</button>
                             <button type="button" class="sort-option" data-sort-group="payment" data-sort="timeOrder" aria-pressed="true" onclick="setPaymentSort('timeOrder')">Check-in order</button>
                         </div>
                         <div class="mb-4">
@@ -593,7 +579,7 @@
                         <section id="unrecognizedWelcomeDrinkSection" class="hidden rounded-xl border border-gold/40 bg-amber-950/25 p-4 mt-5" aria-labelledby="welcomeDrinkHeading">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
                             <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Unaccounted referrals</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-gray-300">Inviters not matched to an InterNations member</span>
+                            <span class="text-[10px] uppercase tracking-wider text-gray-300">Guests whose referral drinks are not yet accounted for, plus RSVPs without an inviter</span>
                         </div>
                         
                         <div id="welcomeDrinkList" class="space-y-2 text-sm text-gray-100">
@@ -614,7 +600,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.15.3</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.15.4</p>
         </div>
     </footer>
 
@@ -731,7 +717,7 @@
 
         function getGuestCategory(data) {
             const tier = getGuestTier(data);
-            return tier === 'basics' ? 'Basics' : tier === 'paidMembers' ? 'Albatross' : 'Friends';
+            return tier === 'basics' ? 'Basics' : tier === 'paidMembers' ? 'Albatross' : 'RSVPs';
         }
 
         function isGuestDrinkChipIssued(data) {
@@ -778,7 +764,7 @@
                 const el = document.getElementById(id);
                 if (el) el.value = String(value);
             });
-            ['Basics', 'PaidMembers', 'Friends'].forEach((tier) => {
+            ['Basics', 'PaidMembers', 'RSVPs'].forEach((tier) => {
                 const mode = document.getElementById('drinkMode' + tier);
                 const price = document.getElementById('drinkPrice' + tier);
                 if (mode && price) price.disabled = mode.value !== 'upgrade';
@@ -800,12 +786,12 @@
                     basePrices: {
                         basics: readAmount('basePriceBasics', 'Basics admission price'),
                         paidMembers: readAmount('basePricePaidMembers', 'Paid Members admission price'),
-                        friends: readAmount('basePriceFriends', 'Friends admission price')
+                        friends: readAmount('basePriceFriends', 'RSVPs admission price')
                     },
                     drinkRules: {
                         basics: { mode: document.getElementById('drinkModeBasics').value, price: readAmount('drinkPriceBasics', 'Basics drink upgrade') },
                         paidMembers: { mode: document.getElementById('drinkModePaidMembers').value, price: readAmount('drinkPricePaidMembers', 'Paid Members drink upgrade') },
-                        friends: { mode: document.getElementById('drinkModeFriends').value, price: readAmount('drinkPriceFriends', 'Friends drink upgrade') }
+                        friends: { mode: document.getElementById('drinkModeFriends').value, price: readAmount('drinkPriceFriends', 'RSVPs drink upgrade') }
                     }
                 };
             } catch (error) {
@@ -835,7 +821,7 @@
             }
         });
 
-        ['Basics', 'PaidMembers', 'Friends'].forEach((tier) => {
+        ['Basics', 'PaidMembers', 'RSVPs'].forEach((tier) => {
             const mode = document.getElementById('drinkMode' + tier);
             if (mode) mode.addEventListener('change', () => {
                 const price = document.getElementById('drinkPrice' + tier);
@@ -1216,13 +1202,12 @@
                 if (element) element.classList.toggle('hidden', !visible);
             };
             show('staffSummaryStats', role !== 'hotel');
-            show('memberReferralsMetric', role !== 'hotel');
             show('unrecognizedWelcomeDrinkSection', role === 'admin');
             show('collectedMetric', role === 'admin');
             const statsGrid = document.getElementById('staffSummaryStats');
             if (statsGrid) {
-                statsGrid.classList.toggle('xl:grid-cols-4', role === 'admin');
-                statsGrid.classList.toggle('xl:grid-cols-3', role !== 'admin');
+                statsGrid.classList.toggle('xl:grid-cols-3', role === 'admin');
+                statsGrid.classList.toggle('xl:grid-cols-2', role !== 'admin');
             }
             show('adminPricingPanel', role === 'admin');
             show('internationsImportPanel', role === 'admin');
@@ -1305,8 +1290,7 @@
                 }
                 applyStaffRole(profile.role);
                 activeStaffUid = user.uid;
-                const roleLabel = profile.role === 'admin' ? 'Admin' : profile.role === 'hotel' ? 'Hotel' : 'InterNations';
-                document.getElementById('staffIdentity').textContent = username + ' · ' + roleLabel;
+                document.getElementById('staffIdentity').textContent = profile.role === 'admin' ? username + ' · Admin' : username;
                 document.getElementById('staffLoginSection').classList.add('hidden');
                 document.getElementById('guestlistSection').classList.remove('hidden');
                 document.getElementById('staffLoginError').classList.add('hidden');
@@ -1477,24 +1461,8 @@
                 const categoryTotals = {
                     Albatross: { total: 0, paid: 0 },
                     Basics: { total: 0, paid: 0 },
-                    Friends: { total: 0, paid: 0 }
+                    RSVPs: { total: 0, paid: 0 }
                 };
-                const memberNameKeys = new Set(snapshot.docs
-                    .filter((guestDoc) => isInterNationsMember(guestDoc.data()))
-                    .map((guestDoc) => normalizeGuestName(guestDoc.data().name))
-                    .filter(Boolean));
-                let memberReferralTotal = 0;
-                let memberReferralCheckedIn = 0;
-                snapshot.docs.forEach((guestDoc) => {
-                    const guestData = guestDoc.data();
-                    const inviterKey = normalizeGuestName(guestData.invitedBy);
-                    if (inviterKey && memberNameKeys.has(inviterKey)) {
-                        memberReferralTotal++;
-                        if (guestData.checkedIn) memberReferralCheckedIn++;
-                    }
-                });
-                document.getElementById('memberReferralTotalCount').textContent = memberReferralTotal;
-                document.getElementById('memberReferralCheckedInCount').textContent = memberReferralCheckedIn;
                 snapshot.docs.forEach((guestDoc) => {
                     const data = guestDoc.data();
                     const category = getGuestCategory(data);
@@ -1503,8 +1471,8 @@
                 });
                 const totalGuestRecords = snapshot.size;
                 const totalPaidRecords = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().paid)).length;
-                const nonAlbatrossTotal = categoryTotals.Basics.total + categoryTotals.Friends.total;
-                const nonAlbatrossPaid = categoryTotals.Basics.paid + categoryTotals.Friends.paid;
+                const nonAlbatrossTotal = categoryTotals.Basics.total + categoryTotals.RSVPs.total;
+                const nonAlbatrossPaid = categoryTotals.Basics.paid + categoryTotals.RSVPs.paid;
                 const formatRate = (albatross, rest) => {
                     if (albatross === 0) return '—';
                     if (rest === 0) return '∞';
@@ -1516,8 +1484,8 @@
                 document.getElementById('guestAlbatrossPaid').textContent = categoryTotals.Albatross.paid;
                 document.getElementById('guestBasicsTotal').textContent = categoryTotals.Basics.total;
                 document.getElementById('guestBasicsPaid').textContent = categoryTotals.Basics.paid;
-                document.getElementById('guestFriendsTotal').textContent = categoryTotals.Friends.total;
-                document.getElementById('guestFriendsPaid').textContent = categoryTotals.Friends.paid;
+                document.getElementById('guestFriendsTotal').textContent = categoryTotals.RSVPs.total;
+                document.getElementById('guestFriendsPaid').textContent = categoryTotals.RSVPs.paid;
                 document.getElementById('guestMixRatio').textContent = formatRate(categoryTotals.Albatross.total, nonAlbatrossTotal);
                 document.getElementById('guestPaidMixRatio').textContent = formatRate(categoryTotals.Albatross.paid, nonAlbatrossPaid);
                 const issuedNameKeys = new Set(snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
@@ -1625,10 +1593,8 @@
                     typeBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
                         (isMemberRecord ? 'border-sky-400/50 bg-sky-950/50 text-sky-100' : 'border-gray-500/50 bg-gray-800/60 text-gray-200');
                     const memberStatus = String(data.interNationsStatus || '').trim();
-                    typeBadge.textContent = isInterNationsMember
-                        ? (memberStatus.toLocaleLowerCase().includes('basic') ? 'BASIC MEMBER' : 'PAID MEMBER')
-                        : 'FRIEND';
-                    titleLine.appendChild(typeBadge);
+                    typeBadge.textContent = getGuestCategory(data).toLocaleUpperCase();
+                    if (currentStaffRole === 'admin') titleLine.appendChild(typeBadge);
 
                     const guestMeta = document.createElement('p');
                     guestMeta.className = 'text-xs text-gray-300 break-words mt-1';
@@ -1971,7 +1937,7 @@
         }
 
         function setHotelSort(sortBy) {
-            if (!['firstName', 'lastName', 'timeOrder'].includes(sortBy)) return;
+            if (!['firstName', 'lastName'].includes(sortBy)) return;
             hotelSortBy = sortBy;
             applyGuestSorts();
         }
@@ -1983,8 +1949,8 @@
         }
 
         function applyGuestSorts() {
-            applySortToContainer('guestNotCheckedInContainer', hotelSortBy, hotelSortBy === 'timeOrder' ? 'sortSignupOrder' : '', -1);
-            applySortToContainer('guestCheckedInContainer', hotelSortBy, hotelSortBy === 'timeOrder' ? 'sortCheckInOrder' : '', 1);
+            applySortToContainer('guestNotCheckedInContainer', hotelSortBy, '', -1);
+            applySortToContainer('guestCheckedInContainer', hotelSortBy, '', 1);
             applySortToContainer('internationsUnpaidContainer', paymentSortBy, paymentSortBy === 'timeOrder' ? 'sortCheckInOrder' : '', 1);
             applySortToContainer('internationsPaidContainer', paymentSortBy, paymentSortBy === 'timeOrder' ? 'sortPaymentOrder' : '', 1);
             updateSortButtonStates();
