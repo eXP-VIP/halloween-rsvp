@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function staffRecordPath(uid) {
+      return /databases/$(database)/documents/staff_users/$(uid);
+    }
+
+    function isActiveStaff() {
+      return signedIn()
+        && exists(staffRecordPath(request.auth.uid))
+        && get(staffRecordPath(request.auth.uid)).data.active == true
+        && get(staffRecordPath(request.auth.uid)).data.role in ['admin', 'hotel', 'internations'];
+    }
+
+    function hasRole(roleName) {
+      return isActiveStaff()
+        && get(staffRecordPath(request.auth.uid)).data.role == roleName;
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isHotel() {
+      return hasRole('hotel');
+    }
+
+    function isInterNations() {
+      return hasRole('internations');
+    }
+
+    function isPublicRsvpCreate() {
+      return request.auth == null
+        && request.resource.data.keys().hasAll([
+          'name', 'firstName', 'lastName', 'invitedBy',
+          'checkedIn', 'checkedInAt', 'paid', 'paidAt',
+          'welcomeDrinkChipIssued', 'guestType', 'source', 'createdAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'name', 'firstName', 'lastName', 'invitedBy',
+          'checkedIn', 'checkedInAt', 'paid', 'paidAt',
+          'welcomeDrinkChipIssued', 'guestType', 'source', 'createdAt'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.firstName is string
+        && request.resource.data.firstName.size() >= 1
+        && request.resource.data.firstName.size() <= 80
+        && request.resource.data.lastName is string
+        && request.resource.data.lastName.size() <= 120
+        && request.resource.data.invitedBy is string
+        && request.resource.data.invitedBy.size() <= 120
+        && request.resource.data.checkedIn == false
+        && request.resource.data.checkedInAt == null
+        && request.resource.data.paid == false
+        && request.resource.data.paidAt == null
+        && request.resource.data.welcomeDrinkChipIssued == false
+        && request.resource.data.guestType == 'friend'
+        && request.resource.data.source == 'website'
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function hotelCheckInUpdate() {
+      return isHotel()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkedIn', 'checkedInAt'])
+        && request.resource.data.checkedIn is bool
+        && (request.resource.data.checkedIn
+          ? request.resource.data.checkedInAt == request.time
+          : request.resource.data.checkedInAt == null
+            && resource.data.paid != true
+            && resource.data.welcomeDrinkChipIssued != true
+            && resource.data.welcomeDrinkUpgradeSelected != true);
+    }
+
+    function interNationsPaymentUpdate() {
+      return isInterNations()
+        && resource.data.checkedIn == true
+        && request.resource.data.checkedIn == resource.data.checkedIn
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'paid', 'paidAt', 'amountPaid', 'paymentStatusUpdatedAt',
+          'welcomeDrinkChipIssued', 'welcomeDrinkChipIssuedAt', 'welcomeDrinkChipIssuedBy',
+          'welcomeDrinkUpgradeSelected', 'welcomeDrinkUpgradePrice', 'welcomeDrinkUpgradeUpdatedAt'
+        ]);
+    }
+
+    match /staff_users/{uid} {
+      // Provision roles in Firebase Console or with a trusted Admin SDK only.
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /halloween_guests/{guestId} {
+      allow get, list: if isActiveStaff();
+      allow create: if isAdmin() || isPublicRsvpCreate();
+      allow update: if isAdmin() || hotelCheckInUpdate() || interNationsPaymentUpdate();
+      allow delete: if isAdmin();
+    }
+
+    match /event_settings/{settingId} {
+      allow read: if isActiveStaff();
+      allow write: if isAdmin();
+    }
+
+    match /welcome_drink_rewards/{rewardId} {
+      allow read, create, update: if isAdmin() || isInterNations();
+      allow delete: if isAdmin();
+    }
+  }
+}
