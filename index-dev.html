@@ -614,7 +614,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.15.2</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.15.3</p>
         </div>
     </footer>
 
@@ -679,9 +679,7 @@
         let pendingInternationsNameColumn = '';
         let cachedGuestDocs = [];
         let pricingUnsubscribe = null;
-        let drinkRewardsUnsubscribe = null;
         let cachedUnaccountedInviters = [];
-        let unrecognizedDrinkChipStatus = new Map();
         const DEFAULT_PRICING = {
             basePrices: { basics: 15, paidMembers: 5, friends: 20 },
             drinkRules: {
@@ -738,7 +736,6 @@
 
         function isGuestDrinkChipIssued(data) {
             const key = normalizeGuestName(data && data.name);
-            if (key && Boolean((unrecognizedDrinkChipStatus.get(key) || {}).welcomeDrinkChipIssued)) return true;
             if (key && cachedGuestDocs.some((doc) => normalizeGuestName(doc.data().name) === key && Boolean(doc.data().welcomeDrinkChipIssued))) return true;
             return Boolean(data && data.welcomeDrinkChipIssued);
         }
@@ -1267,11 +1264,9 @@
         function stopStaffRealtimeListeners() {
             if (guestlistUnsubscribe) { guestlistUnsubscribe(); guestlistUnsubscribe = null; }
             if (pricingUnsubscribe) { pricingUnsubscribe(); pricingUnsubscribe = null; }
-            if (drinkRewardsUnsubscribe) { drinkRewardsUnsubscribe(); drinkRewardsUnsubscribe = null; }
             cachedGuestSnapshot = null;
             cachedGuestDocs = [];
             cachedUnaccountedInviters = [];
-            unrecognizedDrinkChipStatus = new Map();
         }
 
         function showStaffLogin() {
@@ -1471,19 +1466,6 @@
                     if (status) status.textContent = 'Pricing could not be read. Check the database permissions.';
                 });
             }
-            if (!drinkRewardsUnsubscribe) {
-                drinkRewardsUnsubscribe = db.collection('welcome_drink_rewards').onSnapshot((snapshot) => {
-                    unrecognizedDrinkChipStatus = new Map();
-                    snapshot.forEach((doc) => {
-                        const data = doc.data();
-                        if (data.nameKey) unrecognizedDrinkChipStatus.set(data.nameKey, data);
-                    });
-                    renderUnrecognizedWelcomeDrinkList();
-                    const issuedNameKeys = new Set(cachedGuestDocs.filter((doc) => Boolean(doc.data().welcomeDrinkChipIssued)).map((doc) => normalizeGuestName(doc.data().name)).filter(Boolean));
-                    snapshot.docs.forEach((doc) => { const data = doc.data(); if (data.welcomeDrinkChipIssued && data.nameKey) issuedNameKeys.add(data.nameKey); });
-                    document.getElementById('welcomeDrinkChipCount').textContent = issuedNameKeys.size + ' / ' + (document.getElementById('drinkEstimateTotal').textContent || '0');
-                }, (error) => console.error('Unregistered drink chip status listener failed:', error));
-            }
             if (guestlistUnsubscribe) {
                 guestlistUnsubscribe();
                 guestlistUnsubscribe = null;
@@ -1539,7 +1521,6 @@
                 document.getElementById('guestMixRatio').textContent = formatRate(categoryTotals.Albatross.total, nonAlbatrossTotal);
                 document.getElementById('guestPaidMixRatio').textContent = formatRate(categoryTotals.Albatross.paid, nonAlbatrossPaid);
                 const issuedNameKeys = new Set(snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
-                unrecognizedDrinkChipStatus.forEach((record, nameKey) => { if (record.welcomeDrinkChipIssued) issuedNameKeys.add(nameKey); });
 
                 // Count checked-in referrals for live rewards, plus all referral names for the admin reconciliation list.
                 const checkedInReferralsByInviter = new Map();
@@ -1856,15 +1837,6 @@
                     welcomeDrinkChipIssuedAt: nextIssued ? firebase.firestore.FieldValue.serverTimestamp() : null,
                     welcomeDrinkChipIssuedBy: nextIssued ? 'staff' : null
                 });
-                const key = normalizeGuestName(guestName);
-                if (key && unrecognizedDrinkChipStatus.has(key)) {
-                    await db.collection('welcome_drink_rewards').doc(encodeURIComponent(key)).set({
-                        welcomeDrinkChipIssued: false,
-                        welcomeDrinkChipIssuedAt: null,
-                        migratedToGuestRecord: id,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                }
             } catch (error) {
                 console.error('Welcome-drink chip update failed:', error);
                 const listError = document.getElementById('guestlistError');
@@ -1888,8 +1860,7 @@
                     const latestData = latest.data() || {};
                     const latestNameKey = normalizeGuestName(latestData.name);
                     const hasIssuedChip = Boolean(latestData.welcomeDrinkChipIssued ||
-                        cachedGuestDocs.some((guestDoc) => normalizeGuestName(guestDoc.data().name) === latestNameKey && Boolean(guestDoc.data().welcomeDrinkChipIssued)) ||
-                        (unrecognizedDrinkChipStatus.get(latestNameKey) || {}).welcomeDrinkChipIssued);
+                        cachedGuestDocs.some((guestDoc) => normalizeGuestName(guestDoc.data().name) === latestNameKey && Boolean(guestDoc.data().welcomeDrinkChipIssued)));
                     if (latestData.paid || hasIssuedChip || Boolean(latestData.welcomeDrinkUpgradeSelected)) {
                         const listError = document.getElementById('guestlistError');
                         listError.textContent = 'Undo check-in blocked. First mark this guest unpaid, undo the issued drink chip and remove any selected upgrade in Payment status.';
