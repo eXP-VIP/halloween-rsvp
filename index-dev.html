@@ -528,7 +528,7 @@
             <div class="glass-panel rounded-2xl p-5 sm:p-8 max-w-6xl w-full mx-auto gold-border-glow">
                 <div class="flex justify-between items-center gap-4 mb-5 border-b border-gold/20 pb-4">
                     <div class="min-w-0">
-                        <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Staff Portal</h3>
+                        <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Management Portal</h3>
                         <p class="text-xs text-gray-400 mt-1">Guest list, check-in, payment and event administration</p>
                     </div>
                     <button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white shrink-0"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -554,10 +554,10 @@
                     <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">Firebase Authentication or Firestore is unavailable. Check the project configuration and security rules.</p>
                 </div>
                 <div id="guestlistSection" class="hidden">
-                    <h4 class="staff-subheading mb-2">Signed-in staff</h4>
+                    <h4 class="staff-subheading mb-2">Signed in</h4>
                     <div id="staffIdentityBar" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gold/20 bg-black/30 px-3 py-2 mb-4">
                         <p id="staffIdentity" class="text-[10px] text-gray-300 break-all">Signed in</p>
-                        <span class="text-[9px] text-emerald-200 uppercase tracking-wider">Authenticated</span>
+                        <span class="text-[9px] text-emerald-200 uppercase tracking-wider">SIGNED IN</span>
                     </div>
                     <h4 class="staff-subheading mb-2">Live event overview</h4>
                     <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
@@ -639,29 +639,34 @@
                     <p id="guestlistError" class="text-red-300 text-sm hidden mb-3">Could not load the guest list. Check the database connection and access rules.</p>
                     <section id="hotelCheckInPanel" class="staff-panel">
                     <div class="staff-panel__header">
-                        <h4 class="staff-panel__title">Guest-list Verification</h4>
+                        <h4 id="hotelCheckInTitle" class="staff-panel__title">Guest-list Verification</h4>
                         <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
                             <button type="button" id="printGuestListBtn" class="sort-option" title="Open a clean, printable guest list">Print guest list</button>
                             <span id="printGuestListStatus" class="text-[10px] text-gray-400" role="status" aria-live="polite"></span>
                             <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                         </div>
                     </div>
-                    <p class="text-xs text-gray-400 mb-3">Step 1: verify the guest is on the list and record their arrival. Payment and final admission are handled in the second section.</p>
+                    <p id="hotelCheckInDescription" class="text-xs text-gray-400 mb-3">Verify that the guest is on the list and record their arrival.</p>
                     <div id="hotelSortControls" class="flex flex-wrap items-center gap-2 mb-4" role="group" aria-label="Sort check-in lists">
                         <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                         <button type="button" class="sort-option" data-sort-group="checkin" data-sort="firstName" aria-pressed="false" onclick="setGuestSort('firstName')">First name</button>
                         <button type="button" class="sort-option" data-sort-group="checkin" data-sort="lastName" aria-pressed="false" onclick="setGuestSort('lastName')">Last Name</button>
                         <button type="button" class="sort-option" data-sort-group="checkin" data-sort="signupNewest" aria-pressed="false" onclick="setGuestSort('signupNewest')">Signup</button>
                     </div>
-                    <div class="mb-4">
+                    <div id="notCheckedInListSection" class="mb-4">
                         <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Not checked in <span id="hotelOpenCount" class="text-amber-100">(0)</span></p>
                         <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestNotCheckedInContainer"></div>
                         <p id="noUncheckGuests" class="text-xs text-gray-500 py-2 hidden">Everyone is checked in.</p>
                     </div>
-                    <div class="mb-6">
+                    <div id="checkedInListSection" class="mb-6">
                         <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Checked in <span id="hotelCheckedCount" class="text-emerald-200">(0)</span></p>
                         <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestCheckedInContainer"></div>
                         <p id="noCheckedGuests" class="text-xs text-gray-500 py-2 hidden">No guests checked in yet.</p>
+                    </div>
+                    <div id="combinedGuestListSection" class="mb-6 hidden">
+                        <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">All guests <span id="combinedGuestCount" class="text-amber-100">(0)</span></p>
+                        <div class="space-y-2 max-h-[32rem] overflow-y-auto pr-1" id="combinedGuestContainer"></div>
+                        <p id="noCombinedGuests" class="text-xs text-gray-500 py-2 hidden">No guests have been registered yet.</p>
                     </div>
                     </section>
                     <section id="internationsPaymentPanel" class="staff-panel">
@@ -671,7 +676,7 @@
                                 <input type="search" id="paymentSearchInput" oninput="filterPaymentGuests()" aria-label="Search payment list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                             </div>
                         </div>
-                        <p class="text-xs text-gray-400 mb-3">Step 2: collect admission payment, offer eligible drink upgrades, issue welcome-drink chips when entitled, and hand over the admission wristband.</p>
+                        <p id="paymentDescription" class="text-xs text-gray-400 mb-3">Collect admission payment, manage eligible drink upgrades, issue welcome-drink chips when entitled and hand over the admission wristband.</p>
                         <div id="paymentSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort payment lists">
                             <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                             <button type="button" class="sort-option" data-sort-group="payment" data-sort="firstName" aria-pressed="false" onclick="setPaymentSort('firstName')">First name</button>
@@ -712,7 +717,7 @@
                         </div>
                         <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules, referral eligibility and the admission workflow. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid.</p>
                         <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
-                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="twoStepCheckInEnabled" type="checkbox" class="mt-1 accent-amber-300" checked><span><strong>Two-step check-in</strong><span class="block text-xs text-gray-400 mt-1">Enabled: Hotel verifies the guest list; InterNations handles payment and final admission. Disabled: InterNations can perform both steps.</span></span></label>
+                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="twoStepCheckInEnabled" type="checkbox" class="mt-1 accent-amber-300" checked><span><strong>Two-step check-in</strong><span class="block text-xs text-gray-400 mt-1">Enabled: Hotel staff verify arrivals; InterNations staff handle payment and final admission. Disabled: InterNations sees one guest list with check-in and admission actions.</span></span></label>
                             <p id="workflowSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-300 mt-2">Two-step check-in is enabled by default.</p>
                         </div>
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
@@ -839,7 +844,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.6</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.7</p>
         </div>
     </footer>
 
@@ -910,6 +915,7 @@
         let pricingUnsubscribe = null;
         let workflowSettingsUnsubscribe = null;
         let twoStepCheckInEnabled = true;
+        let singleTeamCombinedMode = false;
         let cachedUnaccountedReferrals = [];
         // Defaults for admission tiers, drink treatment and referral rewards; event_settings/pricing can override them.
         const DEFAULT_PRICING = {
@@ -1662,16 +1668,42 @@
         // AUTHENTICATION AND ROLE VISIBILITY: this controls presentation only; server/rules authorization remains authoritative.
         function applyWorkflowRoleVisibility() {
             const role = currentStaffRole;
+            singleTeamCombinedMode = !twoStepCheckInEnabled && (role === 'admin' || role === 'internations');
             const checkInVisible = role === 'admin' || role === 'hotel' || (role === 'internations' && !twoStepCheckInEnabled);
-            const paymentVisible = role === 'admin' || role === 'internations';
+            const paymentVisible = role === 'admin' || (role === 'internations' && twoStepCheckInEnabled);
             const checkInPanel = document.getElementById('hotelCheckInPanel');
             const paymentPanel = document.getElementById('internationsPaymentPanel');
             if (checkInPanel) checkInPanel.classList.toggle('hidden', !checkInVisible);
             if (paymentPanel) paymentPanel.classList.toggle('hidden', !paymentVisible);
+
+            const title = document.getElementById('hotelCheckInTitle');
+            const description = document.getElementById('hotelCheckInDescription');
+            if (title) title.textContent = singleTeamCombinedMode ? 'Guest Check-in & Admission' : 'Guest-list Verification';
+            if (description) description.textContent = singleTeamCombinedMode
+                ? 'Check in guests, record admission payment and manage welcome-drink entitlements from one list.'
+                : 'Verify that the guest is on the list and record their arrival.';
+            const paymentDescription = document.getElementById('paymentDescription');
+            if (paymentDescription) paymentDescription.textContent =
+                'Collect admission payment, manage eligible drink upgrades, issue welcome-drink chips when entitled and hand over the admission wristband.';
+
+            const show = (id, visible) => {
+                const element = document.getElementById(id);
+                if (element) element.classList.toggle('hidden', !visible);
+            };
+            show('notCheckedInListSection', !singleTeamCombinedMode);
+            show('checkedInListSection', !singleTeamCombinedMode);
+            show('combinedGuestListSection', singleTeamCombinedMode);
+            const search = document.getElementById('hotelSearchInput');
+            if (search) {
+                search.placeholder = singleTeamCombinedMode ? 'Search all guests...' : 'Search guests...';
+                search.setAttribute('aria-label', singleTeamCombinedMode ? 'Search all guests' : 'Search check-in list');
+            }
             const hint = document.getElementById('workflowSaveStatus');
-            if (hint && role !== 'admin') hint.textContent = twoStepCheckInEnabled
-                ? 'Two-step workflow: Hotel verifies the guest list; InterNations handles payment and final admission.'
-                : 'Single-team workflow: InterNations can verify the guest list and handle payment and final admission.';
+            if (hint && role !== 'admin') hint.textContent = role === 'hotel'
+                ? 'Hotel staff can verify arrivals. Payment and final admission are handled by InterNations.'
+                : (twoStepCheckInEnabled
+                    ? 'Hotel staff verify arrivals; InterNations staff handle payment and final admission.'
+                    : 'Check-in, payment and welcome-drink actions are available together in one list.');
         }
 
         /** Set the staff interface and available actions for the authenticated role returned by Firestore. */
@@ -1785,7 +1817,7 @@
                 }
                 applyStaffRole(profile.role);
                 activeStaffUid = user.uid;
-                document.getElementById('staffIdentity').textContent = profile.role === 'admin' ? 'Authenticated · ' + username + ' · Admin' : 'Authenticated · ' + username;
+                document.getElementById('staffIdentity').textContent = 'Signed in as ' + username + ' · ' + ({ admin: 'Admin', hotel: 'Hotel', internations: 'InterNations' }[profile.role] || profile.role);
                 document.getElementById('staffLoginSection').classList.add('hidden');
                 document.getElementById('guestlistSection').classList.remove('hidden');
                 document.getElementById('staffLoginError').classList.add('hidden');
@@ -2007,6 +2039,7 @@
             if (!workflowSettingsUnsubscribe) {
                 workflowSettingsUnsubscribe = db.collection('event_settings').doc('workflow').onSnapshot((doc) => {
                     const value = doc.exists ? doc.data() || {} : {};
+                    const previousWorkflowSetting = twoStepCheckInEnabled;
                     twoStepCheckInEnabled = value.twoStepCheckInEnabled !== false;
                     const input = document.getElementById('twoStepCheckInEnabled');
                     if (input) input.checked = twoStepCheckInEnabled;
@@ -2015,6 +2048,7 @@
                         ? 'Two-step check-in is enabled.'
                         : 'Single-team check-in is enabled.';
                     applyWorkflowRoleVisibility();
+                    if (previousWorkflowSetting !== twoStepCheckInEnabled && guestlistUnsubscribe) loadLiveGuestlist();
                 }, (error) => {
                     console.error('Workflow settings listener failed:', error);
                     const status = document.getElementById('workflowSaveStatus');
@@ -2118,10 +2152,12 @@
 
                 const hotelOpenContainer = document.getElementById('guestNotCheckedInContainer');
                 const hotelCheckedContainer = document.getElementById('guestCheckedInContainer');
+                const combinedContainer = document.getElementById('combinedGuestContainer');
                 const unpaidContainer = document.getElementById('internationsUnpaidContainer');
                 const paidContainer = document.getElementById('internationsPaidContainer');
                 hotelOpenContainer.replaceChildren();
                 hotelCheckedContainer.replaceChildren();
+                combinedContainer.replaceChildren();
                 unpaidContainer.replaceChildren();
                 paidContainer.replaceChildren();
 
@@ -2175,7 +2211,7 @@
                     const welcomeDrinkEarned = hasEarnedReferralDrink(inviterIdentity, qualifiedCount);
                     const referralBadgeState = getReferralBadgeState(inviterIdentity, invitedCount, qualifiedCount);
                     const isMemberRecord = isInterNationsMember(data) || Boolean(findImportedMemberData(data));
-                    const isPaymentCard = mode === 'payment';
+                    const isPaymentCard = mode === 'payment' || mode === 'combined';
                     const isPaid = Boolean(data.paid);
                     const paymentComplete = isPaymentCard && isPaymentWorkflowComplete(item);
                     const tier = getGuestTier(data);
@@ -2190,7 +2226,7 @@
                         (isPaymentCard ? (paymentComplete ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-sky-950/30 border-sky-400/40') :
                         (checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'));
                     card.dataset.guestId = doc.id;
-                    card.dataset.listType = isPaymentCard ? 'payment' : 'hotel';
+                    card.dataset.listType = mode;
                     const nameParts = String(data.name || '').trim().split(/\s+/).filter(Boolean);
                     card.dataset.sortFirstName = String(data.firstName || nameParts[0] || '').toLocaleLowerCase();
                     card.dataset.sortLastName = String(data.lastName || nameParts.slice(1).join(' ') || '').toLocaleLowerCase();
@@ -2215,7 +2251,7 @@
                         (isMemberRecord ? 'border-sky-400/50 bg-sky-950/50 text-sky-100' : 'border-gray-500/50 bg-gray-800/60 text-gray-200');
                     const memberStatus = String(data.interNationsStatus || '').trim();
                     typeBadge.textContent = getGuestCategory(data).toLocaleUpperCase();
-                    if (currentStaffRole === 'admin') titleLine.appendChild(typeBadge);
+                    if (currentStaffRole === 'admin' || mode === 'combined') titleLine.appendChild(typeBadge);
 
                     const guestMeta = document.createElement('p');
                     guestMeta.className = 'text-xs text-gray-300 break-words mt-1';
@@ -2231,7 +2267,38 @@
                           (displayDate ? ' · Signed up: ' + displayDate : '');
 
                     const actions = document.createElement('div');
-                    actions.className = 'flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center';
+                    actions.className = mode === 'combined'
+                        ? 'flex w-full min-w-0 flex-wrap items-center gap-2 self-stretch sm:w-auto sm:shrink-0 sm:self-center'
+                        : 'flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center';
+
+                    const appendCheckInAction = () => {
+                        const checkInButton = document.createElement('button');
+                        checkInButton.type = 'button';
+                        checkInButton.className = 'guest-action-btn ' +
+                            (checkedIn ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
+                        const checkInUndoBlocked = checkedIn && (isPaid || chipAlreadyIssued || Boolean(data.welcomeDrinkUpgradeSelected));
+                        checkInButton.textContent = checkedIn ? 'UNDO CHECK-IN' : 'CHECK IN';
+                        checkInButton.title = checkInUndoBlocked
+                            ? 'First mark the guest unpaid, undo the issued drink chip and remove any selected upgrade in Payment status.'
+                            : (checkedIn ? 'Undo check-in. This is not a check-out.' : 'Mark this guest as checked in.');
+                        checkInButton.disabled = checkInUndoBlocked;
+                        if (checkInUndoBlocked) checkInButton.classList.add('is-disabled');
+                        checkInButton.setAttribute('aria-pressed', String(checkedIn));
+                        checkInButton.setAttribute('aria-label', checkInUndoBlocked
+                            ? 'Cannot undo check-in for ' + (data.name || 'this guest') + ' until payment, chip and upgrade are reversed'
+                            : (checkedIn ? 'Undo check-in for ' + (data.name || 'this guest') : 'Check in ' + (data.name || 'this guest')));
+                        checkInButton.addEventListener('click', () => toggleCheckIn(doc.id, checkedIn));
+                        actions.appendChild(checkInButton);
+                    };
+                    const appendDeleteAction = () => {
+                        const deleteButton = document.createElement('button');
+                        deleteButton.type = 'button';
+                        deleteButton.className = 'shrink-0 rounded border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200 hover:bg-red-900/70 transition-colors';
+                        deleteButton.textContent = 'DELETE';
+                        deleteButton.setAttribute('aria-label', 'Delete guest ' + (data.name || ''));
+                        deleteButton.addEventListener('click', () => deleteGuest(doc.id, data.name));
+                        actions.appendChild(deleteButton);
+                    };
 
                     if (isPaymentCard) {
                         if (referralBadgeState) {
@@ -2295,37 +2362,16 @@
                             chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
                             actions.appendChild(chipButton);
                         }
+                        if (mode === 'combined') {
+                            appendCheckInAction();
+                            if (currentStaffRole === 'admin') appendDeleteAction();
+                        }
                     } else {
                         // Hotel sees only the guest identity and check-in control.
                         details.appendChild(titleLine);
                         if (currentStaffRole === 'admin' && guestMeta.textContent) details.appendChild(guestMeta);
-                        const checkInButton = document.createElement('button');
-                        checkInButton.type = 'button';
-                        checkInButton.className = 'guest-action-btn ' +
-                            (checkedIn ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
-                        const checkInUndoBlocked = checkedIn && (isPaid || chipAlreadyIssued || Boolean(data.welcomeDrinkUpgradeSelected));
-                        checkInButton.textContent = checkedIn ? 'UNDO CHECK-IN' : 'CHECK IN';
-                        checkInButton.title = checkInUndoBlocked
-                            ? 'First mark the guest unpaid, undo the issued drink chip and remove any selected upgrade in Payment status.'
-                            : (checkedIn ? 'Undo check-in. This is not a check-out.' : 'Mark this guest as checked in.');
-                        checkInButton.disabled = checkInUndoBlocked;
-                        if (checkInUndoBlocked) checkInButton.classList.add('is-disabled');
-                        checkInButton.setAttribute('aria-pressed', String(checkedIn));
-                        checkInButton.setAttribute('aria-label', checkInUndoBlocked
-                            ? 'Cannot undo check-in for ' + (data.name || 'this guest') + ' until payment, chip and upgrade are reversed'
-                            : (checkedIn ? 'Undo check-in for ' + (data.name || 'this guest') : 'Check in ' + (data.name || 'this guest')));
-                        checkInButton.addEventListener('click', () => toggleCheckIn(doc.id, checkedIn));
-                        actions.appendChild(checkInButton);
-
-                        if (currentStaffRole === 'admin') {
-                            const deleteButton = document.createElement('button');
-                            deleteButton.type = 'button';
-                            deleteButton.className = 'shrink-0 rounded border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200 hover:bg-red-900/70 transition-colors';
-                            deleteButton.textContent = 'DELETE';
-                            deleteButton.setAttribute('aria-label', 'Delete guest ' + (data.name || ''));
-                            deleteButton.addEventListener('click', () => deleteGuest(doc.id, data.name));
-                            actions.appendChild(deleteButton);
-                        }
+                        appendCheckInAction();
+                        if (currentStaffRole === 'admin') appendDeleteAction();
                     }
 
                     card.append(details, actions);
@@ -2336,6 +2382,11 @@
                 const checkedIn = guestDocs.filter((item) => Boolean(item.data.checkedIn)).sort(compareNames);
                 notCheckedIn.forEach((item) => hotelOpenContainer.appendChild(makeGuestCard(item, 'hotel')));
                 checkedIn.forEach((item) => hotelCheckedContainer.appendChild(makeGuestCard(item, 'hotel')));
+                if (singleTeamCombinedMode) {
+                    [...guestDocs].sort(compareNames).forEach((item) => combinedContainer.appendChild(makeGuestCard(item, 'combined')));
+                }
+                document.getElementById('combinedGuestCount').textContent = '(' + guestDocs.length + ')';
+                document.getElementById('noCombinedGuests').classList.toggle('hidden', guestDocs.length > 0);
                 document.getElementById('noUncheckGuests').classList.toggle('hidden', notCheckedIn.length > 0);
                 document.getElementById('noCheckedGuests').classList.toggle('hidden', checkedIn.length > 0);
 
@@ -2577,6 +2628,7 @@
         function applyGuestSorts() {
             applySortToContainer('guestNotCheckedInContainer',guestSortBy,'',-1);
             applySortToContainer('guestCheckedInContainer',guestSortBy,'',1);
+            applySortToContainer('combinedGuestContainer',guestSortBy,'',-1);
             applySortToContainer('internationsUnpaidContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortCheckInOrder':'',1);
             applySortToContainer('internationsPaidContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortPaymentOrder':'',1);
             updateSortButtonStates();
@@ -2604,9 +2656,10 @@
         function filterHotelGuests() {
             const input = document.getElementById('hotelSearchInput');
             const query = (input ? input.value : '').trim().toLocaleLowerCase();
-            const counts = filterContainerCards(['guestNotCheckedInContainer', 'guestCheckedInContainer'], query);
+            const counts = filterContainerCards(['guestNotCheckedInContainer', 'guestCheckedInContainer', 'combinedGuestContainer'], query);
             document.getElementById('hotelOpenCount').textContent = '(' + counts.guestNotCheckedInContainer + ')';
             document.getElementById('hotelCheckedCount').textContent = '(' + counts.guestCheckedInContainer + ')';
+            document.getElementById('combinedGuestCount').textContent = '(' + counts.combinedGuestContainer + ')';
         }
 
         /** Apply the payment/referral search field to the corresponding review list. */
