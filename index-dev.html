@@ -392,12 +392,12 @@
                 </div>
                 <div id="guestlistSection" class="hidden">
                     <h4 class="font-serif uppercase tracking-wider text-gray-300 text-[11px] mb-2">Authentication Details</h4>
-                    <div id="staffIdentityBar" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gold/20 bg-black/30 px-3 py-2 mb-4>
+                    <div id="staffIdentityBar" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gold/20 bg-black/30 px-3 py-2 mb-4">
                         <p id="staffIdentity" class="text-[10px] text-gray-300 break-all">Signed in</p>
                         <span class="text-[9px] text-emerald-200 uppercase tracking-wider">Authenticated</span>
                     </div>
                     <h4 class="font-serif uppercase tracking-wider text-gray-300 text-[11px] mb-2">Event Statistics</h4>
-                    <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-4>
+                    <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
                         <div class="rounded-lg border border-gold/25 bg-black/35 p-3 min-w-0">
                             <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</p>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
@@ -1509,14 +1509,17 @@
         function staffAuthErrorMessage(error) {
             if (error && error.code === 'staff/not-authorized') return error.message;
             if (error && error.code === 'staff/invalid-username') return error.message;
-            if (error && ['auth/invalid-credential', 'auth/user-not-found', 'auth/wrong-password', 'auth/invalid-email'].includes(error.code)) {
+            if (error && ['auth/invalid-credential', 'auth/invalid-login-credentials', 'auth/user-not-found', 'auth/wrong-password', 'auth/invalid-email'].includes(error.code)) {
                 return 'Username or password is incorrect.';
             }
+            if (error && error.code === 'auth/operation-not-allowed') return 'Firebase Email/Password sign-in is disabled. Enable it in Authentication → Sign-in method.';
+            if (error && error.code === 'auth/user-disabled') return 'This Firebase Authentication account is disabled. Enable the account in Authentication → Users.';
             if (error && error.code === 'auth/too-many-requests') return 'Too many sign-in attempts. Wait a while and try again.';
             if (error && error.code === 'auth/unauthorized-domain') return 'This website is not authorized for Firebase sign-in. Add sign-up.partybag.com to Firebase Authentication’s authorized domains.';
             if (error && error.code === 'auth/network-request-failed') return 'Network error while signing in. Check your connection and retry.';
-            if (error && error.code === 'permission-denied') return 'The staff role could not be checked. Confirm that the Firestore security rules have been published.';
-            return 'Sign-in could not be completed. Check your account setup and try again.';
+            if (error && (error.code === 'permission-denied' || error.code === 'firestore/permission-denied')) return 'The staff role could not be checked. Confirm that the role document exists in event_users and that Firestore rules allow this staff account to read it.';
+            if (error && error.code) return 'Sign-in could not be completed (' + error.code + '). Check the account setup and try again.';
+            return 'Sign-in could not be completed. Check the account setup and try again.';
         }
 
         function stopStaffRealtimeListeners() {
@@ -1636,7 +1639,8 @@
                 currentAuthUser = user;
                 const portalOpen = !document.getElementById('hostessPortal').classList.contains('hidden');
                 if (!user) {
-                    if (activeStaffUid) showStaffLogin();
+                    // Fail closed: never leave any staff-role panels visible without an authenticated user.
+                    showStaffLogin();
                     return;
                 }
                 if (portalOpen) {
