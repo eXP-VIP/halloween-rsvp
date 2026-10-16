@@ -467,7 +467,7 @@
                             <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Admin · Prices</h4>
                             <span class="text-[10px] uppercase tracking-wider text-amber-200">Role-controlled staff access</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules and referral eligibility for each category. Included drinks are already covered; a referral reward does not add a second drink. For eligible categories, set how many referred guests must check in. A qualifying referral drink replaces a paid upgrade.</p>
+                        <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules and referral eligibility for each category. Included drinks are already covered; a referral reward does not add a second drink. For eligible categories, the required referrals must check in and be marked paid. A qualifying referral drink replaces a paid upgrade.</p>
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
@@ -483,7 +483,7 @@
                                 <input id="drinkPriceBasics" type="number" min="0" step="1" class="form-field" value="0" disabled>
                                 <div class="mt-4 border-t border-gold/20 pt-3">
                                     <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligibleBasics" type="checkbox" class="mt-0.5 accent-amber-300" checked> Eligible for referral welcome drink</label>
-                                    <label for="referralThresholdBasics" class="form-label">Required referred guests to check in</label>
+                                    <label for="referralThresholdBasics" class="form-label">Required referrals to check in and pay</label>
                                     <input id="referralThresholdBasics" type="number" min="1" step="1" class="form-field" value="2">
                                 </div>
                             </div>
@@ -501,7 +501,7 @@
                                 <input id="drinkPricePaidMembers" type="number" min="0" step="1" class="form-field" value="0" disabled>
                                 <div class="mt-4 border-t border-gold/20 pt-3">
                                     <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligiblePaidMembers" type="checkbox" class="mt-0.5 accent-amber-300" checked> Eligible for referral welcome drink</label>
-                                    <label for="referralThresholdPaidMembers" class="form-label">Required referred guests to check in</label>
+                                    <label for="referralThresholdPaidMembers" class="form-label">Required referrals to check in and pay</label>
                                     <input id="referralThresholdPaidMembers" type="number" min="1" step="1" class="form-field" value="2">
                                 </div>
                             </div>
@@ -519,7 +519,7 @@
                                 <input id="drinkPriceFriends" type="number" min="0" step="1" class="form-field" value="0" disabled>
                                 <div class="mt-4 border-t border-gold/20 pt-3">
                                     <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligibleFriends" type="checkbox" class="mt-0.5 accent-amber-300"> Eligible for referral welcome drink</label>
-                                    <label for="referralThresholdFriends" class="form-label">Required referred guests to check in</label>
+                                    <label for="referralThresholdFriends" class="form-label">Required referrals to check in and pay</label>
                                     <input id="referralThresholdFriends" type="number" min="1" step="1" class="form-field" value="2">
                                 </div>
                             </div>
@@ -553,11 +553,9 @@
                     </div>
                     <div id="hotelSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort check-in lists">
                         <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
-                        <button type="button" class="sort-option" data-sort-group="hotel" data-sort="firstName" aria-pressed="true" onclick="setHotelSort('firstName')">First name</button>
-                        <span class="admin-sort-controls hidden" id="adminGuestSortControls"><button type="button" class="sort-option" data-sort-group="admin" data-sort="firstName" aria-pressed="true" onclick="setAdminGuestSort('firstName')">First name</button>
-                        <button type="button" class="sort-option" data-sort-group="admin" data-sort="lastName" aria-pressed="false" onclick="setAdminGuestSort('lastName')">Last Name</button>
-                        <button type="button" class="sort-option" data-sort-group="admin" data-sort="signupNewest" aria-pressed="false" onclick="setAdminGuestSort('signupNewest')">Signup</button></span>
-                        <button type="button" class="sort-option" data-sort-group="hotel" data-sort="lastName" aria-pressed="false" onclick="setHotelSort('lastName')">Last Name</button>
+                        <button type="button" class="sort-option" data-sort-group="guest" data-sort="firstName" aria-pressed="true" onclick="setGuestSort('firstName')">First name</button>
+                        <button type="button" class="sort-option" data-sort-group="guest" data-sort="lastName" aria-pressed="false" onclick="setGuestSort('lastName')">Last Name</button>
+                        <button type="button" class="sort-option" data-sort-group="guest" data-sort="signupNewest" aria-pressed="false" onclick="setGuestSort('signupNewest')">Signup</button>
                     </div>
                     <div class="mb-4">
                         <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Not checked in <span id="hotelOpenCount" class="text-amber-100">(0)</span></p>
@@ -597,7 +595,7 @@
                         <section id="unrecognizedWelcomeDrinkSection" class="hidden rounded-xl border border-gold/40 bg-amber-950/25 p-4 mt-5" aria-labelledby="welcomeDrinkHeading">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
                             <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Unaccounted referrals</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-gray-300">Guests whose referral drinks are not yet accounted for, plus RSVPs without an inviter</span>
+                            <span class="text-[10px] uppercase tracking-wider text-gray-300">Unknown inviter names entered on RSVP forms, grouped by referral count</span>
                         </div>
                         
                         <div id="welcomeDrinkList" class="space-y-2 text-sm text-gray-100">
@@ -763,10 +761,31 @@
             return Boolean(referralRule.eligible);
         }
 
-        function hasEarnedReferralDrink(data, referredGuestCount) {
+        function hasEarnedReferralDrink(data, qualifiedReferralCount) {
             const tier = getGuestTier(data);
             const referralRule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
-            return isReferralDrinkEligible(data) && Number(referredGuestCount || 0) >= referralRule.threshold;
+            const drinkRule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+            // Included welcome drinks cannot generate a second, referral-earned drink.
+            return isReferralDrinkEligible(data) && drinkRule.mode !== 'included' &&
+                Number(qualifiedReferralCount || 0) >= referralRule.threshold;
+        }
+
+        function hasPotentialReferralDrink(data, registeredReferralCount) {
+            const tier = getGuestTier(data);
+            const referralRule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
+            const drinkRule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+            return isReferralDrinkEligible(data) && drinkRule.mode !== 'included' &&
+                Number(registeredReferralCount || 0) >= referralRule.threshold;
+        }
+
+        function getReferralBadgeState(data, registeredReferralCount, qualifiedReferralCount) {
+            const tier = getGuestTier(data);
+            const referralRule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
+            const drinkRule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+            if (!referralRule.eligible || drinkRule.mode === 'included' || Number(registeredReferralCount || 0) < 1) return '';
+            if (Number(registeredReferralCount || 0) < referralRule.threshold) return 'insufficient';
+            if (Number(qualifiedReferralCount || 0) < referralRule.threshold) return 'pending';
+            return 'earned';
         }
 
         function isGuestDrinkChipIssued(data) {
@@ -1274,6 +1293,7 @@
         function applyStaffRole(role) {
             if (!STAFF_ROLES.includes(role)) throw new Error('The account does not have a valid staff role.');
             currentStaffRole = role;
+            guestSortBy = role === 'admin' ? 'signupNewest' : 'firstName';
             const show = (id, visible) => {
                 const element = document.getElementById(id);
                 if (element) element.classList.toggle('hidden', !visible);
@@ -1460,44 +1480,42 @@
             section.classList.toggle('hidden', !isAdmin);
             if (!isAdmin) return;
 
-            // Reconcile unknown inviter names only. Members who also RSVP'd
-            // remain known members for referral matching and calculations.
-            const guestRows = cachedGuestDocs.map((doc) => doc.data());
-            const knownMemberKeys = new Set(guestRows
-                .filter((data) => isInterNationsMember(data))
-                .map((data) => normalizeGuestName(data.name))
-                .filter(Boolean));
+            const guestRows = cachedGuestDocs.map((doc) => ({ id: doc.id, data: doc.data() }));
+            // Any person on the imported member list or RSVP guest list is a known inviter.
+            // This also recognises members who have submitted an RSVP under the same name.
+            const knownGuestKeys = new Set(guestRows.map((item) => normalizeGuestName(item.data.name)).filter(Boolean));
             const referralsByInviter = new Map();
-            let noInviterCount = 0;
-            let noInviterCheckedIn = 0;
 
-            guestRows.forEach((data) => {
-                // Imported member records are not referral RSVPs.
-                if (isInterNationsMember(data)) return;
+            guestRows.forEach((item) => {
+                const data = item.data;
                 const inviterName = String(data.invitedBy || '').trim();
                 const inviterKey = normalizeGuestName(inviterName);
-                if (!inviterKey) {
-                    noInviterCount++;
-                    if (data.checkedIn) noInviterCheckedIn++;
-                    return;
-                }
-                // If the name matches any registered guest (including a member
-                // who also RSVPed), it is not an unknown inviter.
-                if (knownMemberKeys.has(inviterKey)) return;
+                if (!inviterKey || knownGuestKeys.has(inviterKey)) return;
+
                 if (!referralsByInviter.has(inviterKey)) {
-                    referralsByInviter.set(inviterKey, { name: inviterName, total: 0, checkedIn: 0 });
+                    referralsByInviter.set(inviterKey, { name: inviterName, people: new Map() });
                 }
                 const group = referralsByInviter.get(inviterKey);
-                group.total++;
-                if (data.checkedIn) group.checkedIn++;
+                const personKey = normalizeGuestName(data.name) || item.id;
+                const prior = group.people.get(personKey) || { checkedIn: false, paid: false };
+                prior.checkedIn = prior.checkedIn || Boolean(data.checkedIn);
+                prior.paid = prior.paid || Boolean(data.paid);
+                group.people.set(personKey, prior);
             });
 
             const entries = Array.from(referralsByInviter.values())
+                .map((group) => {
+                    const people = Array.from(group.people.values());
+                    const checkedIn = people.filter((person) => person.checkedIn).length;
+                    const checkedInPaid = people.filter((person) => person.checkedIn && person.paid).length;
+                    return { name: group.name, total: people.length, checkedIn, checkedInPaid };
+                })
                 .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-            if (!entries.length && noInviterCount === 0) {
+
+            if (!entries.length) {
                 const empty = document.createElement('p');
                 empty.className = 'text-xs text-gray-300 py-2';
-                empty.textContent = 'No unknown inviter names or RSVPs without an inviter.';
+                empty.textContent = 'No unknown inviter names have been entered on RSVP forms.';
                 rewardList.appendChild(empty);
                 return;
             }
@@ -1512,34 +1530,16 @@
                 name.textContent = entry.name;
                 const meta = document.createElement('p');
                 meta.className = 'text-[10px] text-gray-300 mt-1';
-                meta.textContent = entry.checkedIn + ' checked in · ' + (entry.total - entry.checkedIn) + ' not checked in';
+                meta.textContent = entry.checkedIn + ' checked in · ' + entry.checkedInPaid +
+                    ' checked in & paid · ' + (entry.total - entry.checkedIn) + ' not checked in';
                 details.append(name, meta);
                 const count = document.createElement('span');
                 count.className = 'shrink-0 rounded border border-amber-400/40 bg-amber-950/40 px-3 py-1 text-sm font-semibold text-amber-100 tabular-nums';
                 count.textContent = String(entry.total);
-                count.title = entry.total + ' RSVP(s) entered this unknown inviter name';
+                count.title = entry.total + ' distinct RSVP guest(s) entered this unknown inviter name';
                 row.append(details, count);
                 rewardList.appendChild(row);
             });
-
-            if (noInviterCount > 0) {
-                const row = document.createElement('div');
-                row.className = 'flex items-center justify-between gap-3 rounded-lg border border-gray-500/40 bg-black/25 px-3 py-2';
-                const details = document.createElement('div');
-                const label = document.createElement('p');
-                label.className = 'font-medium text-gray-200';
-                label.textContent = 'No inviter entered';
-                const meta = document.createElement('p');
-                meta.className = 'text-[10px] text-gray-400 mt-1';
-                meta.textContent = noInviterCheckedIn + ' checked in · ' + (noInviterCount - noInviterCheckedIn) + ' not checked in';
-                details.append(label, meta);
-                const count = document.createElement('span');
-                count.className = 'shrink-0 rounded border border-gray-500/40 bg-gray-900/50 px-3 py-1 text-sm font-semibold text-gray-100 tabular-nums';
-                count.textContent = String(noInviterCount);
-                count.title = noInviterCount + ' RSVP(s) with no inviter entered';
-                row.append(details, count);
-                rewardList.appendChild(row);
-            }
         }
 
         async function toggleGuestDrinkUpgrade(id, data, welcomeDrinkEarned) {
@@ -1634,28 +1634,27 @@
                 document.getElementById('guestPaidStandardMixRatio').textContent = formatRate(categoryTotals.Albatross.paid, categoryTotals.Basics.paid);
                 const issuedNameKeys = new Set(snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
 
-                // Count checked-in referrals for live rewards, plus all referral names for the admin reconciliation list.
-                const checkedInReferralsByInviter = new Map();
+                // Track distinct referred people. A qualifying referral must have arrived and be marked paid.
                 const referralTrackingByInviter = new Map();
                 snapshot.forEach((guestDoc) => {
                     const referredGuest = guestDoc.data();
                     const inviterName = String(referredGuest.invitedBy || '').trim();
                     const inviterKey = normalizeGuestName(inviterName);
                     if (!inviterKey) return;
+                    const referredPersonKey = normalizeGuestName(referredGuest.name) || guestDoc.id;
 
                     if (!referralTrackingByInviter.has(inviterKey)) {
-                        referralTrackingByInviter.set(inviterKey, { name: inviterName, guestIds: new Set(), checkedInGuestIds: new Set() });
+                        referralTrackingByInviter.set(inviterKey, {
+                            name: inviterName,
+                            guestIds: new Set(),
+                            checkedInGuestIds: new Set(),
+                            qualifiedGuestIds: new Set()
+                        });
                     }
                     const tracking = referralTrackingByInviter.get(inviterKey);
-                    tracking.guestIds.add(guestDoc.id);
-                    if (referredGuest.checkedIn) tracking.checkedInGuestIds.add(guestDoc.id);
-
-                    if (referredGuest.checkedIn) {
-                        if (!checkedInReferralsByInviter.has(inviterKey)) {
-                            checkedInReferralsByInviter.set(inviterKey, { name: inviterName, guestIds: new Set() });
-                        }
-                        checkedInReferralsByInviter.get(inviterKey).guestIds.add(guestDoc.id);
-                    }
+                    tracking.guestIds.add(referredPersonKey);
+                    if (referredGuest.checkedIn) tracking.checkedInGuestIds.add(referredPersonKey);
+                    if (referredGuest.checkedIn && referredGuest.paid) tracking.qualifiedGuestIds.add(referredPersonKey);
                 });
 
                 renderInternationsImportPreview();
@@ -1680,54 +1679,6 @@
                     }
                 });
 
-                cachedUnaccountedReferrals = [];
-                guestDocs.forEach((item) => {
-                    const guestData = item.data;
-                    const inviteName = String(guestData.invitedBy || '').trim();
-                    const inviterKey = normalizeGuestName(inviteName);
-                    let reason = '';
-                    let inviter = null;
-                    let referralTracking = null;
-
-                    if (inviterKey) {
-                        inviter = guestByNameKey.get(inviterKey) || null;
-                        referralTracking = referralTrackingByInviter.get(inviterKey) || null;
-                        if (!inviter) {
-                            reason = 'Inviter not found in guest list';
-                        } else {
-                            const tier = getGuestTier(inviter.data);
-                            const drinkRule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
-                            const referralRule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
-                            const checkedReferrals = checkedInReferralsByInviter.get(inviterKey)?.guestIds.size || 0;
-                            // Included drinks are already accounted for; qualifying referral rewards are accounted separately.
-                            if (drinkRule.mode === 'included') return;
-                            if (hasEarnedReferralDrink(inviter.data, checkedReferrals)) return;
-                            reason = !referralRule.eligible
-                                ? 'Referral drinks disabled for ' + getGuestCategory(inviter.data)
-                                : 'Needs ' + Math.max(0, referralRule.threshold - checkedReferrals) + ' more checked-in referral(s)';
-                        }
-                    } else {
-                        // Do not list imported membership rows as RSVPs without an inviter.
-                        if (isInterNationsMember(guestData)) return;
-                        reason = 'No inviter entered';
-                    }
-
-                    cachedUnaccountedReferrals.push({
-                        guestName: String(guestData.name || '').trim() || '(No name provided)',
-                        category: getGuestCategory(guestData),
-                        invitedBy: inviter ? String(inviter.data.name || inviteName).trim() : inviteName,
-                        inviterCategory: inviter ? getGuestCategory(inviter.data) : '',
-                        registeredReferrals: referralTracking ? referralTracking.guestIds.size : 0,
-                        checkedInReferrals: referralTracking ? referralTracking.checkedInGuestIds.size : 0,
-                        guestStatus: guestData.checkedIn ? 'Checked in' : 'Not checked in',
-                        reason
-                    });
-                });
-                cachedUnaccountedReferrals.sort((a, b) =>
-                    a.reason.localeCompare(b.reason) ||
-                    String(a.invitedBy || '').localeCompare(String(b.invitedBy || '')) ||
-                    a.guestName.localeCompare(b.guestName, undefined, { sensitivity: 'base' })
-                );
                 renderUnrecognizedWelcomeDrinkList();
 
                 const checkedInGuests = guestDocs.filter((item) => Boolean(item.data.checkedIn));
@@ -1746,10 +1697,11 @@
                     const data = item.data;
                     const checkedIn = Boolean(data.checkedIn);
                     const inviterKey = normalizeGuestName(data.name);
-                    // Qualification uses registered referrals, matching the dashboard
-                    // forecast; check-in status is tracked separately for operations.
-                    const invitedCount = referralTrackingByInviter.get(inviterKey)?.guestIds.size || 0;
-                    const welcomeDrinkEarned = hasEarnedReferralDrink(data, invitedCount);
+                    const referralTracking = referralTrackingByInviter.get(inviterKey) || { guestIds: new Set(), qualifiedGuestIds: new Set() };
+                    const invitedCount = referralTracking.guestIds.size;
+                    const paidAttendedReferralCount = referralTracking.qualifiedGuestIds.size;
+                    const welcomeDrinkEarned = hasEarnedReferralDrink(data, paidAttendedReferralCount);
+                    const referralBadgeState = getReferralBadgeState(data, invitedCount, paidAttendedReferralCount);
                     const isMemberRecord = isInterNationsMember(data);
                     const isPaymentCard = mode === 'payment';
                     const isPaid = Boolean(data.paid);
@@ -1758,7 +1710,7 @@
                     const chipAlreadyIssued = isGuestDrinkChipIssued(data);
                     const drinkIncluded = charge.drinkMode === 'included' && !welcomeDrinkEarned;
                     const drinkEntitled = welcomeDrinkEarned || drinkIncluded || charge.upgradeSelected || chipAlreadyIssued;
-                    const upgradeCanBeSelected = charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued;
+                    const upgradeCanBeSelected = charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !referralBadgeState && !chipAlreadyIssued;
 
                     const card = document.createElement('div');
                     card.className = 'guest-card p-3 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ' +
@@ -1809,17 +1761,28 @@
                     actions.className = 'flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center';
 
                     if (isPaymentCard) {
-                        // Drink rewards and collection appear only in the payment-management view.
-                        if (welcomeDrinkEarned) {
+                        // Show exactly one referral status badge: insufficient, pending, or earned.
+                        if (referralBadgeState) {
                             const rewardBadge = document.createElement('span');
-                            rewardBadge.className = 'inline-flex items-center rounded-full border border-amber-300 bg-amber-300/20 px-2 py-1 text-[9px] font-bold tracking-wider text-amber-100 shadow-sm shadow-amber-400/20';
-                            rewardBadge.textContent = 'REFERRALS DRINK';
-                            rewardBadge.title = 'Referral-earned welcome drink: issue a drink chip, not a paid upgrade.';
+                            rewardBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-bold tracking-wider ' +
+                                (referralBadgeState === 'insufficient'
+                                    ? 'border-gray-400/60 bg-gray-200/10 text-gray-200'
+                                    : referralBadgeState === 'pending'
+                                        ? 'border-amber-400/60 bg-amber-800/30 text-amber-100'
+                                        : 'border-amber-300 bg-amber-300/20 text-amber-100 shadow-sm shadow-amber-400/20');
+                            rewardBadge.textContent = referralBadgeState === 'insufficient'
+                                ? 'REFERRAL INSUFFICIENT'
+                                : referralBadgeState === 'pending' ? 'REFERRAL PENDING' : 'REFERRALS DRINK';
+                            rewardBadge.title = referralBadgeState === 'insufficient'
+                                ? 'Not enough registered referrals yet to reach the welcome-drink threshold.'
+                                : referralBadgeState === 'pending'
+                                    ? 'Enough referrals are registered, but the required number have not all checked in and paid.'
+                                    : 'Referral-earned welcome drink: issue a drink chip, not a paid upgrade.';
                             titleLine.appendChild(rewardBadge);
                         }
 
                         if (charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued &&
-                            (upgradeCanBeSelected || charge.upgradeSelected)) {
+                            (charge.upgradeSelected || upgradeCanBeSelected)) {
                             const upgradeButton = document.createElement('button');
                             upgradeButton.type = 'button';
                             upgradeButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
@@ -1853,8 +1816,7 @@
                         if (drinkEntitled) {
                             const chipButton = document.createElement('button');
                             chipButton.type = 'button';
-                            chipButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
-                                (chipAlreadyIssued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : (welcomeDrinkEarned ? 'border-amber-300 bg-amber-300/20 text-amber-100 shadow-md shadow-amber-500/20' : 'border-amber-500/50 bg-amber-950/40 text-amber-100 hover:bg-amber-900/50'));
+                            chipButton.className = 'shrink-0 rounded border border-amber-500/50 bg-amber-950/40 px-3 py-2 text-xs font-semibold tracking-wider text-amber-100 hover:bg-amber-900/50';
                             chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
                             chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
                             chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
@@ -1918,7 +1880,7 @@
                     Array.from(potentialReferralCounts.entries())
                         .filter(([key, record]) => {
                             const inviter = guestByNameKey.get(key);
-                            return Boolean(inviter) && hasEarnedReferralDrink(inviter.data, record.guestIds.size);
+                            return Boolean(inviter) && hasPotentialReferralDrink(inviter.data, record.guestIds.size);
                         })
                         .map(([key]) => key)
                 );
@@ -1954,7 +1916,7 @@
                 const totalCollected = guestDocs.filter((item) => Boolean(item.data.paid)).reduce((sum, item) => {
                     if (item.data.amountPaid != null && Number.isFinite(Number(item.data.amountPaid))) return sum + Number(item.data.amountPaid);
                     const key = normalizeGuestName(item.data.name);
-                    const referrals = checkedInReferralsByInviter.get(key)?.guestIds.size || 0;
+                    const referrals = referralTrackingByInviter.get(key)?.qualifiedGuestIds.size || 0;
                     return sum + calculateGuestCharge(item.data, hasEarnedReferralDrink(item.data, referrals)).total;
                 }, 0);
                 const maxFullAttendance = guestDocs.reduce((sum, item) => {
@@ -2106,8 +2068,7 @@
             }
         }
 
-        let hotelSortBy = 'firstName';
-        let adminGuestSortBy = 'firstName';
+        let guestSortBy = 'firstName';
         let paymentSortBy = 'timeOrder';
 
         function applySortToContainer(containerId, sortBy, timeKey, timeDirection) {
@@ -2136,26 +2097,17 @@
         }
 
         function updateSortButtonStates() {
-            document.querySelectorAll('.sort-option[data-sort-group="admin"]').forEach((button) => {
-                button.setAttribute('aria-pressed', String(button.dataset.sort === adminGuestSortBy));
-            });
-            document.querySelectorAll('.sort-option[data-sort-group="hotel"]').forEach((button) => {
-                button.setAttribute('aria-pressed', String(button.dataset.sort === hotelSortBy));
+            document.querySelectorAll('.sort-option[data-sort-group="guest"]').forEach((button) => {
+                button.setAttribute('aria-pressed', String(button.dataset.sort === guestSortBy));
             });
             document.querySelectorAll('.sort-option[data-sort-group="payment"]').forEach((button) => {
                 button.setAttribute('aria-pressed', String(button.dataset.sort === paymentSortBy));
             });
         }
 
-        function setAdminGuestSort(sortBy) {
-            if (!['signupNewest', 'firstName', 'lastName'].includes(sortBy)) return;
-            adminGuestSortBy = sortBy;
-            applyGuestSorts();
-        }
-
-        function setHotelSort(sortBy) {
-            if (!['firstName', 'lastName'].includes(sortBy)) return;
-            hotelSortBy = sortBy;
+        function setGuestSort(sortBy) {
+            if (!['firstName', 'lastName', 'signupNewest'].includes(sortBy)) return;
+            guestSortBy = sortBy;
             applyGuestSorts();
         }
 
@@ -2166,11 +2118,8 @@
         }
 
         function applyGuestSorts() {
-            const adminSortControls = document.getElementById('adminGuestSortControls');
-            if (adminSortControls) adminSortControls.classList.toggle('hidden', currentStaffRole !== 'admin');
-            const guestListSort = currentStaffRole === 'admin' ? adminGuestSortBy : hotelSortBy;
-            applySortToContainer('guestNotCheckedInContainer', guestListSort, '', -1);
-            applySortToContainer('guestCheckedInContainer', guestListSort, '', 1);
+            applySortToContainer('guestNotCheckedInContainer', guestSortBy, '', -1);
+            applySortToContainer('guestCheckedInContainer', guestSortBy, '', 1);
             applySortToContainer('internationsUnpaidContainer', paymentSortBy, paymentSortBy === 'timeOrder' ? 'sortCheckInOrder' : '', 1);
             applySortToContainer('internationsPaidContainer', paymentSortBy, paymentSortBy === 'timeOrder' ? 'sortPaymentOrder' : '', 1);
             updateSortButtonStates();
