@@ -551,7 +551,7 @@
                         </div>
                     </div>
                     <div id="hotelSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort check-in lists">
-                        <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
+                        <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Guest list:</span>
                         <button type="button" class="sort-option" data-sort-group="guest" data-sort="firstName" aria-pressed="true" onclick="setGuestSort('firstName')">First name</button>
                         <button type="button" class="sort-option" data-sort-group="guest" data-sort="lastName" aria-pressed="false" onclick="setGuestSort('lastName')">Last Name</button>
                         <button type="button" class="sort-option" data-sort-group="guest" data-sort="signupNewest" aria-pressed="false" onclick="setGuestSort('signupNewest')">Signup</button>
@@ -575,7 +575,7 @@
                             </div>
                         </div>
                         <div id="paymentSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort payment lists">
-                            <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
+                            <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Payment list:</span>
                             <button type="button" class="sort-option" data-sort-group="payment" data-sort="firstName" aria-pressed="false" onclick="setPaymentSort('firstName')">First name</button>
                             <button type="button" class="sort-option" data-sort-group="payment" data-sort="lastName" aria-pressed="false" onclick="setPaymentSort('lastName')">Last Name</button>
                             <button type="button" class="sort-option" data-sort-group="payment" data-sort="timeOrder" aria-pressed="true" onclick="setPaymentSort('timeOrder')">Check-in order</button>
@@ -615,7 +615,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Production build 2026.10.16.1</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Production build 2026.10.16.2</p>
         </div>
     </footer>
 
@@ -779,11 +779,17 @@
             return isReferralDrinkEligible(data) && drink.mode !== 'included' && Number(registeredReferralCount || 0) >= rule.threshold;
         }
         function getReferralBadgeState(data, registeredReferralCount, qualifiedReferralCount) {
-            const rule = pricingSettings.referralRules[getGuestTier(data)] || { eligible: false, threshold: 2 };
+            const tier = getGuestTier(data);
+            const rule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
+            const drink = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+            const threshold = Math.max(1, Number(rule.threshold) || 2);
             const registered = Number(registeredReferralCount || 0);
-            if (registered < 1) return '';
-            if (registered < rule.threshold) return 'insufficient';
-            if (Number(qualifiedReferralCount || 0) < rule.threshold) return 'pending';
+            const qualified = Number(qualifiedReferralCount || 0);
+            // Referral badges apply only when a category can earn an additional referral drink.
+            // Included drinks are already covered and must not show a second referral entitlement.
+            if (!rule.eligible || drink.mode === 'included' || registered < 1) return '';
+            if (registered < threshold) return 'insufficient';
+            if (qualified < threshold) return 'pending';
             return 'earned';
         }
 
@@ -1306,6 +1312,8 @@
             if (!STAFF_ROLES.includes(role)) throw new Error('The account does not have a valid staff role.');
             currentStaffRole = role;
             guestSortBy = role === 'admin' ? 'signupNewest' : 'firstName';
+            // Apply the role-specific default immediately; the live snapshot reapplies it to loaded cards.
+            applyGuestSorts();
             const show = (id, visible) => {
                 const element = document.getElementById(id);
                 if (element) element.classList.toggle('hidden', !visible);
@@ -1492,21 +1500,22 @@
             if (!isAdmin) return;
             const rows = cachedGuestDocs.map(doc => ({id:doc.id,data:doc.data()||{}}));
             const knownNames = new Set(rows.map(x=>normalizeGuestName(x.data.name)).filter(Boolean));
-            const knownMembers = new Set(rows.filter(x=>isImportedMemberRecord(x.data)).map(x=>normalizeGuestName(x.data.name)).filter(Boolean));
             const people = new Map();
             rows.forEach(item=>{
                 const d=item.data,key=normalizeGuestName(d.name)||item.id;
                 let p=people.get(key);
-                if(!p){p={key,name:String(d.name||'').trim()||'(No name provided)',inviter:'',checkedIn:false,paid:false,hasRsvp:false,hasMember:false};people.set(key,p);}
+                if(!p){p={key,name:String(d.name||'').trim()||'(No name provided)',inviter:'',checkedIn:false,paid:false,hasRsvp:false};people.set(key,p);}
                 const inv=String(d.invitedBy||'').trim();if(inv&&!p.inviter)p.inviter=inv;
                 p.checkedIn=p.checkedIn||Boolean(d.checkedIn);p.paid=p.paid||Boolean(d.paid);
-                p.hasMember=p.hasMember||isImportedMemberRecord(d);p.hasRsvp=p.hasRsvp||!isImportedMemberRecord(d);
+                p.hasRsvp=p.hasRsvp||!isImportedMemberRecord(d);
             });
             const groups=new Map(), noInviterPeople=new Map();
             people.forEach(p=>{
                 if(!p.hasRsvp)return;
                 const key=normalizeGuestName(p.inviter);
-                if(!key){if(p.hasMember||knownMembers.has(p.key))return;noInviterPeople.set(p.key,p);return;}
+                // Count RSVP guests with no inviter even when the same person is also an imported member.
+                if(!key){noInviterPeople.set(p.key,p);return;}
+                // Only names entered as inviters that don't match any registered guest/member are unaccounted.
                 if(knownNames.has(key))return;
                 if(!groups.has(key))groups.set(key,{name:p.inviter,people:new Map()});
                 groups.get(key).people.set(p.key,p);
@@ -1811,7 +1820,7 @@
                         if (drinkEntitled) {
                             const chipButton = document.createElement('button');
                             chipButton.type = 'button';
-                            chipButton.className = 'shrink-0 rounded border border-sky-400/50 bg-sky-950/40 px-3 py-2 text-xs font-semibold tracking-wider text-sky-100 hover:bg-sky-900/50';
+                            chipButton.className = 'shrink-0 rounded border border-emerald-500/50 bg-emerald-900/40 px-3 py-2 text-xs font-semibold tracking-wider text-emerald-100 hover:bg-emerald-800/50';
                             chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
                             chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
                             chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
