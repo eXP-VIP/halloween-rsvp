@@ -38,6 +38,7 @@
         <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-functions-compat.js"></script>
     <style>
         :root {
             --gold: #d4af37;
@@ -367,7 +368,7 @@
         <div id="hostessPortal" class="hidden relative z-20 w-full mt-8 mb-8">
             <div class="glass-panel rounded-2xl p-5 sm:p-8 max-w-3xl w-full mx-auto gold-border-glow">
                 <div class="flex justify-between items-center mb-5 border-b border-gold/20 pb-4">
-                    <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Check-in</h3>
+                    <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Event Admission</h3>
                     <button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
                 <div id="staffLoginSection" class="space-y-4 py-5">
@@ -390,11 +391,13 @@
                     <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">Firebase Authentication or Firestore is unavailable. Check the project configuration and security rules.</p>
                 </div>
                 <div id="guestlistSection" class="hidden">
-                    <div id="staffIdentityBar" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gold/20 bg-black/30 px-3 py-2 mb-4">
+                    <h4 class="font-serif uppercase tracking-wider text-gray-300 text-[11px] mb-2">Authentication Details</h4>
+                    <div id="staffIdentityBar" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gold/20 bg-black/30 px-3 py-2 mb-4>
                         <p id="staffIdentity" class="text-[10px] text-gray-300 break-all">Signed in</p>
                         <span class="text-[9px] text-emerald-200 uppercase tracking-wider">Authenticated</span>
                     </div>
-                    <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
+                    <h4 class="font-serif uppercase tracking-wider text-gray-300 text-[11px] mb-2">Event Statistics</h4>
+                    <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-4>
                         <div class="rounded-lg border border-gold/25 bg-black/35 p-3 min-w-0">
                             <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</p>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
@@ -464,10 +467,14 @@
                     </div>
                     <section id="adminPricingPanel" class="rounded-xl border border-gold/40 bg-black/30 p-4 mb-5">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-3">
-                            <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Admin · Prices</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-amber-200">Role-controlled staff access</span>
+                            <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Event Settings</h4>
+                            <span class="text-[10px] uppercase tracking-wider text-amber-200">Pricing, welcome drinks and admission workflow</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules and referral eligibility for each category. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid. Referral badges are informational; drink eligibility still follows each category’s rule.</p>
+                        <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules, referral eligibility and the admission workflow. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid.</p>
+                        <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
+                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="twoStepCheckInEnabled" type="checkbox" class="mt-1 accent-amber-300" checked><span><strong>Two-step check-in</strong><span class="block text-xs text-gray-400 mt-1">Enabled: Hotel verifies the guest list; InterNations handles payment and final admission. Disabled: InterNations can perform both steps.</span></span></label>
+                            <p id="workflowSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-300 mt-2">Two-step check-in is enabled by default.</p>
+                        </div>
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
@@ -531,13 +538,13 @@
                             <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">Import InterNations guest list</h4>
                             <span class="text-[10px] uppercase tracking-wider text-sky-200">CSV / Excel · repeatable import</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-3">Choose the latest InterNations export. First and last names are combined automatically; the Status field is saved as the InterNations member type/status. Existing check-in, payment and chip status are preserved.</p>
+                        <p class="text-xs text-gray-300 mb-3">Choose the full current InterNations Members-List export. Missing names are removed from the imported member list; matched guests keep their check-in, payment and chip status. An RSVP guest who is also a member remains a member for calculations.</p>
                         <label for="internationsFileInput" class="form-label">Guest-list spreadsheet</label>
                         <input id="internationsFileInput" type="file" accept=".xlsx,.xls,.csv,.ods" class="form-field text-sm mb-3">
                         <div id="internationsImportOptions" class="hidden space-y-3">
                             <p class="text-xs text-sky-100">Names are combined automatically from First Name + Last Name. The Status field is imported as the member type/status.</p>
                             <div id="internationsImportPreview" class="rounded-lg border border-sky-400/20 bg-black/30 p-3 text-xs text-gray-200"></div>
-                            <button type="button" id="confirmInternationsImport" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Import / Update InterNations Names</button>
+                            <button type="button" id="confirmInternationsImport" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Synchronize full InterNations Members-List</button>
                         </div>
                         <p id="internationsImportStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-3"></p>
                     </section>
@@ -545,18 +552,16 @@
                     <p id="guestlistError" class="text-red-300 text-sm hidden mb-3">Could not load the guest list. Check the database connection and access rules.</p>
                     <section id="hotelCheckInPanel">
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
-                        <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Check-in</h4>
+                        <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Guest-list Verification</h4>
                         <div class="flex w-full sm:w-auto">
                             <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                         </div>
                     </div>
-                    <div id="hotelSortControls" class="flex items-center gap-3 mb-4" role="group" aria-label="Sort check-in lists">
-                        <label for="guestSortSelect" class="text-[10px] uppercase tracking-wider text-gray-400 whitespace-nowrap">Sort by</label>
-                        <select id="guestSortSelect" class="form-field text-sm py-2 px-3 w-auto min-w-36" aria-label="Sort check-in guest list" onchange="setGuestSort(this.value)">
-                            <option value="firstName">First name</option>
-                            <option value="lastName">Last Name</option>
-                            <option value="signupNewest">Signup</option>
-                        </select>
+                    <div id="hotelSortControls" class="flex flex-wrap items-center gap-2 mb-4" role="group" aria-label="Sort check-in lists">
+                        <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
+                        <button type="button" class="sort-option" data-sort-group="checkin" data-sort="firstName" aria-pressed="false" onclick="setGuestSort('firstName')">First name</button>
+                        <button type="button" class="sort-option" data-sort-group="checkin" data-sort="lastName" aria-pressed="false" onclick="setGuestSort('lastName')">Last Name</button>
+                        <button type="button" class="sort-option" data-sort-group="checkin" data-sort="signupNewest" aria-pressed="false" onclick="setGuestSort('signupNewest')">Signup</button>
                     </div>
                     <div class="mb-4">
                         <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Not checked in <span id="hotelOpenCount" class="text-amber-100">(0)</span></p>
@@ -571,13 +576,13 @@
                     </section>
                     <section id="internationsPaymentPanel" class="rounded-xl border border-sky-400/40 bg-sky-950/20 p-4 mt-6">
                         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
-                            <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">Checked-in guests · Payment status</h4>
+                            <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">Payment, Welcome Drinks & Final Admission</h4>
                             <div class="flex w-full sm:w-auto">
                                 <input type="search" id="paymentSearchInput" oninput="filterPaymentGuests()" aria-label="Search payment list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                             </div>
                         </div>
                         <div id="paymentSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort payment lists">
-                            <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Payment list:</span>
+                            <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                             <button type="button" class="sort-option" data-sort-group="payment" data-sort="firstName" aria-pressed="false" onclick="setPaymentSort('firstName')">First name</button>
                             <button type="button" class="sort-option" data-sort-group="payment" data-sort="lastName" aria-pressed="false" onclick="setPaymentSort('lastName')">Last Name</button>
                             <button type="button" class="sort-option" data-sort-group="payment" data-sort="timeOrder" aria-pressed="true" onclick="setPaymentSort('timeOrder')">Check-in order</button>
@@ -596,7 +601,7 @@
                         <section id="unrecognizedWelcomeDrinkSection" class="hidden rounded-xl border border-gold/40 bg-amber-950/25 p-4 mt-5" aria-labelledby="welcomeDrinkHeading">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
                             <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Unaccounted referrals</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-gray-300">Unknown inviter names entered on RSVP forms, plus RSVPs without an inviter</span>
+                            <span class="text-[10px] uppercase tracking-wider text-gray-300">Inviter names entered on RSVP forms that do not match a registered guest or member</span>
                         </div>
                         
                         <div id="welcomeDrinkList" class="space-y-2 text-sm text-gray-100">
@@ -617,7 +622,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.5</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.6</p>
         </div>
     </footer>
 
@@ -1880,7 +1885,7 @@
                                         : 'border-amber-300 bg-amber-300/20 text-amber-100 shadow-sm shadow-amber-400/20');
                             badge.textContent = referralBadgeState === 'insufficient'
                                 ? 'REFERRAL INSUFFICIENT'
-                                : referralBadgeState === 'pending' ? 'REFERRAL PENDING' : 'REFERRALS DRINK';
+                                : referralBadgeState === 'pending' ? 'REFERRAL PENDING' : 'REFERRAL DRINK';
                             badge.title = referralBadgeState === 'insufficient'
                                 ? 'Not enough registered referrals yet to reach this category’s threshold.'
                                 : referralBadgeState === 'pending'
@@ -1924,9 +1929,7 @@
                         if (drinkEntitled) {
                             const chipButton = document.createElement('button');
                             chipButton.type = 'button';
-                            chipButton.className = chipAlreadyIssued
-                                ? 'shrink-0 rounded border border-emerald-500/50 bg-emerald-900/40 px-3 py-2 text-xs font-semibold tracking-wider text-emerald-100 hover:bg-emerald-800/50'
-                                : 'shrink-0 rounded border border-sky-400/50 bg-sky-950/40 px-3 py-2 text-xs font-semibold tracking-wider text-sky-100 hover:bg-sky-900/50';
+                            chipButton.className = 'shrink-0 rounded border border-emerald-500/50 bg-emerald-900/40 px-3 py-2 text-xs font-semibold tracking-wider text-emerald-100 hover:bg-emerald-800/50';
                             chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
                             chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
                             chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
