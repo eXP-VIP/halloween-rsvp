@@ -244,6 +244,8 @@ exports.adminChangeStaffPassword = region.https.onCall(async (data, context) => 
   }
   try {
     await auth.updateUser(uid, { password: password });
+    // Invalidate existing refresh tokens so a changed password takes effect for active sessions.
+    await auth.revokeRefreshTokens(uid);
   } catch (error) {
     if (error && error.code === "auth/user-not-found") {
       throw httpsError("failed-precondition", "The Authentication account is missing.");
