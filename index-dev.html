@@ -697,11 +697,13 @@
         );
         let db = null;
         let auth = null;
+        let functionsApi = null;
         if (firebaseConfigured) {
             try {
                 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
                 auth = firebase.auth();
+                if (typeof firebase.functions === 'function') functionsApi = firebase.app().functions('europe-west1');
             } catch (error) {
                 console.error('Firebase initialisation failed:', error);
             }
@@ -723,6 +725,8 @@
         let pendingInternationsNameColumn = '';
         let cachedGuestDocs = [];
         let pricingUnsubscribe = null;
+        let workflowSettingsUnsubscribe = null;
+        let twoStepCheckInEnabled = true;
         let cachedUnaccountedReferrals = [];
         const DEFAULT_PRICING = {
             basePrices: { basics: 15, paidMembers: 5, friends: 20 },
@@ -1351,6 +1355,20 @@
             document.getElementById('guestName').focus({ preventScroll: true });
         });
 
+        function applyWorkflowRoleVisibility() {
+            const role = currentStaffRole;
+            const checkInVisible = role === 'admin' || role === 'hotel' || (role === 'internations' && !twoStepCheckInEnabled);
+            const paymentVisible = role === 'admin' || role === 'internations';
+            const checkInPanel = document.getElementById('hotelCheckInPanel');
+            const paymentPanel = document.getElementById('internationsPaymentPanel');
+            if (checkInPanel) checkInPanel.classList.toggle('hidden', !checkInVisible);
+            if (paymentPanel) paymentPanel.classList.toggle('hidden', !paymentVisible);
+            const hint = document.getElementById('workflowSaveStatus');
+            if (hint && role !== 'admin') hint.textContent = twoStepCheckInEnabled
+                ? 'Two-step workflow: Hotel verifies the guest list; InterNations handles payment and final admission.'
+                : 'Single-team workflow: InterNations can verify the guest list and handle payment and final admission.';
+        }
+
         function applyStaffRole(role) {
             if (!STAFF_ROLES.includes(role)) throw new Error('The account does not have a valid staff role.');
             currentStaffRole = role;
@@ -1373,8 +1391,9 @@
             }
             show('adminPricingPanel', role === 'admin');
             show('internationsImportPanel', role === 'admin');
-            show('hotelCheckInPanel', role !== 'internations');
-            show('internationsPaymentPanel', role !== 'hotel');
+            show('staffUserManagementPanel', role === 'admin');
+            show('databaseBackupPanel', role === 'admin');
+            applyWorkflowRoleVisibility();
         }
 
         function setStaffLoginError(message) {
@@ -1699,6 +1718,23 @@
                 listError.textContent = 'Firebase could not connect. Check the Firebase project configuration and Firestore rules.';
                 listError.classList.remove('hidden');
                 return;
+            }
+            if (!workflowSettingsUnsubscribe) {
+                workflowSettingsUnsubscribe = db.collection('event_settings').doc('workflow').onSnapshot((doc) => {
+                    const value = doc.exists ? doc.data() || {} : {};
+                    twoStepCheckInEnabled = value.twoStepCheckInEnabled !== false;
+                    const input = document.getElementById('twoStepCheckInEnabled');
+                    if (input) input.checked = twoStepCheckInEnabled;
+                    const status = document.getElementById('workflowSaveStatus');
+                    if (status && currentStaffRole === 'admin') status.textContent = twoStepCheckInEnabled
+                        ? 'Two-step check-in is enabled.'
+                        : 'Single-team check-in is enabled.';
+                    applyWorkflowRoleVisibility();
+                }, (error) => {
+                    console.error('Workflow settings listener failed:', error);
+                    const status = document.getElementById('workflowSaveStatus');
+                    if (status) status.textContent = 'Workflow setting could not be read. The default two-step workflow remains selected.';
+                });
             }
             if (!pricingUnsubscribe) {
                 pricingUnsubscribe = db.collection('event_settings').doc('pricing').onSnapshot((doc) => {
@@ -2223,10 +2259,11 @@
             cards.forEach(card=>container.appendChild(card));
         }
         function updateSortButtonStates() {
-            const guestSortSelect = document.getElementById('guestSortSelect');
-            if (guestSortSelect && guestSortSelect.value !== guestSortBy) guestSortSelect.value = guestSortBy;
-            document.querySelectorAll('.sort-option[data-sort-group="payment"]').forEach(button=>{
-                button.setAttribute('aria-pressed',String(button.dataset.sort===paymentSortBy));
+            document.querySelectorAll('.sort-option[data-sort-group="checkin"]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.sort === guestSortBy));
+            });
+            document.querySelectorAll('.sort-option[data-sort-group="payment"]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.sort === paymentSortBy));
             });
         }
         function setGuestSort(sortBy) {
