@@ -1,14 +1,17 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Require a Firebase Authentication identity before any staff profile or protected event data can be accessed.
     function signedIn() {
       return request.auth != null;
     }
 
+    // Use the caller’s Auth UID as the role-document key; a client-supplied username is not an identity proof.
     function staffRecordPath(uid) {
       return /databases/$(database)/documents/event_users/$(uid);
     }
 
+    // Resolve the caller’s role record and require active == true before granting staff reads or writes.
     function isActiveStaff() {
       return signedIn()
         && exists(staffRecordPath(request.auth.uid))
@@ -16,23 +19,28 @@ service cloud.firestore {
         && get(staffRecordPath(request.auth.uid)).data.role in ['admin', 'hotel', 'internations'];
     }
 
+    // Check a named role only after confirming the user is an active staff member.
     function hasRole(roleName) {
       return isActiveStaff()
         && get(staffRecordPath(request.auth.uid)).data.role == roleName;
     }
 
+    // Admin role predicate for broad guest management and event configuration.
     function isAdmin() {
       return hasRole('admin');
     }
 
+    // Hotel/check-in role predicate for the restricted check-in workflow.
     function isHotel() {
       return hasRole('hotel');
     }
 
+    // InterNations role predicate for payment and referral-drink operations.
     function isInterNations() {
       return hasRole('internations');
     }
 
+    // Validate the older public RSVP document shape for backward compatibility; do not broaden this without reviewing client versions.
     function isLegacyPublicRsvpCreate() {
       return request.resource.data.keys().hasAll(['name', 'invitedBy', 'checkedIn', 'createdAt'])
         && request.resource.data.keys().hasOnly(['name', 'invitedBy', 'checkedIn', 'createdAt'])
@@ -45,6 +53,7 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
     }
 
+    // Validate the current public RSVP document shape and safe initial field values for anonymous submission.
     function isFullPublicRsvpCreate() {
       return request.resource.data.keys().hasAll([
           'name', 'firstName', 'lastName', 'invitedBy',
@@ -76,10 +85,12 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
     }
 
+    // Accept only one of the explicitly recognized public RSVP payload shapes.
     function isPublicRsvpCreate() {
       return isLegacyPublicRsvpCreate() || isFullPublicRsvpCreate();
     }
 
+    // Restrict hotel staff updates to check-in-related fields; do not add payment or admin fields here.
     function hotelCheckInUpdate() {
       return isHotel()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkedIn', 'checkedInAt'])
@@ -93,6 +104,7 @@ service cloud.firestore {
             && resource.data.get('welcomeDrinkUpgradeSelected', false) != true);
     }
 
+    // Allow broad guest-document updates only for an active Admin.
     function adminGuestUpdate() {
       return isAdmin()
         && (
@@ -107,6 +119,7 @@ service cloud.firestore {
         );
     }
 
+    // Restrict payment staff updates to the explicit payment, qualifying-referral chip and drink-upgrade field allowlist.
     function interNationsPaymentUpdate() {
       return isInterNations()
         && resource.data.checkedIn == true
@@ -118,6 +131,7 @@ service cloud.firestore {
         ]);
     }
 
+    // Staff identity and role records are readable only by their owner (single document) or an Admin; browsers cannot mutate roles.
     match /event_users/{uid} {
       // Provision roles in Firebase Console or with a trusted Admin SDK only.
       allow get: if signedIn() && request.auth.uid == uid;
@@ -125,6 +139,7 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Guest-list reads are staff-only; public visitors can create an RSVP but cannot enumerate, edit or delete guest records.
     match /halloween_guests/{guestId} {
       allow get, list: if isActiveStaff();
       allow create: if isAdmin() || isPublicRsvpCreate();
@@ -132,6 +147,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Workflow and pricing settings are visible to active staff but writable only by an Admin.
     match /event_settings/{settingId} {
       allow read: if isActiveStaff();
       allow write: if isAdmin();
