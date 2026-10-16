@@ -640,11 +640,6 @@
                     <div class="staff-panel__header">
                         <h4 id="hotelCheckInTitle" class="staff-panel__title">Guest-list Verification</h4>
                         <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
-                            <label for="printPageCount" class="text-[10px] uppercase tracking-wider text-gray-400">Print layout</label>
-                            <select id="printPageCount" class="form-field w-auto py-2 text-xs" aria-label="Guest-list print layout" title="Choose a compact one-page roster or a more readable two-page roster">
-                                <option value="1">1 page · compact</option>
-                                <option value="2" selected>2 pages · larger text</option>
-                            </select>
                             <button type="button" id="printGuestListBtn" class="sort-option" title="Print the guest list in the selected layout">Print guest list</button>
                             <span id="printGuestListStatus" class="text-[10px] text-gray-400" role="status" aria-live="polite"></span>
                             <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
@@ -835,7 +830,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.11</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.12</p>
         </div>
     </footer>
 
@@ -2948,7 +2943,7 @@
         }
 
         /** Create a de-duplicated, surname-sorted print roster without exposing internal payment or referral data. */
-        /** Print a four-column roster in the main guest list's currently selected sort order. */
+        /** Open one print document containing both the compact and large-text roster editions. */
         function printGuestList() {
             // Prefer imported membership records when a normalized name also exists as a public RSVP.
             const unique = new Map();
@@ -2994,12 +2989,9 @@
                 return compareText(aa.firstName, bb.firstName) || compareText(aa.lastName, bb.lastName);
             });
 
-            const pageCount = document.getElementById('printPageCount').value === '1' ? 1 : 2;
             const escapeHtml = value => String(value || '').replace(/[&<>"']/g, char => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             }[char]));
-
-            // Divide both pages and columns as evenly as possible; each column remains a contiguous block of sorted names.
             const splitEvenly = (items, count) => {
                 const result = [];
                 const baseSize = Math.floor(items.length / count);
@@ -3012,33 +3004,50 @@
                 }
                 return result;
             };
-
             const indexedGuests = guests.map((data, index) => ({
-                data: data,
                 index: index + 1,
                 name: splitName(data).name
             }));
-            const pageGuestSets = splitEvenly(indexedGuests, pageCount);
-            const renderGuest = guest =>
-                '<div class="guest-row">' +
-                    '<span class="number">' + guest.index + '</span>' +
-                    '<span class="name">' + escapeHtml(guest.name) + '</span>' +
-                    '<span class="check"><span class="check-box" aria-label="Not checked in"></span></span>' +
-                '</div>';
-
-            let pageHtml = '';
-            pageGuestSets.forEach(pageGuests => {
-                const columns = splitEvenly(pageGuests, 4);
+            const columnsPerPage = 4;
+            const rowAreaMm = 194;
+            const maxNameWidthMm = 61;
+            const rowsToColumnHtml = (items, mode, pageClass) => {
+                const columns = splitEvenly(items, columnsPerPage);
+                const maxRows = Math.max(1, ...columns.map(column => column.length));
+                // Size each row to fill the printable height instead of leaving a large blank area at the bottom.
+                const rowHeightMm = rowAreaMm / maxRows;
+                const baseFontPt = mode === 'compact'
+                    ? Math.min(10.8, Math.max(8.8, rowHeightMm * 1.55))
+                    : Math.min(15.5, Math.max(10.2, rowHeightMm * 1.47));
                 const columnHtml = columns.map(column =>
-                    '<div class="roster-column">' + column.map(renderGuest).join('') + '</div>'
+                    '<div class="roster-column">' + column.map(guest => {
+                        // Shrink only unusually long names, keeping the name visible and clear of the check box.
+                        const estimatedNameWidthPt = maxNameWidthMm * 2.83465;
+                        const fitFontPt = guest.name
+                            ? Math.max(8, Math.min(baseFontPt, estimatedNameWidthPt / (guest.name.length * 0.53)))
+                            : baseFontPt;
+                        return '<div class="guest-row" style="height:' + rowHeightMm.toFixed(3) + 'mm;font-size:' + fitFontPt.toFixed(2) + 'pt">' +
+                            '<span class="number">' + guest.index + '</span>' +
+                            '<span class="name" title="' + escapeHtml(guest.name) + '">' + escapeHtml(guest.name) + '</span>' +
+                            '<span class="check"><span class="check-box" aria-label="Not checked in"></span></span>' +
+                        '</div>';
+                    }).join('') + '</div>'
                 ).join('');
-                pageHtml +=
-                    '<section class="print-page ' + (pageCount === 1 ? 'compact' : 'readable') + '">' +
-                        '<h1>The Dean After Dark — Guest List</h1>' +
-                        '<div class="roster-grid">' + columnHtml + '</div>' +
-                    '</section>';
-            });
+                return '<div class="roster-grid ' + pageClass + '">' + columnHtml + '</div>';
+            };
+            const makePage = (items, versionLabel, mode, pageClass) =>
+                '<section class="print-page ' + mode + '">' +
+                    '<header class="page-header">' +
+                        '<h1>The Dean After Dark - Guest List</h1>' +
+                        '<span class="edition-label">' + versionLabel + '</span>' +
+                    '</header>' +
+                    rowsToColumnHtml(items, mode, pageClass) +
+                '</section>';
 
+            const compactPage = makePage(indexedGuests, 'COMPACT - 1 PAGE', 'compact', 'compact-grid');
+            const readablePages = splitEvenly(indexedGuests, 2).map((items, index) =>
+                makePage(items, 'LARGE TEXT - PAGE ' + (index + 1) + ' OF 2', 'readable', 'readable-grid')
+            );
             const printWindow = window.open('', '_blank', 'width=1200,height=850');
             if (!printWindow) {
                 const status = document.getElementById('printGuestListStatus');
@@ -3050,36 +3059,31 @@
             }
 
             const printDocument = '<!doctype html><html><head><meta charset="utf-8">' +
-                '<title>The Dean After Dark — Guest List</title>' +
+                '<title>The Dean After Dark - Guest List</title>' +
                 '<style>' +
-                '@page{size:A4 landscape;margin:6mm}' +
+                '@page{size:A4 landscape;margin:3mm}' +
                 '*{box-sizing:border-box}' +
                 'html,body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#111}' +
-                'h1{font-size:15pt;line-height:1.1;margin:0 0 3mm;font-weight:700}' +
-                '.roster-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4mm;align-items:start;width:100%}' +
-                '.roster-column{min-width:0}' +
-                '.guest-row{display:grid;grid-template-columns:5mm minmax(0,1fr) 4mm;gap:1mm;align-items:center;border-bottom:.3pt solid #ddd;break-inside:avoid;page-break-inside:avoid;line-height:1.05}' +
-                '.number{color:#555;text-align:right;font-size:7.5pt;font-variant-numeric:tabular-nums}' +
-                '.name{min-width:0;overflow-wrap:anywhere}' +
-                '.check{text-align:center}' +
-                '.check-box{display:inline-block;width:3mm;height:3mm;border:.7pt solid #333;vertical-align:middle}' +
-                '.compact .guest-row{min-height:3.9mm;padding:.15mm 0;font-size:8.2pt}' +
-                '.compact .name{font-size:8.2pt}' +
-                '.readable .guest-row{min-height:6.5mm;padding:.45mm 0;font-size:11.5pt}' +
-                '.readable .name{font-size:11.5pt}' +
+                '.print-page{width:100%;height:204mm;overflow:hidden;break-after:page;page-break-after:always}' +
+                '.print-page:last-child{break-after:auto;page-break-after:auto}' +
+                '.page-header{height:7mm;display:flex;align-items:baseline;justify-content:space-between;gap:4mm;margin:0 0 1mm;padding:0;white-space:nowrap}' +
+                'h1{margin:0;font-size:14pt;line-height:1;font-weight:700}' +
+                '.readable h1{font-size:16pt}' +
+                '.edition-label{font-size:7.5pt;font-weight:700;letter-spacing:.08em;color:#444}' +
+                '.roster-grid{height:194mm;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:1.2mm;align-items:stretch;width:100%}' +
+                '.roster-column{min-width:0;height:100%;display:flex;flex-direction:column}' +
+                '.guest-row{flex:0 0 auto;display:grid;grid-template-columns:3.8mm minmax(0,1fr) 3.2mm;column-gap:.45mm;align-items:center;min-width:0;padding:0;border-bottom:.25pt solid #ddd;line-height:1;overflow:hidden}' +
+                '.number{color:#555;text-align:right;font-size:7.5pt;font-variant-numeric:tabular-nums;white-space:nowrap}' +
+                '.name{display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:clip;line-height:1.0}' +
+                '.check{display:flex;align-items:center;justify-content:flex-end;width:3.2mm;height:100%;margin:0;padding:0}' +
+                '.check-box{display:block;width:3mm;height:3mm;flex:0 0 3mm;border:.65pt solid #222;margin:0;padding:0}' +
+                '.compact .guest-row{padding-top:0;padding-bottom:0}' +
+                '.compact .number{font-size:7pt}' +
                 '.readable .number{font-size:8.5pt}' +
-                '.readable .check-box{width:3.6mm;height:3.6mm}' +
-                '.print-page{width:100%}' +
-                '@media print{' +
-                    'body{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
-                    '.print-page{break-after:page;page-break-after:always}' +
-                    '.print-page:last-child{break-after:auto;page-break-after:auto}' +
-                '}' +
-                '@media screen{' +
-                    'body{background:#eee;padding:12px}' +
-                    '.print-page{background:white;box-shadow:0 1px 8px #bbb;margin:0 auto 14px;padding:6mm;width:285mm;min-height:196mm}' +
-                '}' +
-                '</style></head><body>' + pageHtml + '</body></html>';
+                '.readable .check-box{width:3.7mm;height:3.7mm;flex-basis:3.7mm}' +
+                '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}' +
+                '@media screen{body{background:#eee;padding:10px}.print-page{background:#fff;box-shadow:0 1px 8px #bbb;margin:0 auto 14px;padding:0;width:291mm;height:204mm}}' +
+                '</style></head><body>' + compactPage + readablePages.join('') + '</body></html>';
 
             printWindow.document.open();
             printWindow.document.write(printDocument);
@@ -3091,7 +3095,7 @@
 
             const status = document.getElementById('printGuestListStatus');
             if (status) {
-                status.textContent = guests.length + ' names prepared in ' + (pageCount === 1 ? 'four-column one-page layout.' : 'four-column two-page layout with larger text.');
+                status.textContent = guests.length + ' names prepared in one PDF layout: a compact one-page version followed by a larger-text two-page version.';
                 status.classList.remove('text-red-300');
             }
         }
