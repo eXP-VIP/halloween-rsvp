@@ -1670,7 +1670,7 @@
             const role = currentStaffRole;
             singleTeamCombinedMode = !twoStepCheckInEnabled && (role === 'admin' || role === 'internations');
             const checkInVisible = role === 'admin' || role === 'hotel' || (role === 'internations' && !twoStepCheckInEnabled);
-            const paymentVisible = role === 'admin' || (role === 'internations' && twoStepCheckInEnabled);
+            const paymentVisible = (role === 'admin' || role === 'internations') && twoStepCheckInEnabled;
             const checkInPanel = document.getElementById('hotelCheckInPanel');
             const paymentPanel = document.getElementById('internationsPaymentPanel');
             if (checkInPanel) checkInPanel.classList.toggle('hidden', !checkInVisible);
