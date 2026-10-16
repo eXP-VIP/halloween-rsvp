@@ -1565,6 +1565,7 @@
                 document.getElementById('guestlistSection').classList.remove('hidden');
                 document.getElementById('staffLoginError').classList.add('hidden');
                 loadLiveGuestlist();
+                if (currentStaffRole === 'admin') loadStaffUsers();
             })();
             staffActivationPromise = activation;
             try { await activation; }
@@ -2367,6 +2368,407 @@
             document.getElementById('internationsUnpaidCount').textContent = '(' + counts.internationsUnpaidContainer + ')';
             document.getElementById('internationsPaidCount').textContent = '(' + counts.internationsPaidContainer + ')';
         }
+
+
+        // Admin operations use callable Cloud Functions and the Admin SDK on the server.
+        // The browser never receives privileged Firebase credentials.
+        let pendingDatabaseBackup = null;
+
+        async function callSecureAdminFunction(name, payload) {
+            if (!functionsApi || typeof functionsApi.httpsCallable !== 'function') {
+                throw new Error('The secure admin backend is not configured. Follow DEV_ADMIN_BACKEND_SETUP.md to deploy the callable functions.');
+            }
+            const callable = functionsApi.httpsCallable(name);
+            const result = await callable(payload || {});
+            return result && result.data ? result.data : {};
+        }
+
+        function setAdminStatus(id, message, isError) {
+            const element = document.getElementById(id);
+            if (!element) return;
+            element.textContent = message;
+            element.classList.toggle('text-red-300', Boolean(isError));
+            element.classList.toggle('text-emerald-200', !isError);
+        }
+
+        function appendOption(select, value, label) {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = label;
+            select.appendChild(option);
+        }
+
+        async function loadStaffUsers() {
+            const status = document.getElementById('staffUsersStatus');
+            const list = document.getElementById('staffUsersList');
+            if (!status || !list || currentStaffRole !== 'admin') return;
+            status.textContent = 'Loading staff accounts…';
+            list.replaceChildren();
+            try {
+                const result = await callSecureAdminFunction('adminListStaffUsers');
+                renderStaffUsers(result.users || []);
+                status.textContent = (result.users || []).length + ' staff role record(s). Changes are applied to Firebase Authentication and event_users.';
+                status.classList.remove('text-red-300');
+                status.classList.add('text-emerald-200');
+            } catch (error) {
+                console.error('Staff user list failed:', error);
+                status.textContent = error && error.message ? error.message : 'Could not load staff accounts. Confirm the secure admin functions are deployed.';
+                status.classList.remove('text-emerald-200');
+                status.classList.add('text-red-300');
+            }
+        }
+
+        function renderStaffUsers(users) {
+            const list = document.getElementById('staffUsersList');
+            if (!list) return;
+            list.replaceChildren();
+            if (!users.length) {
+                const empty = document.createElement('p');
+                empty.className = 'text-xs text-gray-400 py-2';
+                empty.textContent = 'No staff accounts were returned.';
+                list.appendChild(empty);
+                return;
+            }
+            users.forEach(user => {
+                const row = document.createElement('div');
+                row.className = 'rounded-lg border border-violet-400/20 bg-black/30 p-3 space-y-3';
+                const top = document.createElement('div');
+                top.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 items-end';
+
+                const usernameWrap = document.createElement('div');
+                const usernameLabel = document.createElement('label');
+                usernameLabel.className = 'form-label';
+                usernameLabel.textContent = 'Username';
+                const username = document.createElement('input');
+                username.className = 'form-field';
+                username.value = user.username || '';
+                username.autocomplete = 'off';
+                username.autocapitalize = 'none';
+                username.minLength = 3;
+                username.maxLength = 32;
+                username.pattern = '[A-Za-z0-9][A-Za-z0-9._-]{2,31}';
+                username.id = 'staff-username-' + user.uid;
+                usernameLabel.htmlFor = username.id;
+                usernameLabel.appendChild(username);
+                usernameWrap.appendChild(usernameLabel);
+
+                const roleWrap = document.createElement('div');
+                const roleLabel = document.createElement('label');
+                roleLabel.className = 'form-label';
+                roleLabel.textContent = 'Role';
+                const role = document.createElement('select');
+                role.className = 'form-field';
+                appendOption(role, 'admin', 'Admin');
+                appendOption(role, 'hotel', 'Hotel');
+                appendOption(role, 'internations', 'InterNations');
+                role.value = ['admin', 'hotel', 'internations'].includes(user.role) ? user.role : 'hotel';
+                role.id = 'staff-role-' + user.uid;
+                roleLabel.htmlFor = role.id;
+                roleLabel.appendChild(role);
+                roleWrap.appendChild(roleLabel);
+
+                const activeWrap = document.createElement('label');
+                activeWrap.className = 'flex items-center gap-2 text-xs text-gray-200 min-h-10';
+                const active = document.createElement('input');
+                active.type = 'checkbox';
+                active.className = 'accent-emerald-300';
+                active.checked = user.active === true;
+                activeWrap.append(active, document.createTextNode('Active'));
+
+                const authStatus = document.createElement('div');
+                authStatus.className = 'text-[10px] text-gray-400 pb-2';
+                authStatus.textContent = user.authExists === false ? 'Authentication account missing' :
+                    (user.authDisabled ? 'Authentication disabled' : 'Authentication account found');
+
+                const save = document.createElement('button');
+                save.type = 'button';
+                save.className = 'sort-option';
+                save.textContent = 'Save access';
+                const isSelf = user.uid === activeStaffUid;
+                if (isSelf) {
+                    username.disabled = true;
+                    role.disabled = true;
+                    active.disabled = true;
+                    save.title = 'Your own username, role and active status are protected against accidental lockout.';
+                }
+                save.addEventListener('click', async () => {
+                    save.disabled = true;
+                    try {
+                        await callSecureAdminFunction('adminUpdateStaffUser', {
+                            uid: user.uid, username: username.value, role: role.value, active: active.checked
+                        });
+                        await loadStaffUsers();
+                    } catch (error) {
+                        setAdminStatus('staffUsersStatus', error.message || 'Could not update this staff account.', true);
+                    } finally {
+                        save.disabled = false;
+                    }
+                });
+                top.append(usernameWrap, roleWrap, activeWrap, authStatus, save);
+
+                const bottom = document.createElement('div');
+                bottom.className = 'flex flex-wrap items-end gap-2 border-t border-violet-400/15 pt-3';
+                const passwordWrap = document.createElement('div');
+                passwordWrap.className = 'flex-1 min-w-48';
+                const passwordLabel = document.createElement('label');
+                passwordLabel.className = 'form-label';
+                passwordLabel.textContent = 'Set new password (10+ characters)';
+                const password = document.createElement('input');
+                password.type = 'password';
+                password.className = 'form-field';
+                password.minLength = 10;
+                password.maxLength = 128;
+                password.autocomplete = 'new-password';
+                password.placeholder = 'Enter a new password';
+                passwordLabel.appendChild(password);
+                passwordWrap.appendChild(passwordLabel);
+
+                const changePassword = document.createElement('button');
+                changePassword.type = 'button';
+                changePassword.className = 'sort-option';
+                changePassword.textContent = 'Change password';
+                changePassword.addEventListener('click', async () => {
+                    if (password.value.length < 10) {
+                        setAdminStatus('staffUsersStatus', 'Password must contain at least 10 characters.', true);
+                        password.focus();
+                        return;
+                    }
+                    changePassword.disabled = true;
+                    try {
+                        await callSecureAdminFunction('adminChangeStaffPassword', { uid: user.uid, password: password.value });
+                        password.value = '';
+                        setAdminStatus('staffUsersStatus', 'Password changed for ' + (user.username || 'staff user') + '.', false);
+                    } catch (error) {
+                        setAdminStatus('staffUsersStatus', error.message || 'Could not change the password.', true);
+                    } finally {
+                        changePassword.disabled = false;
+                    }
+                });
+
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'sort-option';
+                remove.textContent = 'Remove user';
+                if (isSelf) {
+                    remove.disabled = true;
+                    remove.classList.add('opacity-40', 'cursor-not-allowed');
+                    remove.title = 'You cannot remove your own signed-in Admin account.';
+                }
+                remove.addEventListener('click', async () => {
+                    if (!window.confirm('Permanently remove the staff account "' + (user.username || user.uid) + '" and its assigned role?')) return;
+                    remove.disabled = true;
+                    try {
+                        await callSecureAdminFunction('adminDeleteStaffUser', { uid: user.uid });
+                        await loadStaffUsers();
+                    } catch (error) {
+                        setAdminStatus('staffUsersStatus', error.message || 'Could not remove this user.', true);
+                    } finally {
+                        remove.disabled = false;
+                    }
+                });
+                bottom.append(passwordWrap, changePassword, remove);
+                row.append(top, bottom);
+                list.appendChild(row);
+            });
+        }
+
+        async function downloadDatabaseBackup() {
+            const button = document.getElementById('createDatabaseBackupBtn');
+            button.disabled = true;
+            setAdminStatus('databaseBackupStatus', 'Creating a verified backup from Firestore…', false);
+            try {
+                const result = await callSecureAdminFunction('adminCreateDatabaseBackup');
+                if (!result.backup || result.backup.format !== 'the-dean-rsvp-backup') throw new Error('The server returned an unsupported backup format.');
+                const content = JSON.stringify(result.backup, null, 2);
+                const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'the-dean-rsvp-backup-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(url);
+                setAdminStatus('databaseBackupStatus', 'Backup downloaded. ' +
+                    Object.keys(result.backup.collections || {}).map(name => name + ': ' + (result.backup.collections[name] || []).length).join(' · ') +
+                    '. Firebase Authentication passwords are not included.', false);
+            } catch (error) {
+                console.error('Database backup failed:', error);
+                setAdminStatus('databaseBackupStatus', error.message || 'Could not create a backup. Confirm that the secure admin functions are deployed.', true);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        async function restoreSelectedDatabaseBackup() {
+            if (!pendingDatabaseBackup) {
+                setAdminStatus('databaseBackupStatus', 'Choose a valid RSVP backup JSON file first.', true);
+                return;
+            }
+            const required = ['halloween_guests', 'event_settings', 'event_users', 'welcome_drink_rewards'];
+            const counts = required.map(name => name + ': ' + (pendingDatabaseBackup.collections[name] || []).length).join(', ');
+            if (!window.confirm('RESTORE WARNING: this replaces the current guest, event settings, staff-role and legacy reward collections with this backup. Current data created after the backup will be lost. Firebase Authentication accounts/passwords are not changed. Backup contents: ' + counts + '. Continue?')) return;
+            const button = document.getElementById('restoreDatabaseBackupBtn');
+            button.disabled = true;
+            setAdminStatus('databaseBackupStatus', 'Restoring event collections… do not close this page.', false);
+            try {
+                const result = await callSecureAdminFunction('adminRestoreDatabaseBackup', {
+                    backup: pendingDatabaseBackup, confirmReplace: true
+                });
+                pendingDatabaseBackup = null;
+                document.getElementById('restoreDatabaseFileInput').value = '';
+                button.disabled = true;
+                button.classList.add('opacity-40', 'cursor-not-allowed');
+                setAdminStatus('databaseBackupStatus', 'Restore completed. Restored counts: ' +
+                    Object.keys(result.counts || {}).map(name => name + ': ' + result.counts[name]).join(' · ') +
+                    '. Authentication accounts were not changed.', false);
+                loadLiveGuestlist();
+                loadStaffUsers();
+            } catch (error) {
+                console.error('Database restore failed:', error);
+                setAdminStatus('databaseBackupStatus', error.message || 'Restore failed. Check the data before retrying.', true);
+                button.disabled = false;
+            }
+        }
+
+        function printGuestList() {
+            const unique = new Map();
+            cachedGuestDocs.forEach(doc => {
+                const data = doc.data() || {};
+                const key = normalizeGuestName(data.name);
+                if (!key) return;
+                const previous = unique.get(key);
+                if (!previous || isImportedMemberRecord(data)) unique.set(key, data);
+            });
+            const guests = Array.from(unique.values());
+            const splitName = data => {
+                const parts = String(data.name || '').trim().split(/\s+/).filter(Boolean);
+                return {
+                    firstName: String(data.firstName || parts[0] || ''),
+                    lastName: String(data.lastName || parts.slice(1).join(' ') || ''),
+                    name: String(data.name || '')
+                };
+            };
+            guests.sort((a, b) => {
+                const aa = splitName(a), bb = splitName(b);
+                return aa.lastName.localeCompare(bb.lastName, undefined, { sensitivity: 'base' }) ||
+                    aa.firstName.localeCompare(bb.firstName, undefined, { sensitivity: 'base' });
+            });
+            const escapeHtml = value => String(value || '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[char]));
+            const printWindow = window.open('', '_blank', 'width=900,height=700');
+            if (!printWindow) {
+                setAdminStatus('internationsImportStatus', 'The print window was blocked. Allow pop-ups for this site and try again.', true);
+                return;
+            }
+            const rows = guests.map((data, index) => {
+                return '<tr><td class="number">' + (index + 1) + '</td><td>' + escapeHtml(splitName(data).name) +
+                    '</td><td class="check">□</td><td class="notes"></td></tr>';
+            }).join('');
+            const html = '<!doctype html><html><head><meta charset="utf-8"><title>The Dean After Dark — Guest List</title>' +
+                '<style>body{font:12px Arial,sans-serif;color:#111;margin:18mm}h1{font-size:20px;margin:0 0 5px}p{margin:4px 0 16px;color:#444}table{width:100%;border-collapse:collapse}th,td{border:1px solid #888;padding:6px 8px;text-align:left}th{background:#eee}.number{width:32px;color:#555}.check{width:95px;text-align:center;font-size:17px}.notes{width:150px}@media print{thead{display:table-header-group}tr{break-inside:avoid}}</style>' +
+                '</head><body><h1>The Dean After Dark — Guest List</h1><p>The Dean Munich, Autograph Collection by Marriott · Saturday, 31 October 2026 · ' +
+                guests.length + ' guests</p><table><thead><tr><th>#</th><th>Guest name</th><th>Guest-list check</th><th>Payment / wristband notes</th></tr></thead><tbody>' + rows +
+                '</tbody></table></body></html>';
+            printWindow.document.open();
+            printWindow.document.write(html);
+            printWindow.document.close();
+            setTimeout(() => { printWindow.focus(); printWindow.print(); }, 400);
+        }
+
+        // Event workflow setting is stored separately from admission pricing.
+        const workflowCheckbox = document.getElementById('twoStepCheckInEnabled');
+        if (workflowCheckbox) workflowCheckbox.addEventListener('change', async () => {
+            const status = document.getElementById('workflowSaveStatus');
+            if (currentStaffRole !== 'admin' || !db) {
+                workflowCheckbox.checked = twoStepCheckInEnabled;
+                if (status) status.textContent = 'Only an authenticated Admin can change this setting.';
+                return;
+            }
+            const requested = workflowCheckbox.checked;
+            workflowCheckbox.disabled = true;
+            if (status) status.textContent = 'Saving workflow setting…';
+            try {
+                await db.collection('event_settings').doc('workflow').set({
+                    twoStepCheckInEnabled: requested,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedBy: activeStaffUid || null
+                }, { merge: true });
+                twoStepCheckInEnabled = requested;
+                applyWorkflowRoleVisibility();
+                if (status) status.textContent = requested
+                    ? 'Two-step check-in enabled: Hotel verifies; InterNations handles payment and final admission.'
+                    : 'Single-team check-in enabled: InterNations can do both steps.';
+            } catch (error) {
+                console.error('Workflow setting save failed:', error);
+                workflowCheckbox.checked = twoStepCheckInEnabled;
+                if (status) status.textContent = 'Could not save this setting. Check Firestore permissions and try again.';
+            } finally {
+                workflowCheckbox.disabled = false;
+            }
+        });
+
+        document.getElementById('createStaffUserForm').addEventListener('submit', async event => {
+            event.preventDefault();
+            if (currentStaffRole !== 'admin') return;
+            const button = document.getElementById('createStaffUserBtn');
+            const username = document.getElementById('newStaffUsername').value;
+            const role = document.getElementById('newStaffRole').value;
+            const password = document.getElementById('newStaffPassword').value;
+            button.disabled = true;
+            try {
+                const created = await callSecureAdminFunction('adminCreateStaffUser', {
+                    username: username, role: role, password: password
+                });
+                document.getElementById('createStaffUserForm').reset();
+                document.getElementById('newStaffRole').value = 'hotel';
+                setAdminStatus('staffUsersStatus', 'Created ' + created.username + ' with role ' + created.role + '.', false);
+                await loadStaffUsers();
+            } catch (error) {
+                setAdminStatus('staffUsersStatus', error.message || 'Could not create the staff account.', true);
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        document.getElementById('refreshStaffUsersBtn').addEventListener('click', loadStaffUsers);
+        document.getElementById('createDatabaseBackupBtn').addEventListener('click', downloadDatabaseBackup);
+        document.getElementById('restoreDatabaseBackupBtn').addEventListener('click', restoreSelectedDatabaseBackup);
+        document.getElementById('restoreDatabaseFileInput').addEventListener('change', async event => {
+            const input = event.target;
+            const file = input.files && input.files[0];
+            pendingDatabaseBackup = null;
+            const button = document.getElementById('restoreDatabaseBackupBtn');
+            button.disabled = true;
+            button.classList.add('opacity-40', 'cursor-not-allowed');
+            if (!file) return;
+            if (file.size > 8 * 1024 * 1024) {
+                setAdminStatus('databaseBackupStatus', 'This backup file is larger than 8 MB and cannot be restored through this page. Use a managed Firestore restore instead.', true);
+                input.value = '';
+                return;
+            }
+            try {
+                const parsed = JSON.parse(await file.text());
+                if (!parsed || parsed.format !== 'the-dean-rsvp-backup' || parsed.schemaVersion !== 1 || !parsed.collections) {
+                    throw new Error('This does not appear to be a supported RSVP backup file.');
+                }
+                const required = ['halloween_guests', 'event_settings', 'event_users', 'welcome_drink_rewards'];
+                if (required.some(name => !Array.isArray(parsed.collections[name]))) {
+                    throw new Error('The backup is missing one or more required collections.');
+                }
+                pendingDatabaseBackup = parsed;
+                button.disabled = false;
+                button.classList.remove('opacity-40', 'cursor-not-allowed');
+                setAdminStatus('databaseBackupStatus', 'Selected backup from ' + (parsed.createdAt || 'an unknown date') + '. ' +
+                    required.map(name => name + ': ' + parsed.collections[name].length).join(' · ') +
+                    '. Restore will replace current event collections.', false);
+            } catch (error) {
+                pendingDatabaseBackup = null;
+                setAdminStatus('databaseBackupStatus', error.message || 'Could not read this backup file.', true);
+            }
+        });
+        document.getElementById('printGuestListBtn').addEventListener('click', printGuestList);
 
     </script>
 </body>
