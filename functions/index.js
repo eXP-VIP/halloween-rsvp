@@ -63,8 +63,9 @@ async function requireAdmin(context) {
 }
 
 async function assertUsernameAvailable(username, exceptUid) {
-  const snapshot = await db.collection(USER_COLLECTION).where("username", "==", username).limit(2).get();
-  if (snapshot.docs.some(doc => doc.id !== exceptUid)) {
+  const snapshot = await db.collection(USER_COLLECTION).get();
+  if (snapshot.docs.some(doc => doc.id !== exceptUid &&
+      String((doc.data() || {}).username || "").trim().toLowerCase() === username)) {
     throw httpsError("already-exists", "That username is already assigned.");
   }
   try {
@@ -73,7 +74,7 @@ async function assertUsernameAvailable(username, exceptUid) {
       throw httpsError("already-exists", "That username is already assigned to an authentication account.");
     }
   } catch (error) {
-    if (error && error.code === "functions/already-exists") throw error;
+    if (error instanceof functions.https.HttpsError) throw error;
     if (error && error.code === "auth/email-already-exists") {
       throw httpsError("already-exists", "That username is already assigned to an authentication account.");
     }
@@ -310,6 +311,9 @@ exports.adminRestoreDatabaseBackup = region.https.onCall(async (data, context) =
   const backup = data.backup;
   if (!backup || backup.format !== BACKUP_FORMAT || backup.schemaVersion !== BACKUP_SCHEMA_VERSION || !backup.collections) {
     throw httpsError("invalid-argument", "This is not a supported RSVP backup file.");
+  }
+  if (backup.projectId && backup.projectId !== (process.env.GCLOUD_PROJECT || "")) {
+    throw httpsError("invalid-argument", "This backup belongs to a different Firebase project.");
   }
 
   const collections = {};
