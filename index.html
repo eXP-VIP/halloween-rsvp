@@ -1710,6 +1710,20 @@
                 );
                 renderUnrecognizedWelcomeDrinkList();
 
+                function isPaymentWorkflowComplete(item) {
+                    const data = item.data || {};
+                    if (!Boolean(data.paid)) return false;
+                    const key = normalizeGuestName(data.name);
+                    const identity = guestByNameKey.get(key)?.data || data;
+                    const qualified = referralTrackingByInviter.get(key)?.qualifiedGuestIds.size || 0;
+                    const referralEarned = hasEarnedReferralDrink(identity, qualified);
+                    const rule = pricingSettings.drinkRules[getGuestTier(data)] || { mode: 'not_allowed', price: 0 };
+                    const issued = isGuestDrinkChipIssued(data);
+                    const chipRequired = referralEarned || rule.mode === 'included' ||
+                        (rule.mode === 'upgrade' && Boolean(data.welcomeDrinkUpgradeSelected)) || issued;
+                    return !chipRequired || issued;
+                }
+
                 const checkedInGuests = guestDocs.filter((item) => Boolean(item.data.checkedIn));
                 const compareNames = (a, b) => String(a.data.name || '').localeCompare(String(b.data.name || ''), undefined, { sensitivity: 'base' });
                 const timestampMillis = (value) => {
@@ -1726,13 +1740,16 @@
                     const data = item.data;
                     const checkedIn = Boolean(data.checkedIn);
                     const inviterKey = normalizeGuestName(data.name);
-                    // Qualification uses registered referrals, matching the dashboard
-                    // forecast; check-in status is tracked separately for operations.
-                    const invitedCount = referralTrackingByInviter.get(inviterKey)?.guestIds.size || 0;
-                    const welcomeDrinkEarned = hasEarnedReferralDrink(data, invitedCount);
+                    const referralTracking = referralTrackingByInviter.get(inviterKey) || { guestIds: new Set(), checkedInGuestIds: new Set(), qualifiedGuestIds: new Set() };
+                    const invitedCount = referralTracking.guestIds.size;
+                    const qualifiedCount = referralTracking.qualifiedGuestIds.size;
+                    const inviterIdentity = guestByNameKey.get(inviterKey)?.data || data;
+                    const welcomeDrinkEarned = hasEarnedReferralDrink(inviterIdentity, qualifiedCount);
+                    const referralBadgeState = getReferralBadgeState(inviterIdentity, invitedCount, qualifiedCount);
                     const isMemberRecord = isInterNationsMember(data) || Boolean(findImportedMemberData(data));
                     const isPaymentCard = mode === 'payment';
                     const isPaid = Boolean(data.paid);
+                    const paymentComplete = isPaymentCard && isPaymentWorkflowComplete(item);
                     const tier = getGuestTier(data);
                     const charge = calculateGuestCharge(data, welcomeDrinkEarned);
                     const chipAlreadyIssued = isGuestDrinkChipIssued(data);
@@ -1742,7 +1759,7 @@
 
                     const card = document.createElement('div');
                     card.className = 'guest-card p-3 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ' +
-                        (isPaymentCard ? (isPaid ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-sky-950/30 border-sky-400/40') :
+                        (isPaymentCard ? (paymentComplete ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-sky-950/30 border-sky-400/40') :
                         (checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'));
                     card.dataset.guestId = doc.id;
                     card.dataset.listType = isPaymentCard ? 'payment' : 'hotel';
@@ -1789,13 +1806,23 @@
                     actions.className = 'flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center';
 
                     if (isPaymentCard) {
-                        // Drink rewards and collection appear only in the payment-management view.
-                        if (welcomeDrinkEarned) {
-                            const rewardBadge = document.createElement('span');
-                            rewardBadge.className = 'inline-flex items-center rounded-full border border-amber-300 bg-amber-300/20 px-2 py-1 text-[9px] font-bold tracking-wider text-amber-100 shadow-sm shadow-amber-400/20';
-                            rewardBadge.textContent = 'REFERRALS DRINK';
-                            rewardBadge.title = 'Referral-earned welcome drink: issue a drink chip, not a paid upgrade.';
-                            titleLine.appendChild(rewardBadge);
+                        if (referralBadgeState) {
+                            const badge = document.createElement('span');
+                            badge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-bold tracking-wider ' +
+                                (referralBadgeState === 'insufficient'
+                                    ? 'border-gray-300/70 bg-gray-200/10 text-gray-200'
+                                    : referralBadgeState === 'pending'
+                                        ? 'border-amber-400/60 bg-amber-800/30 text-amber-100'
+                                        : 'border-amber-300 bg-amber-300/20 text-amber-100 shadow-sm shadow-amber-400/20');
+                            badge.textContent = referralBadgeState === 'insufficient'
+                                ? 'REFERRAL INSUFFICIENT'
+                                : referralBadgeState === 'pending' ? 'REFERRAL PENDING' : 'REFERRAL DRINK';
+                            badge.title = referralBadgeState === 'insufficient'
+                                ? 'Not enough registered referrals yet to reach this category’s threshold.'
+                                : referralBadgeState === 'pending'
+                                    ? 'The threshold is registered, but not enough referred guests have both checked in and paid.'
+                                    : 'The required number of referred guests have checked in and paid.';
+                            titleLine.appendChild(badge);
                         }
 
                         if (charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued &&
@@ -1833,8 +1860,7 @@
                         if (drinkEntitled) {
                             const chipButton = document.createElement('button');
                             chipButton.type = 'button';
-                            chipButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
-                                (chipAlreadyIssued ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : (welcomeDrinkEarned ? 'border-amber-300 bg-amber-300/20 text-amber-100 shadow-md shadow-amber-500/20' : 'border-amber-500/50 bg-amber-950/40 text-amber-100 hover:bg-amber-900/50'));
+                            chipButton.className = 'shrink-0 rounded border border-sky-400/50 bg-sky-950/40 px-3 py-2 text-xs font-semibold tracking-wider text-sky-100 hover:bg-sky-900/50';
                             chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
                             chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
                             chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
@@ -1944,14 +1970,14 @@
                 document.getElementById('collectedAmount').textContent = formatEuro(totalCollected);
                 document.getElementById('fullAttendanceAmount').textContent = formatEuro(maxFullAttendance);
 
-                const unpaidGuests = checkedInGuests.filter((item) => !item.data.paid).sort((a, b) => {
+                const unpaidGuests = checkedInGuests.filter((item) => !isPaymentWorkflowComplete(item)).sort((a, b) => {
                     const timeA = checkInTime(a), timeB = checkInTime(b);
                     if (timeA == null && timeB != null) return 1;
                     if (timeA != null && timeB == null) return -1;
                     if (timeA != null && timeB != null && timeA !== timeB) return timeA - timeB;
                     return compareNames(a, b);
                 });
-                const paidGuests = checkedInGuests.filter((item) => Boolean(item.data.paid)).sort(compareNames);
+                const paidGuests = checkedInGuests.filter((item) => isPaymentWorkflowComplete(item)).sort(compareNames)
                 unpaidGuests.forEach((item) => unpaidContainer.appendChild(makeGuestCard(item, 'payment')));
                 paidGuests.forEach((item) => paidContainer.appendChild(makeGuestCard(item, 'payment')));
                 document.getElementById('internationsUnpaidCount').textContent = '(' + unpaidGuests.length + ')';
@@ -2048,16 +2074,8 @@
                     amountPaid: nextPaid ? charge.total : null,
                     paymentStatusUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
-                const tier = getGuestTier(data);
-                const rule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
-                const paidUpgrade = rule.mode === 'upgrade' && Boolean(data.welcomeDrinkUpgradeSelected) && !welcomeDrinkEarned;
-                // Payment automatically collects an included or paid-upgrade drink chip.
-                // An earned referral drink remains manually checked as collected.
-                if (nextPaid && !welcomeDrinkEarned && (rule.mode === 'included' || paidUpgrade) && !isGuestDrinkChipIssued(data)) {
-                    update.welcomeDrinkChipIssued = true;
-                    update.welcomeDrinkChipIssuedAt = firebase.firestore.FieldValue.serverTimestamp();
-                    update.welcomeDrinkChipIssuedBy = 'payment';
-                }
+                // Issue chip is a separate staff action. Payment alone does not complete
+                // the workflow while a required welcome-drink chip remains outstanding.
                 await db.collection('halloween_guests').doc(id).update(update);
             } catch (error) {
                 console.error('Guest payment status update failed:', error);
