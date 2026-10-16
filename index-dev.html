@@ -1033,29 +1033,53 @@
             const preview = document.getElementById('internationsImportPreview');
             const confirm = document.getElementById('confirmInternationsImport');
             if (!pendingInternationsRows.length || !pendingInternationsNameColumn) {
-                preview.textContent = '';
+                preview.replaceChildren();
                 confirm.disabled = true;
                 return;
             }
             const result = getUniqueImportedNames();
-            const existingKeys = new Set(cachedGuestDocs.map((doc) => normalizeGuestName(doc.data().name)).filter(Boolean));
-            const newNames = result.entries.filter((item) => !existingKeys.has(item.key));
+            const inputKeys = new Set(result.entries.map(item => item.key));
+            const existingKeys = new Set(cachedGuestDocs.map(doc => normalizeGuestName((doc.data() || {}).name)).filter(Boolean));
+            const newNames = result.entries.filter(item => !existingKeys.has(item.key));
             const matchingNames = result.entries.length - newNames.length;
+            const missingMembers = cachedGuestDocs.filter(doc => {
+                const data = doc.data() || {};
+                const key = normalizeGuestName(data.name);
+                return isImportedMemberRecord(data) && key && !inputKeys.has(key);
+            });
+            const looksLikeRsvp = data => Boolean(
+                data.rsvpSubmitted === true ||
+                data.rsvpSource === 'website' ||
+                data.source === 'website' ||
+                String(data.invitedBy || '').trim()
+            );
+            const preserveAsRsvp = missingMembers.filter(doc => looksLikeRsvp(doc.data() || {}));
+            const removeFromList = missingMembers.filter(doc => !looksLikeRsvp(doc.data() || {}));
             preview.replaceChildren();
             const summary = document.createElement('p');
             summary.className = 'font-semibold text-sm text-white mb-2';
-            summary.textContent = result.entries.length + ' unique names · ' + newNames.length + ' new · ' + matchingNames + ' already listed · ' + result.duplicateRows + ' repeated rows ignored';
+            summary.textContent = result.entries.length + ' unique members · ' + newNames.length + ' new · ' +
+                matchingNames + ' matched · ' + removeFromList.length + ' no longer on the member list · ' +
+                preserveAsRsvp.length + ' retained as RSVP guests · ' + result.duplicateRows + ' repeated rows ignored';
             preview.appendChild(summary);
             const note = document.createElement('p');
             note.className = 'text-gray-300 mb-2';
-            note.textContent = 'Matching names will be labelled InterNations member. Their existing check-in and welcome-drink chip status will be preserved.';
+            note.textContent = 'Confirming synchronizes to this full Members-List: new members are added, matches are updated, member-only records missing from the file are removed, and records marked as separate RSVPs are retained as RSVPs. Existing status is preserved for matches.';
             preview.appendChild(note);
-            const previewNames = document.createElement('p');
-            previewNames.className = 'text-gray-400 break-words';
-            previewNames.textContent = 'New names: ' + (newNames.slice(0, 8).map((item) => item.name).join(', ') || 'none') + (newNames.length > 8 ? ' …' : '');
-            preview.appendChild(previewNames);
+            const newNamesLine = document.createElement('p');
+            newNamesLine.className = 'text-gray-400 break-words mb-1';
+            newNamesLine.textContent = 'New names: ' + (newNames.slice(0, 10).map(item => item.name).join(', ') || 'none') + (newNames.length > 10 ? ' …' : '');
+            preview.appendChild(newNamesLine);
+            const removeNamesLine = document.createElement('p');
+            removeNamesLine.className = 'text-amber-200 break-words mb-1';
+            removeNamesLine.textContent = 'To remove: ' + (removeFromList.slice(0, 15).map(doc => doc.data().name || '(No name)').join(', ') || 'none') + (removeFromList.length > 15 ? ' …' : '');
+            preview.appendChild(removeNamesLine);
+            const retainedLine = document.createElement('p');
+            retainedLine.className = 'text-sky-200 break-words';
+            retainedLine.textContent = 'Keep as RSVPs: ' + (preserveAsRsvp.slice(0, 10).map(doc => doc.data().name || '(No name)').join(', ') || 'none') + (preserveAsRsvp.length > 10 ? ' …' : '');
+            preview.appendChild(retainedLine);
             confirm.disabled = result.entries.length === 0;
-            confirm.textContent = newNames.length ? 'Import ' + newNames.length + ' new name(s) and update matches' : 'Update matching InterNations names';
+            confirm.textContent = 'Synchronize Members-List (' + newNames.length + ' add · ' + removeFromList.length + ' remove)';
         }
 
         document.getElementById('internationsFileInput').addEventListener('change', async (event) => {
@@ -1113,26 +1137,61 @@
             if (!db) { status.textContent = 'The guest database is not connected.'; return; }
             const result = getUniqueImportedNames();
             if (!result.entries.length) { status.textContent = 'No valid guest names found.'; return; }
+
+            const inputKeys = new Set(result.entries.map(item => item.key));
+            const latestPreview = cachedGuestDocs.filter(doc => {
+                const data = doc.data() || {};
+                const key = normalizeGuestName(data.name);
+                return isImportedMemberRecord(data) && key && !inputKeys.has(key);
+            });
+            const looksLikeRsvp = data => Boolean(
+                data.rsvpSubmitted === true ||
+                data.rsvpSource === 'website' ||
+                data.source === 'website' ||
+                String(data.invitedBy || '').trim()
+            );
+            const removedPreview = latestPreview.filter(doc => !looksLikeRsvp(doc.data() || {}));
+            if (removedPreview.length) {
+                const names = removedPreview.slice(0, 12).map(doc => doc.data().name || '(No name)').join(', ');
+                const suffix = removedPreview.length > 12 ? ' and ' + (removedPreview.length - 12) + ' more' : '';
+                if (!window.confirm('This must be the FULL current InterNations Members-List. ' +
+                    removedPreview.length + ' imported-only guest record(s) are not in the new file and will be removed: ' +
+                    names + suffix + '. Continue with synchronization?')) return;
+            } else if (!window.confirm('Synchronize the full InterNations Members-List now? New members will be added and matching member records updated.')) {
+                return;
+            }
+
             button.disabled = true;
             const oldText = button.textContent;
-            button.textContent = 'IMPORTING…';
+            button.textContent = 'SYNCHRONIZING…';
             status.textContent = 'Checking the current guest list and preparing changes…';
             try {
                 const current = await db.collection('halloween_guests').get();
                 const byName = new Map();
-                current.forEach((doc) => {
-                    const key = normalizeGuestName(doc.data().name);
+                current.forEach(doc => {
+                    const key = normalizeGuestName((doc.data() || {}).name);
                     if (key && !byName.has(key)) byName.set(key, doc);
                 });
-                let added = 0, matched = 0;
+                let added = 0, matched = 0, removed = 0, retainedAsRsvp = 0;
                 const operations = [];
-                result.entries.forEach((entry) => {
+                const currentMissing = [];
+                const latestInputKeys = new Set(result.entries.map(item => item.key));
+
+                result.entries.forEach(entry => {
                     const existing = byName.get(entry.key);
                     if (existing) {
                         matched++;
+                        const prior = existing.data() || {};
+                        // Preserve a marker for a guest who had also submitted the public RSVP
+                        // before the membership-list import upgraded their classification.
+                        const wasRsvp = prior.rsvpSubmitted === true ||
+                            prior.rsvpSource === 'website' ||
+                            prior.source === 'website' ||
+                            Boolean(String(prior.invitedBy || '').trim());
                         const updateData = {
                             guestType: 'internations_member',
                             source: 'internations_import',
+                            rsvpSubmitted: wasRsvp,
                             importNameKey: entry.key,
                             importedAt: firebase.firestore.FieldValue.serverTimestamp(),
                             firstName: entry.firstName,
@@ -1154,6 +1213,7 @@
                             paidAt: null,
                             guestType: 'internations_member',
                             source: 'internations_import',
+                            rsvpSubmitted: false,
                             importNameKey: entry.key,
                             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                             importedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1162,29 +1222,60 @@
                         }});
                     }
                 });
+
+                current.forEach(doc => {
+                    const data = doc.data() || {};
+                    const key = normalizeGuestName(data.name);
+                    if (!isImportedMemberRecord(data) || !key || latestInputKeys.has(key)) return;
+                    currentMissing.push({ doc, data });
+                });
+                currentMissing.forEach(({doc, data}) => {
+                    const wasRsvp = data.rsvpSubmitted === true ||
+                        data.rsvpSource === 'website' ||
+                        data.source === 'website' ||
+                        Boolean(String(data.invitedBy || '').trim());
+                    if (wasRsvp) {
+                        retainedAsRsvp++;
+                        operations.push({ type: 'update', ref: doc.ref, data: {
+                            guestType: 'friend',
+                            source: 'website',
+                            rsvpSubmitted: true,
+                            importNameKey: firebase.firestore.FieldValue.delete(),
+                            importedAt: firebase.firestore.FieldValue.delete(),
+                            interNationsStatus: firebase.firestore.FieldValue.delete(),
+                            membershipRemovedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }});
+                    } else {
+                        removed++;
+                        operations.push({ type: 'delete', ref: doc.ref });
+                    }
+                });
+
                 for (let start = 0; start < operations.length; start += 400) {
                     const batch = db.batch();
-                    operations.slice(start, start + 400).forEach((op) => {
+                    operations.slice(start, start + 400).forEach(op => {
                         if (op.type === 'update') batch.update(op.ref, op.data);
+                        else if (op.type === 'delete') batch.delete(op.ref);
                         else batch.set(op.ref, op.data);
                     });
                     await batch.commit();
                 }
-                status.textContent = 'Import complete: ' + added + ' new guest(s) added, ' + matched + ' existing name(s) matched. Member status was updated where provided; existing check-in, payment and chip status were preserved.';
+                status.textContent = 'Synchronization complete: ' + added + ' new member(s) added, ' + matched +
+                    ' matched, ' + removed + ' member-only record(s) removed, and ' + retainedAsRsvp +
+                    ' records retained as RSVPs. Existing check-in, payment and chip status was preserved for matching records.';
                 pendingInternationsRows = [];
                 pendingInternationsHeaders = [];
                 pendingInternationsNameColumn = '';
                 document.getElementById('internationsImportOptions').classList.add('hidden');
                 document.getElementById('internationsFileInput').value = '';
             } catch (error) {
-                console.error('InterNations import failed:', error);
-                status.textContent = 'Import failed. No success was reported; check the guest list and database access rules before retrying. ' + (error.message || '');
+                console.error('InterNations synchronization failed:', error);
+                status.textContent = 'Synchronization failed. Review the guest list before retrying. ' + (error.message || '');
             } finally {
                 button.disabled = false;
                 button.textContent = oldText;
             }
         });
-
 
         function escapeIcsText(value) {
             return String(value)
