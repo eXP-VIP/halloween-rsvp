@@ -625,6 +625,16 @@
                                     <p class="text-[10px] uppercase tracking-wider text-gray-400">Paid</p>
                                 </div>
                             </div>
+                            <div class="mt-3 border-t border-white/10 pt-2">
+                                <table class="w-full table-fixed border-collapse text-[9px] sm:text-[10px] leading-4 text-gray-300 tabular-nums" aria-label="Ticket revenue by category">
+                                    <thead><tr class="text-[8px] sm:text-[9px] uppercase tracking-wide text-gray-500"><th scope="col" class="w-[31%] text-left font-medium">Category</th><th scope="col" class="w-[19%] text-right font-medium">Ticket</th><th scope="col" class="w-[25%] text-right font-medium">Potential</th><th scope="col" class="w-[25%] text-right font-medium">Paid</th></tr></thead>
+                                    <tbody>
+                                        <tr class="border-t border-white/5"><th scope="row" class="py-0.5 text-left font-medium text-gray-300">Albatross</th><td id="paymentAlbatrossTicket" class="text-right whitespace-nowrap">€5</td><td id="paymentAlbatrossPotential" class="text-right whitespace-nowrap">€0</td><td id="paymentAlbatrossPaid" class="text-right whitespace-nowrap text-sky-200">€0</td></tr>
+                                        <tr class="border-t border-white/5"><th scope="row" class="py-0.5 text-left font-medium text-gray-300">Basics</th><td id="paymentBasicsTicket" class="text-right whitespace-nowrap">€15</td><td id="paymentBasicsPotential" class="text-right whitespace-nowrap">€0</td><td id="paymentBasicsPaid" class="text-right whitespace-nowrap text-sky-200">€0</td></tr>
+                                        <tr class="border-t border-white/5"><th scope="row" class="py-0.5 text-left font-medium text-gray-300">RSVPs</th><td id="paymentRsvpsTicket" class="text-right whitespace-nowrap">€20</td><td id="paymentRsvpsPotential" class="text-right whitespace-nowrap">€0</td><td id="paymentRsvpsPaid" class="text-right whitespace-nowrap text-sky-200">€0</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                     
@@ -830,7 +840,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.17.1</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.17.2</p>
         </div>
     </footer>
 
@@ -2448,18 +2458,43 @@
                 document.getElementById('drinkUpgradeEstimate').textContent = drinkForecastCounts.upgrades;
                 document.getElementById('drinkUpgradeIssued').textContent = drinkIssuedCounts.upgrades;
 
-                const totalCollected = Array.from(categoryPeople.values()).filter(person => person.paid).reduce((sum, person) => {
-                    if (person.amountPaid != null && Number.isFinite(Number(person.amountPaid))) return sum + Number(person.amountPaid);
+                const categoryPaymentTotals = {
+                    Albatross: { potential: 0, paid: 0 },
+                    Basics: { potential: 0, paid: 0 },
+                    RSVPs: { potential: 0, paid: 0 }
+                };
+                let totalCollected = 0;
+                let maxFullAttendance = 0;
+                categoryPeople.forEach(person => {
                     const key = normalizeGuestName(person.data.name);
-                    const qualified = referralTrackingByInviter.get(key)?.qualifiedGuestIds.size || 0;
-                    return sum + calculateGuestCharge(person.data, hasEarnedReferralDrink(person.data, qualified)).total;
-                }, 0);
-                const maxFullAttendance = Array.from(categoryPeople.values()).reduce((sum, person) => {
-                    const key = normalizeGuestName(person.data.name);
-                    return sum + calculateGuestCharge(person.data, estimatedEarnedKeys.has(key)).total;
-                }, 0);
+                    const category = getGuestCategory(person.data);
+                    const categoryTotal = categoryPaymentTotals[category] || categoryPaymentTotals.RSVPs;
+                    const potentialAmount = calculateGuestCharge(person.data, estimatedEarnedKeys.has(key)).total;
+                    categoryTotal.potential += potentialAmount;
+                    maxFullAttendance += potentialAmount;
+                    if (person.paid) {
+                        let paidAmount;
+                        if (person.amountPaid != null && Number.isFinite(Number(person.amountPaid))) {
+                            paidAmount = Number(person.amountPaid);
+                        } else {
+                            const qualified = referralTrackingByInviter.get(key)?.qualifiedGuestIds.size || 0;
+                            paidAmount = calculateGuestCharge(person.data, hasEarnedReferralDrink(person.data, qualified)).total;
+                        }
+                        categoryTotal.paid += paidAmount;
+                        totalCollected += paidAmount;
+                    }
+                });
                 document.getElementById('collectedAmount').textContent = formatEuro(totalCollected);
                 document.getElementById('fullAttendanceAmount').textContent = formatEuro(maxFullAttendance);
+                document.getElementById('paymentAlbatrossTicket').textContent = formatEuro(pricingSettings.basePrices.paidMembers);
+                document.getElementById('paymentAlbatrossPotential').textContent = formatEuro(categoryPaymentTotals.Albatross.potential);
+                document.getElementById('paymentAlbatrossPaid').textContent = formatEuro(categoryPaymentTotals.Albatross.paid);
+                document.getElementById('paymentBasicsTicket').textContent = formatEuro(pricingSettings.basePrices.basics);
+                document.getElementById('paymentBasicsPotential').textContent = formatEuro(categoryPaymentTotals.Basics.potential);
+                document.getElementById('paymentBasicsPaid').textContent = formatEuro(categoryPaymentTotals.Basics.paid);
+                document.getElementById('paymentRsvpsTicket').textContent = formatEuro(pricingSettings.basePrices.friends);
+                document.getElementById('paymentRsvpsPotential').textContent = formatEuro(categoryPaymentTotals.RSVPs.potential);
+                document.getElementById('paymentRsvpsPaid').textContent = formatEuro(categoryPaymentTotals.RSVPs.paid);
 
                 const unpaidGuests = checkedInGuests.filter((item) => !isPaymentWorkflowComplete(item)).sort((a, b) => {
                     const timeA = checkInTime(a), timeB = checkInTime(b);
@@ -3009,7 +3044,10 @@
                 name: splitName(data).name
             }));
             const allNames = indexedGuests.map(guest => guest.name);
-            const pageMarginMm = 8;
+            const pageMarginTopMm = 8;
+            const pageMarginRightMm = 12;
+            const pageMarginBottomMm = 12;
+            const pageMarginLeftMm = 12;
             const pageContentHeightMinusHeaderMm = 8; // 7 mm heading plus 1 mm separation
             const columnGapMm = 1.8;
             const nameGapMm = 0.8;
@@ -3038,8 +3076,8 @@
 
             const chooseModeLayout = (orientation, mode) => {
                 const dimensions = pageDimensions(orientation);
-                const usableWidthMm = dimensions.widthMm - pageMarginMm * 2;
-                const usableHeightMm = dimensions.heightMm - pageMarginMm * 2;
+                const usableWidthMm = dimensions.widthMm - pageMarginLeftMm - pageMarginRightMm;
+                const usableHeightMm = dimensions.heightMm - pageMarginTopMm - pageMarginBottomMm;
                 const rowAreaMm = usableHeightMm - pageContentHeightMinusHeaderMm;
                 const maxItemsOnPage = mode === 'compact'
                     ? indexedGuests.length
@@ -3101,8 +3139,8 @@
             const pageDimensionsSelected = pageDimensions(selected.orientation);
             const physicalPageWidthMm = pageDimensionsSelected.widthMm;
             const physicalPageHeightMm = pageDimensionsSelected.heightMm;
-            const printableWidthMm = physicalPageWidthMm - pageMarginMm * 2;
-            const printableHeightMm = physicalPageHeightMm - pageMarginMm * 2;
+            const printableWidthMm = physicalPageWidthMm - pageMarginLeftMm - pageMarginRightMm;
+            const printableHeightMm = physicalPageHeightMm - pageMarginTopMm - pageMarginBottomMm;
 
             const rowsToColumnHtml = (items, config, mode) => {
                 const columns = splitEvenly(items, config.columns);
@@ -3129,19 +3167,18 @@
                     columnGapMm + 'mm">' + columnHtml + '</div>';
             };
 
-            const makePage = (items, versionLabel, mode, config) =>
+            const makePage = (items, mode, config) =>
                 '<section class="print-page ' + mode + '">' +
                     '<header class="page-header">' +
                         '<h1>The Dean After Dark - Guest List</h1>' +
-                        '<span class="edition-label">' + versionLabel + '</span>' +
                     '</header>' +
                     rowsToColumnHtml(items, config, mode) +
                 '</section>';
 
-            const compactPage = makePage(indexedGuests, 'COMPACT - 1 PAGE', 'compact', selected.compact);
+            const compactPage = makePage(indexedGuests, 'compact', selected.compact);
             const readablePageItems = splitEvenly(indexedGuests, 2);
-            const readablePages = readablePageItems.map((items, index) =>
-                makePage(items, 'LARGE TEXT - PAGE ' + (index + 1) + ' OF 2', 'readable', selected.readable)
+            const readablePages = readablePageItems.map(items =>
+                makePage(items, 'readable', selected.readable)
             );
 
             const printWindow = window.open('', '_blank', 'width=1200,height=850');
@@ -3157,15 +3194,14 @@
             const printDocument = '<!doctype html><html><head><meta charset="utf-8">' +
                 '<title>The Dean After Dark - Guest List</title>' +
                 '<style>' +
-                '@page{size:A4 ' + selected.orientation + ';margin:' + pageMarginMm + 'mm}' +
+                '@page{size:A4 ' + selected.orientation + ';margin:' + pageMarginTopMm + 'mm ' + pageMarginRightMm + 'mm ' + pageMarginBottomMm + 'mm ' + pageMarginLeftMm + 'mm}' +
                 '*{box-sizing:border-box}' +
                 'html,body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#111}' +
                 '.print-page{display:flex;flex-direction:column;width:100%;height:' + printableHeightMm + 'mm;overflow:hidden;break-after:page;page-break-after:always;margin:0;padding:0}' +
                 '.print-page:last-child{break-after:auto;page-break-after:auto}' +
-                '.page-header{flex:0 0 7mm;height:7mm;display:flex;align-items:baseline;justify-content:space-between;gap:4mm;margin:0 0 1mm;padding:0;white-space:nowrap;overflow:hidden}' +
-                'h1{margin:0;font-size:12.5pt;line-height:1;font-weight:700;white-space:nowrap}' +
+                '.page-header{flex:0 0 7mm;height:7mm;display:flex;align-items:center;justify-content:center;gap:0;margin:0 0 1mm;padding:0;width:100%;white-space:nowrap;overflow:hidden;text-align:center}' +
+                'h1{margin:0;font-size:12.5pt;line-height:1;font-weight:700;white-space:nowrap;text-align:center}' +
                 '.readable h1{font-size:14pt}' +
-                '.edition-label{font-size:7.5pt;font-weight:700;letter-spacing:.04em;color:#444;white-space:nowrap}' +
                 '.roster-grid{flex:0 0 auto;display:grid;align-items:stretch;width:100%;min-width:0}' +
                 '.roster-column{min-width:0;height:100%;display:flex;flex-direction:column}' +
                 '.guest-row{flex:0 0 auto;display:grid;align-items:center;min-width:0;padding:0;border-bottom:.25pt solid #ddd;line-height:1;overflow:hidden}' +
@@ -3177,7 +3213,7 @@
                 '.readable .number{font-size:8.5pt}' +
                 '@media print{html,body{margin:0;padding:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.print-page{width:100%;height:' + printableHeightMm + 'mm;padding:0}}' +
                 '@media screen{body{background:#eee;padding:10px}.print-page{background:#fff;box-shadow:0 1px 8px #bbb;margin:0 auto 14px;padding:' +
-                    pageMarginMm + 'mm;width:' + physicalPageWidthMm + 'mm;height:' + physicalPageHeightMm + 'mm}}' +
+                    pageMarginTopMm + 'mm ' + pageMarginRightMm + 'mm ' + pageMarginBottomMm + 'mm ' + pageMarginLeftMm + 'mm;width:' + physicalPageWidthMm + 'mm;height:' + physicalPageHeightMm + 'mm}}' +
                 '</style></head><body>' + compactPage + readablePages.join('') + '</body></html>';
 
             printWindow.document.open();
@@ -3193,7 +3229,7 @@
                 status.textContent = indexedGuests.length + ' guests prepared in ' + selected.orientation +
                     ' orientation with ' + selected.compact.columns + ' compact columns and ' +
                     selected.readable.columns + ' large-text columns; safe ' + pageMarginMm +
-                    ' mm margins. Longest name: ' + maxName.length + ' characters.';
+                    ' mm margins (12 mm left/right/bottom). Longest name: ' + maxName.length + ' characters.';
                 status.classList.remove('text-red-300');
             }
         }
