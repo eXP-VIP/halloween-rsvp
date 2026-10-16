@@ -467,7 +467,7 @@
                             <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Admin · Prices</h4>
                             <span class="text-[10px] uppercase tracking-wider text-amber-200">Role-controlled staff access</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules and referral eligibility for each category. Included drinks are already covered; a referral reward does not add a second drink. For eligible categories, set how many referred guests must check in. A qualifying referral drink replaces a paid upgrade.</p>
+                        <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules and referral eligibility for each category. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid. Referral badges are informational; drink eligibility still follows each category’s rule.</p>
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
@@ -483,7 +483,7 @@
                                 <input id="drinkPriceBasics" type="number" min="0" step="1" class="form-field" value="0" disabled>
                                 <div class="mt-4 border-t border-gold/20 pt-3">
                                     <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligibleBasics" type="checkbox" class="mt-0.5 accent-amber-300" checked> Eligible for referral welcome drink</label>
-                                    <label for="referralThresholdBasics" class="form-label">Required referred guests to check in</label>
+                                    <label for="referralThresholdBasics" class="form-label">Required referrals who checked in and paid</label>
                                     <input id="referralThresholdBasics" type="number" min="1" step="1" class="form-field" value="2">
                                 </div>
                             </div>
@@ -501,7 +501,7 @@
                                 <input id="drinkPricePaidMembers" type="number" min="0" step="1" class="form-field" value="0" disabled>
                                 <div class="mt-4 border-t border-gold/20 pt-3">
                                     <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligiblePaidMembers" type="checkbox" class="mt-0.5 accent-amber-300" checked> Eligible for referral welcome drink</label>
-                                    <label for="referralThresholdPaidMembers" class="form-label">Required referred guests to check in</label>
+                                    <label for="referralThresholdPaidMembers" class="form-label">Required referrals who checked in and paid</label>
                                     <input id="referralThresholdPaidMembers" type="number" min="1" step="1" class="form-field" value="2">
                                 </div>
                             </div>
@@ -519,7 +519,7 @@
                                 <input id="drinkPriceFriends" type="number" min="0" step="1" class="form-field" value="0" disabled>
                                 <div class="mt-4 border-t border-gold/20 pt-3">
                                     <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligibleFriends" type="checkbox" class="mt-0.5 accent-amber-300"> Eligible for referral welcome drink</label>
-                                    <label for="referralThresholdFriends" class="form-label">Required referred guests to check in</label>
+                                    <label for="referralThresholdFriends" class="form-label">Required referrals who checked in and paid</label>
                                     <input id="referralThresholdFriends" type="number" min="1" step="1" class="form-field" value="2">
                                 </div>
                             </div>
@@ -1399,7 +1399,7 @@
                 }
                 applyStaffRole(profile.role);
                 activeStaffUid = user.uid;
-                document.getElementById('staffIdentity').textContent = profile.role === 'admin' ? username + ' · Admin' : username;
+                document.getElementById('staffIdentity').textContent = profile.role === 'admin' ? 'Authenticated · ' + username + ' · Admin' : 'Authenticated · ' + username;
                 document.getElementById('staffLoginSection').classList.add('hidden');
                 document.getElementById('guestlistSection').classList.remove('hidden');
                 document.getElementById('staffLoginError').classList.add('hidden');
@@ -1659,54 +1659,6 @@
                     if (!current || (isImportedMemberRecord(item.data) && !isImportedMemberRecord(current.data))) guestByNameKey.set(key,item);
                 });
 
-                cachedUnaccountedReferrals = [];
-                guestDocs.forEach((item) => {
-                    const guestData = item.data;
-                    const inviteName = String(guestData.invitedBy || '').trim();
-                    const inviterKey = normalizeGuestName(inviteName);
-                    let reason = '';
-                    let inviter = null;
-                    let referralTracking = null;
-
-                    if (inviterKey) {
-                        inviter = guestByNameKey.get(inviterKey) || null;
-                        referralTracking = referralTrackingByInviter.get(inviterKey) || null;
-                        if (!inviter) {
-                            reason = 'Inviter not found in guest list';
-                        } else {
-                            const tier = getGuestTier(inviter.data);
-                            const drinkRule = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
-                            const referralRule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
-                            const checkedReferrals = checkedInReferralsByInviter.get(inviterKey)?.guestIds.size || 0;
-                            // Included drinks are already accounted for; qualifying referral rewards are accounted separately.
-                            if (drinkRule.mode === 'included') return;
-                            if (hasEarnedReferralDrink(inviter.data, checkedReferrals)) return;
-                            reason = !referralRule.eligible
-                                ? 'Referral drinks disabled for ' + getGuestCategory(inviter.data)
-                                : 'Needs ' + Math.max(0, referralRule.threshold - checkedReferrals) + ' more checked-in referral(s)';
-                        }
-                    } else {
-                        // Do not list imported membership rows as RSVPs without an inviter.
-                        if (isInterNationsMember(guestData)) return;
-                        reason = 'No inviter entered';
-                    }
-
-                    cachedUnaccountedReferrals.push({
-                        guestName: String(guestData.name || '').trim() || '(No name provided)',
-                        category: getGuestCategory(guestData),
-                        invitedBy: inviter ? String(inviter.data.name || inviteName).trim() : inviteName,
-                        inviterCategory: inviter ? getGuestCategory(inviter.data) : '',
-                        registeredReferrals: referralTracking ? referralTracking.guestIds.size : 0,
-                        checkedInReferrals: referralTracking ? referralTracking.checkedInGuestIds.size : 0,
-                        guestStatus: guestData.checkedIn ? 'Checked in' : 'Not checked in',
-                        reason
-                    });
-                });
-                cachedUnaccountedReferrals.sort((a, b) =>
-                    a.reason.localeCompare(b.reason) ||
-                    String(a.invitedBy || '').localeCompare(String(b.invitedBy || '')) ||
-                    a.guestName.localeCompare(b.guestName, undefined, { sensitivity: 'base' })
-                );
                 renderUnrecognizedWelcomeDrinkList();
 
                 function isPaymentWorkflowComplete(item) {
