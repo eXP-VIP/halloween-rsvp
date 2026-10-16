@@ -548,12 +548,48 @@
                         </div>
                         <p id="internationsImportStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-3"></p>
                     </section>
-                    
+
+                    <section id="staffUserManagementPanel" class="hidden rounded-xl border border-violet-400/40 bg-violet-950/15 p-4 mb-5" aria-labelledby="staffUserManagementHeading">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-3">
+                            <h4 id="staffUserManagementHeading" class="font-serif uppercase tracking-wider text-violet-100 text-sm">Staff Access Management</h4>
+                            <span class="text-[10px] uppercase tracking-wider text-violet-200">Admin only</span>
+                        </div>
+                        <p class="text-xs text-gray-300 mb-4">Create staff accounts, assign roles, activate or remove access, and set passwords. Account and password operations run through a secure Firebase backend; no privileged credentials are stored in this page.</p>
+                        <form id="createStaffUserForm" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 rounded-lg border border-violet-400/20 bg-black/25 p-3">
+                            <div><label for="newStaffUsername" class="form-label">Username</label><input id="newStaffUsername" class="form-field" autocomplete="off" autocapitalize="none" minlength="3" maxlength="32" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}" required placeholder="e.g. hotel1"></div>
+                            <div><label for="newStaffRole" class="form-label">Role</label><select id="newStaffRole" class="form-field"><option value="hotel">Hotel</option><option value="internations">InterNations</option><option value="admin">Admin</option></select></div>
+                            <div><label for="newStaffPassword" class="form-label">Initial password</label><input id="newStaffPassword" type="password" class="form-field" autocomplete="new-password" minlength="10" required placeholder="At least 10 characters"></div>
+                            <div class="flex items-end"><button id="createStaffUserBtn" type="submit" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Create user</button></div>
+                        </form>
+                        <div class="flex flex-wrap items-center gap-2 mt-4 mb-2">
+                            <button id="refreshStaffUsersBtn" type="button" class="sort-option">Refresh users</button>
+                            <span class="text-[10px] text-gray-400">Usernames are used at sign-in; no mailbox is required.</span>
+                        </div>
+                        <p id="staffUsersStatus" class="text-xs text-gray-300 mb-3" role="status" aria-live="polite">Load staff accounts to manage their roles and access.</p>
+                        <div id="staffUsersList" class="space-y-2"></div>
+                    </section>
+
+                    <section id="databaseBackupPanel" class="hidden rounded-xl border border-emerald-400/35 bg-emerald-950/15 p-4 mb-5" aria-labelledby="databaseBackupHeading">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-3">
+                            <h4 id="databaseBackupHeading" class="font-serif uppercase tracking-wider text-emerald-100 text-sm">Database Backup & Restore</h4>
+                            <span class="text-[10px] uppercase tracking-wider text-emerald-200">Admin only</span>
+                        </div>
+                        <p class="text-xs text-gray-300 mb-3">The backup includes guest records, event settings, and staff role records. It does not include Firebase Authentication accounts or passwords. Restore replaces these event collections with the selected backup, so review the file carefully before confirming.</p>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <button id="createDatabaseBackupBtn" type="button" class="sort-option">Download backup (.json)</button>
+                            <label for="restoreDatabaseFileInput" class="sort-option cursor-pointer">Choose backup to restore</label>
+                            <input id="restoreDatabaseFileInput" type="file" accept=".json,application/json" class="hidden">
+                            <button id="restoreDatabaseBackupBtn" type="button" disabled class="sort-option opacity-40 cursor-not-allowed">Restore selected backup</button>
+                        </div>
+                        <p id="databaseBackupStatus" class="text-xs text-gray-300 mt-3" role="status" aria-live="polite">Create a backup before making bulk changes.</p>
+                    </section>
+
                     <p id="guestlistError" class="text-red-300 text-sm hidden mb-3">Could not load the guest list. Check the database connection and access rules.</p>
                     <section id="hotelCheckInPanel">
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
                         <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Guest-list Verification</h4>
-                        <div class="flex w-full sm:w-auto">
+                        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
+                            <button type="button" id="printGuestListBtn" class="sort-option" title="Open a clean, printable guest list">Print guest list</button>
                             <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                         </div>
                     </div>
