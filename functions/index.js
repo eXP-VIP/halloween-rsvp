@@ -3,13 +3,16 @@ const admin = require("firebase-admin");
 
 admin.initializeApp();
 
+// The Admin SDK is used only in trusted Cloud Functions; the browser must never receive these privileged capabilities.
 const db = admin.firestore();
 const auth = admin.auth();
 const region = functions.region("europe-west1");
 const USER_COLLECTION = "event_users";
 const AUTH_ALIAS_DOMAIN = "staff.partybag.com";
+// Keep the backup format/version stable; change the schema version when its serialized shape becomes incompatible.
 const BACKUP_FORMAT = "the-dean-rsvp-backup";
 const BACKUP_SCHEMA_VERSION = 1;
+// Only these top-level event collections are included; Firebase Authentication accounts and passwords are deliberately excluded.
 const BACKUP_COLLECTIONS = [
   "halloween_guests",
   "event_settings",
@@ -18,10 +21,12 @@ const BACKUP_COLLECTIONS = [
 ];
 const VALID_ROLES = ["admin", "hotel", "internations"];
 
+/** Create a consistent Firebase callable error so the client can display a safe, expected message. */
 function httpsError(code, message) {
   return new functions.https.HttpsError(code, message);
 }
 
+/** Normalize and validate the username before it becomes the synthetic Firebase Auth sign-in identifier. */
 function cleanUsername(value) {
   const username = String(value || "").trim().toLowerCase();
   if (!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username)) {
@@ -30,6 +35,7 @@ function cleanUsername(value) {
   return username;
 }
 
+/** Reject roles outside the explicitly supported staff-role allowlist. */
 function cleanRole(value) {
   const role = String(value || "").trim().toLowerCase();
   if (!VALID_ROLES.includes(role)) {
@@ -38,6 +44,7 @@ function cleanRole(value) {
   return role;
 }
 
+/** Enforce the server-side password length policy before calling the Firebase Admin SDK. */
 function cleanPassword(value) {
   const password = String(value || "");
   if (password.length < 10 || password.length > 128) {
@@ -46,10 +53,12 @@ function cleanPassword(value) {
   return password;
 }
 
+/** Build the email-shaped Auth identifier from a username; it is not a real mailbox and must not trigger email workflows. */
 function authAlias(username) {
   return username + "@" + AUTH_ALIAS_DOMAIN;
 }
 
+/** Security gate for every privileged callable: require sign-in plus an active admin role profile keyed by the caller’s Auth UID. */
 async function requireAdmin(context) {
   if (!context.auth || !context.auth.uid) {
     throw httpsError("unauthenticated", "Sign in with an active Admin account.");
@@ -62,6 +71,7 @@ async function requireAdmin(context) {
   return { uid: context.auth.uid, profile: profile };
 }
 
+/** Prevent duplicate usernames across Firestore role profiles and Firebase Authentication aliases. */
 async function assertUsernameAvailable(username, exceptUid) {
   const snapshot = await db.collection(USER_COLLECTION).get();
   if (snapshot.docs.some(doc => doc.id !== exceptUid &&
@@ -82,6 +92,7 @@ async function assertUsernameAvailable(username, exceptUid) {
   }
 }
 
+/** Serialize Firestore timestamps and JavaScript dates into tagged JSON-safe values for backups. */
 function encodeValue(value) {
   if (value instanceof admin.firestore.Timestamp) {
     return {
@@ -102,6 +113,7 @@ function encodeValue(value) {
   return value;
 }
 
+/** Restore tagged timestamp/date values to native types while recursively decoding backup documents. */
 function decodeValue(value) {
   if (Array.isArray(value)) return value.map(decodeValue);
   if (value && typeof value === "object") {
@@ -120,10 +132,12 @@ function decodeValue(value) {
   return value;
 }
 
+/** Reject malformed or path-like document IDs before a restore can write them. */
 function validDocumentId(id) {
   return typeof id === "string" && id.length > 0 && id.length <= 1500 && !id.includes("/");
 }
 
+/** List staff role profiles and reconcile them with Auth-account existence/disabled state; admin-only. */
 exports.adminListStaffUsers = region.https.onCall(async (data, context) => {
   await requireAdmin(context);
   const snapshot = await db.collection(USER_COLLECTION).get();
@@ -151,6 +165,7 @@ exports.adminListStaffUsers = region.https.onCall(async (data, context) => {
   return { users: users };
 });
 
+/** Create the Firebase Auth identity and matching active role profile, rolling back the Auth user if profile creation fails. */
 exports.adminCreateStaffUser = region.https.onCall(async (data, context) => {
   const adminContext = await requireAdmin(context);
   const username = cleanUsername(data && data.username);
@@ -190,6 +205,7 @@ exports.adminCreateStaffUser = region.https.onCall(async (data, context) => {
   return { uid: createdUser.uid, username: username, role: role, active: true };
 });
 
+/** Update a staff username, role and active state while preventing self-lockout and synchronizing the Auth account. */
 exports.adminUpdateStaffUser = region.https.onCall(async (data, context) => {
   const adminContext = await requireAdmin(context);
   const uid = String((data && data.uid) || "").trim();
@@ -233,6 +249,7 @@ exports.adminUpdateStaffUser = region.https.onCall(async (data, context) => {
   return { uid: uid, username: username, role: role, active: active };
 });
 
+/** Change a staff password and revoke refresh tokens so existing sessions must authenticate again. */
 exports.adminChangeStaffPassword = region.https.onCall(async (data, context) => {
   const adminContext = await requireAdmin(context);
   const uid = String((data && data.uid) || "").trim();
@@ -256,6 +273,7 @@ exports.adminChangeStaffPassword = region.https.onCall(async (data, context) => 
   return { uid: uid, changed: true };
 });
 
+/** Delete a staff Auth identity and role profile while preventing an admin from deleting their own active account. */
 exports.adminDeleteStaffUser = region.https.onCall(async (data, context) => {
   const adminContext = await requireAdmin(context);
   const uid = String((data && data.uid) || "").trim();
@@ -278,6 +296,7 @@ exports.adminDeleteStaffUser = region.https.onCall(async (data, context) => {
   return { uid: uid, deleted: true };
 });
 
+/** Create a bounded, versioned JSON backup of the configured event collections after admin authorization. */
 exports.adminCreateDatabaseBackup = region.https.onCall(async (data, context) => {
   await requireAdmin(context);
   const backup = {
@@ -305,6 +324,7 @@ exports.adminCreateDatabaseBackup = region.https.onCall(async (data, context) =>
   return { backup: backup };
 });
 
+/** Preflight and validate the backup, protect the current Admin role, then replace the configured collections; this is destructive and not an atomic multi-collection transaction. */
 exports.adminRestoreDatabaseBackup = region.https.onCall(async (data, context) => {
   const adminContext = await requireAdmin(context);
   if (!data || data.confirmReplace !== true) {
