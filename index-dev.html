@@ -2252,6 +2252,19 @@
                     const memberStatus = String(data.interNationsStatus || '').trim();
                     typeBadge.textContent = getGuestCategory(data).toLocaleUpperCase();
                     if (currentStaffRole === 'admin' || mode === 'combined') titleLine.appendChild(typeBadge);
+                    if (mode === 'combined') {
+                        const checkInStateBadge = document.createElement('span');
+                        checkInStateBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
+                            (checkedIn ? 'border-emerald-400/50 bg-emerald-950/50 text-emerald-100' : 'border-amber-400/50 bg-amber-950/40 text-amber-100');
+                        checkInStateBadge.textContent = checkedIn ? 'CHECKED IN' : 'NOT CHECKED IN';
+                        titleLine.appendChild(checkInStateBadge);
+
+                        const paymentStateBadge = document.createElement('span');
+                        paymentStateBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
+                            (isPaid ? 'border-emerald-400/50 bg-emerald-950/50 text-emerald-100' : 'border-sky-400/50 bg-sky-950/40 text-sky-100');
+                        paymentStateBadge.textContent = isPaid ? 'PAID' : 'UNPAID';
+                        titleLine.appendChild(paymentStateBadge);
+                    }
 
                     const guestMeta = document.createElement('p');
                     guestMeta.className = 'text-xs text-gray-300 break-words mt-1';
@@ -2320,7 +2333,7 @@
                             titleLine.appendChild(badge);
                         }
 
-                        if (charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued &&
+                        if ((mode !== 'combined' || checkedIn) && charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued &&
                             (upgradeCanBeSelected || charge.upgradeSelected)) {
                             const upgradeButton = document.createElement('button');
                             upgradeButton.type = 'button';
@@ -2337,30 +2350,34 @@
                         details.appendChild(titleLine);
                         if (currentStaffRole === 'admin' && guestMeta.textContent) details.appendChild(guestMeta);
 
-                        const amount = document.createElement('span');
-                        amount.className = 'text-sm font-semibold text-white tabular-nums whitespace-nowrap';
-                        const paidAmount = data.amountPaid != null ? Number(data.amountPaid) : charge.total;
-                        amount.textContent = formatEuro(isPaid ? paidAmount : charge.total);
-                        actions.appendChild(amount);
+                        const canManageAdmission = mode !== 'combined' || checkedIn ||
+                            (currentStaffRole === 'admin' && (isPaid || chipAlreadyIssued || Boolean(data.welcomeDrinkUpgradeSelected)));
+                        if (canManageAdmission) {
+                            const amount = document.createElement('span');
+                            amount.className = 'text-sm font-semibold text-white tabular-nums whitespace-nowrap';
+                            const paidAmount = data.amountPaid != null ? Number(data.amountPaid) : charge.total;
+                            amount.textContent = formatEuro(isPaid ? paidAmount : charge.total);
+                            actions.appendChild(amount);
 
-                        const paymentButton = document.createElement('button');
-                        paymentButton.type = 'button';
-                        paymentButton.className = 'guest-action-btn ' +
-                            (isPaid ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
-                        paymentButton.textContent = isPaid ? 'MARK UNPAID' : 'MARK PAID';
-                        paymentButton.setAttribute('aria-pressed', String(isPaid));
-                        paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned));
-                        actions.appendChild(paymentButton);
+                            const paymentButton = document.createElement('button');
+                            paymentButton.type = 'button';
+                            paymentButton.className = 'guest-action-btn ' +
+                                (isPaid ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
+                            paymentButton.textContent = isPaid ? 'MARK UNPAID' : 'MARK PAID';
+                            paymentButton.setAttribute('aria-pressed', String(isPaid));
+                            paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned));
+                            actions.appendChild(paymentButton);
 
-                        if (drinkEntitled) {
-                            const chipButton = document.createElement('button');
-                            chipButton.type = 'button';
-                            chipButton.className = 'guest-action-btn ' +
-                                (chipAlreadyIssued ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
-                            chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
-                            chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
-                            chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
-                            actions.appendChild(chipButton);
+                            if (drinkEntitled) {
+                                const chipButton = document.createElement('button');
+                                chipButton.type = 'button';
+                                chipButton.className = 'guest-action-btn ' +
+                                    (chipAlreadyIssued ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
+                                chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
+                                chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
+                                chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
+                                actions.appendChild(chipButton);
+                            }
                         }
                         if (mode === 'combined') {
                             appendCheckInAction();
