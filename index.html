@@ -552,11 +552,10 @@
                     </div>
                     <div id="hotelSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort check-in lists">
                         <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
-                        <button type="button" class="sort-option" data-sort-group="hotel" data-sort="firstName" aria-pressed="true" onclick="setHotelSort('firstName')">First name</button>
-                        <span class="admin-sort-controls hidden" id="adminGuestSortControls"><button type="button" class="sort-option" data-sort-group="admin" data-sort="firstName" aria-pressed="true" onclick="setAdminGuestSort('firstName')">First name</button>
-                        <button type="button" class="sort-option" data-sort-group="admin" data-sort="lastName" aria-pressed="false" onclick="setAdminGuestSort('lastName')">Last Name</button>
-                        <button type="button" class="sort-option" data-sort-group="admin" data-sort="signupNewest" aria-pressed="false" onclick="setAdminGuestSort('signupNewest')">Signup</button></span>
-                        <button type="button" class="sort-option" data-sort-group="hotel" data-sort="lastName" aria-pressed="false" onclick="setHotelSort('lastName')">Last Name</button>
+                        <button type="button" class="sort-option" data-sort-group="guest" data-sort="firstName" aria-pressed="true" onclick="setGuestSort('firstName')">First name</button>
+                        <button type="button" class="sort-option" data-sort-group="guest" data-sort="lastName" aria-pressed="false" onclick="setGuestSort('lastName')">Last Name</button>
+                        <button type="button" class="sort-option" data-sort-group="guest" data-sort="signupNewest" aria-pressed="false" onclick="setGuestSort('signupNewest')">
+                        Signup
                     </div>
                     <div class="mb-4">
                         <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Not checked in <span id="hotelOpenCount" class="text-amber-100">(0)</span></p>
@@ -1307,6 +1306,7 @@
         function applyStaffRole(role) {
             if (!STAFF_ROLES.includes(role)) throw new Error('The account does not have a valid staff role.');
             currentStaffRole = role;
+            guestSortBy = role === 'admin' ? 'signupNewest' : 'firstName';
             const show = (id, visible) => {
                 const element = document.getElementById(id);
                 if (element) element.classList.toggle('hidden', !visible);
@@ -2104,73 +2104,50 @@
             }
         }
 
-        let hotelSortBy = 'firstName';
-        let adminGuestSortBy = 'firstName';
+        let guestSortBy = 'firstName';
         let paymentSortBy = 'timeOrder';
-
         function applySortToContainer(containerId, sortBy, timeKey, timeDirection) {
             const container = document.getElementById(containerId);
             if (!container) return;
-            const cards = Array.from(container.children).filter((card) => card.classList.contains('guest-card'));
-            const compareAlpha = (a, b, key) => (a.dataset[key] || '').localeCompare(b.dataset[key] || '', undefined, { numeric: true, sensitivity: 'base' });
-            const compareTime = (a, b, key, direction) => {
-                const rawA = a.dataset[key], rawB = b.dataset[key];
-                const timeA = rawA === '' || rawA == null ? null : Number(rawA);
-                const timeB = rawB === '' || rawB == null ? null : Number(rawB);
-                if (timeA == null && timeB != null) return 1;
-                if (timeA != null && timeB == null) return -1;
-                if (timeA == null && timeB == null) return 0;
-                return (timeA - timeB) * direction;
+            const cards = Array.from(container.children).filter(card => card.classList.contains('guest-card'));
+            const alpha = (a,b,key) => (a.dataset[key] || '').localeCompare(b.dataset[key] || '', undefined, { numeric:true, sensitivity:'base' });
+            const time = (a,b,key,direction) => {
+                const rawA=a.dataset[key], rawB=b.dataset[key];
+                const valueA=rawA===''||rawA==null?null:Number(rawA), valueB=rawB===''||rawB==null?null:Number(rawB);
+                if(valueA===null&&valueB!==null)return 1;
+                if(valueA!==null&&valueB===null)return -1;
+                if(valueA===null&&valueB===null)return 0;
+                return (valueA-valueB)*direction;
             };
-            cards.sort((a, b) => {
-                if (sortBy === 'firstName') return compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
-                if (sortBy === 'lastName') return compareAlpha(a, b, 'sortLastName') || compareAlpha(a, b, 'sortFirstName');
-                if (sortBy === 'signupNewest') return compareTime(a, b, 'sortSignupOrder', -1) || compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
-                if (sortBy === 'signupOldest') return compareTime(a, b, 'sortSignupOrder', 1) || compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
-                return compareTime(a, b, timeKey, timeDirection) ||
-                    compareAlpha(a, b, 'sortFirstName') || compareAlpha(a, b, 'sortLastName');
+            cards.sort((a,b)=>{
+                if(sortBy==='firstName')return alpha(a,b,'sortFirstName')||alpha(a,b,'sortLastName');
+                if(sortBy==='lastName')return alpha(a,b,'sortLastName')||alpha(a,b,'sortFirstName');
+                if(sortBy==='signupNewest')return time(a,b,'sortSignupOrder',-1)||alpha(a,b,'sortFirstName')||alpha(a,b,'sortLastName');
+                return time(a,b,timeKey,timeDirection)||alpha(a,b,'sortFirstName')||alpha(a,b,'sortLastName');
             });
-            cards.forEach((card) => container.appendChild(card));
+            cards.forEach(card=>container.appendChild(card));
         }
-
         function updateSortButtonStates() {
-            document.querySelectorAll('.sort-option[data-sort-group="admin"]').forEach((button) => {
-                button.setAttribute('aria-pressed', String(button.dataset.sort === adminGuestSortBy));
+            document.querySelectorAll('.sort-option[data-sort-group="guest"]').forEach(button=>{
+                button.setAttribute('aria-pressed',String(button.dataset.sort===guestSortBy));
             });
-            document.querySelectorAll('.sort-option[data-sort-group="hotel"]').forEach((button) => {
-                button.setAttribute('aria-pressed', String(button.dataset.sort === hotelSortBy));
-            });
-            document.querySelectorAll('.sort-option[data-sort-group="payment"]').forEach((button) => {
-                button.setAttribute('aria-pressed', String(button.dataset.sort === paymentSortBy));
+            document.querySelectorAll('.sort-option[data-sort-group="payment"]').forEach(button=>{
+                button.setAttribute('aria-pressed',String(button.dataset.sort===paymentSortBy));
             });
         }
-
-        function setAdminGuestSort(sortBy) {
-            if (!['signupNewest', 'firstName', 'lastName'].includes(sortBy)) return;
-            adminGuestSortBy = sortBy;
-            applyGuestSorts();
+        function setGuestSort(sortBy) {
+            if(!['firstName','lastName','signupNewest'].includes(sortBy))return;
+            guestSortBy=sortBy;applyGuestSorts();
         }
-
-        function setHotelSort(sortBy) {
-            if (!['firstName', 'lastName'].includes(sortBy)) return;
-            hotelSortBy = sortBy;
-            applyGuestSorts();
-        }
-
         function setPaymentSort(sortBy) {
-            if (!['firstName', 'lastName', 'timeOrder'].includes(sortBy)) return;
-            paymentSortBy = sortBy;
-            applyGuestSorts();
+            if(!['firstName','lastName','timeOrder'].includes(sortBy))return;
+            paymentSortBy=sortBy;applyGuestSorts();
         }
-
         function applyGuestSorts() {
-            const adminSortControls = document.getElementById('adminGuestSortControls');
-            if (adminSortControls) adminSortControls.classList.toggle('hidden', currentStaffRole !== 'admin');
-            const guestListSort = currentStaffRole === 'admin' ? adminGuestSortBy : hotelSortBy;
-            applySortToContainer('guestNotCheckedInContainer', guestListSort, '', -1);
-            applySortToContainer('guestCheckedInContainer', guestListSort, '', 1);
-            applySortToContainer('internationsUnpaidContainer', paymentSortBy, paymentSortBy === 'timeOrder' ? 'sortCheckInOrder' : '', 1);
-            applySortToContainer('internationsPaidContainer', paymentSortBy, paymentSortBy === 'timeOrder' ? 'sortPaymentOrder' : '', 1);
+            applySortToContainer('guestNotCheckedInContainer',guestSortBy,'',-1);
+            applySortToContainer('guestCheckedInContainer',guestSortBy,'',1);
+            applySortToContainer('internationsUnpaidContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortCheckInOrder':'',1);
+            applySortToContainer('internationsPaidContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortPaymentOrder':'',1);
             updateSortButtonStates();
         }
 
