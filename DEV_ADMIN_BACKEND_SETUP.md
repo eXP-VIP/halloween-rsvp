@@ -7,7 +7,7 @@ The development page now contains admin-only User Management and Database Backup
 - Take a separate Firebase/Firestore backup first.
 - Confirm the Firebase project is `the-dean-munich-halloween`.
 - Use Node.js 22 and a recent Firebase CLI.
-- Cloud Functions deployment generally requires the Firebase project to use the Blaze (pay-as-you-go) plan. Review the project billing and usage before deploying.
+- Cloud Functions deployment generally requires the Firebase project to use the Blaze (pay-as-you-go) plan. Review the project billing and usage before deploying. See [Firebase's Cloud Functions setup guide](https://firebase.google.com/docs/functions/get-started) for current prerequisites.
 - Do not put a service-account key or Admin SDK credentials in the web page. The Cloud Functions runtime uses its own service identity.
 - The user-management functions authorize every operation by checking the signed-in caller's active `event_users/{uid}` record and requiring `role: "admin"`.
 
@@ -18,7 +18,6 @@ From a local clone of this repository:
 ```sh
 npm install -g firebase-tools
 firebase login
-firebase use the-dean-munich-halloween
 cd functions
 npm install
 npm run check
