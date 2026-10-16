@@ -618,7 +618,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.15.4</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Production build 2026.10.16.1</p>
         </div>
     </footer>
 
@@ -741,14 +741,22 @@
             };
         }
 
-        function isInterNationsMember(data) {
+        function isImportedMemberRecord(data) {
             return Boolean(data && (data.guestType === 'internations_member' || data.source === 'internations_import'));
         }
-
+        function findImportedMemberData(data) {
+            const key = normalizeGuestName(data && data.name);
+            if (!key) return isImportedMemberRecord(data) ? data : null;
+            const match = cachedGuestDocs.find(doc => {
+                const candidate = doc.data() || {};
+                return isImportedMemberRecord(candidate) && normalizeGuestName(candidate.name) === key;
+            });
+            return match ? (match.data() || {}) : (isImportedMemberRecord(data) ? data : null);
+        }
+        function isInterNationsMember(data) { return isImportedMemberRecord(data); }
         function getGuestTier(data) {
-            if (isInterNationsMember(data)) {
-                return String(data.interNationsStatus || '').toLocaleLowerCase().includes('basic') ? 'basics' : 'paidMembers';
-            }
+            const member = findImportedMemberData(data);
+            if (member) return String(member.interNationsStatus || (data && data.interNationsStatus) || '').toLocaleLowerCase().includes('basic') ? 'basics' : 'paidMembers';
             return 'friends';
         }
 
@@ -763,10 +771,23 @@
             return Boolean(referralRule.eligible);
         }
 
-        function hasEarnedReferralDrink(data, referredGuestCount) {
-            const tier = getGuestTier(data);
-            const referralRule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
-            return isReferralDrinkEligible(data) && Number(referredGuestCount || 0) >= referralRule.threshold;
+        function hasEarnedReferralDrink(data, qualifiedReferralCount) {
+            const tier = getGuestTier(data), rule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
+            const drink = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+            return isReferralDrinkEligible(data) && drink.mode !== 'included' && Number(qualifiedReferralCount || 0) >= rule.threshold;
+        }
+        function hasPotentialReferralDrink(data, registeredReferralCount) {
+            const tier = getGuestTier(data), rule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
+            const drink = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
+            return isReferralDrinkEligible(data) && drink.mode !== 'included' && Number(registeredReferralCount || 0) >= rule.threshold;
+        }
+        function getReferralBadgeState(data, registeredReferralCount, qualifiedReferralCount) {
+            const rule = pricingSettings.referralRules[getGuestTier(data)] || { eligible: false, threshold: 2 };
+            const registered = Number(registeredReferralCount || 0);
+            if (registered < 1) return '';
+            if (registered < rule.threshold) return 'insufficient';
+            if (Number(qualifiedReferralCount || 0) < rule.threshold) return 'pending';
+            return 'earned';
         }
 
         function isGuestDrinkChipIssued(data) {
@@ -1452,94 +1473,48 @@
         }
 
         function renderUnrecognizedWelcomeDrinkList() {
-            const rewardList = document.getElementById('welcomeDrinkList');
-            const section = document.getElementById('unrecognizedWelcomeDrinkSection');
-            if (!rewardList || !section) return;
-            rewardList.replaceChildren();
+            const list = document.getElementById('welcomeDrinkList'), section = document.getElementById('unrecognizedWelcomeDrinkSection');
+            if (!list || !section) return;
+            list.replaceChildren();
             const isAdmin = currentStaffRole === 'admin';
             section.classList.toggle('hidden', !isAdmin);
             if (!isAdmin) return;
-
-            // Reconcile unknown inviter names only. Members who also RSVP'd
-            // remain known members for referral matching and calculations.
-            const guestRows = cachedGuestDocs.map((doc) => doc.data());
-            const knownMemberKeys = new Set(guestRows
-                .filter((data) => isInterNationsMember(data))
-                .map((data) => normalizeGuestName(data.name))
-                .filter(Boolean));
-            const referralsByInviter = new Map();
-            let noInviterCount = 0;
-            let noInviterCheckedIn = 0;
-
-            guestRows.forEach((data) => {
-                // Imported member records are not referral RSVPs.
-                if (isInterNationsMember(data)) return;
-                const inviterName = String(data.invitedBy || '').trim();
-                const inviterKey = normalizeGuestName(inviterName);
-                if (!inviterKey) {
-                    noInviterCount++;
-                    if (data.checkedIn) noInviterCheckedIn++;
-                    return;
-                }
-                // If the name matches any registered guest (including a member
-                // who also RSVPed), it is not an unknown inviter.
-                if (knownMemberKeys.has(inviterKey)) return;
-                if (!referralsByInviter.has(inviterKey)) {
-                    referralsByInviter.set(inviterKey, { name: inviterName, total: 0, checkedIn: 0 });
-                }
-                const group = referralsByInviter.get(inviterKey);
-                group.total++;
-                if (data.checkedIn) group.checkedIn++;
+            const rows = cachedGuestDocs.map(doc => ({id:doc.id,data:doc.data()||{}}));
+            const knownNames = new Set(rows.map(x=>normalizeGuestName(x.data.name)).filter(Boolean));
+            const knownMembers = new Set(rows.filter(x=>isImportedMemberRecord(x.data)).map(x=>normalizeGuestName(x.data.name)).filter(Boolean));
+            const people = new Map();
+            rows.forEach(item=>{
+                const d=item.data,key=normalizeGuestName(d.name)||item.id;
+                let p=people.get(key);
+                if(!p){p={key,name:String(d.name||'').trim()||'(No name provided)',inviter:'',checkedIn:false,paid:false,hasRsvp:false,hasMember:false};people.set(key,p);}
+                const inv=String(d.invitedBy||'').trim();if(inv&&!p.inviter)p.inviter=inv;
+                p.checkedIn=p.checkedIn||Boolean(d.checkedIn);p.paid=p.paid||Boolean(d.paid);
+                p.hasMember=p.hasMember||isImportedMemberRecord(d);p.hasRsvp=p.hasRsvp||!isImportedMemberRecord(d);
             });
-
-            const entries = Array.from(referralsByInviter.values())
-                .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-            if (!entries.length && noInviterCount === 0) {
-                const empty = document.createElement('p');
-                empty.className = 'text-xs text-gray-300 py-2';
-                empty.textContent = 'No unknown inviter names or RSVPs without an inviter.';
-                rewardList.appendChild(empty);
-                return;
-            }
-
-            entries.forEach((entry) => {
-                const row = document.createElement('div');
-                row.className = 'flex items-center justify-between gap-3 rounded-lg border border-gold/30 bg-black/25 px-3 py-2';
-                const details = document.createElement('div');
-                details.className = 'min-w-0';
-                const name = document.createElement('p');
-                name.className = 'font-medium break-words';
-                name.textContent = entry.name;
-                const meta = document.createElement('p');
-                meta.className = 'text-[10px] text-gray-300 mt-1';
-                meta.textContent = entry.checkedIn + ' checked in · ' + (entry.total - entry.checkedIn) + ' not checked in';
-                details.append(name, meta);
-                const count = document.createElement('span');
-                count.className = 'shrink-0 rounded border border-amber-400/40 bg-amber-950/40 px-3 py-1 text-sm font-semibold text-amber-100 tabular-nums';
-                count.textContent = String(entry.total);
-                count.title = entry.total + ' RSVP(s) entered this unknown inviter name';
-                row.append(details, count);
-                rewardList.appendChild(row);
+            const groups=new Map(), noInviterPeople=new Map();
+            people.forEach(p=>{
+                if(!p.hasRsvp)return;
+                const key=normalizeGuestName(p.inviter);
+                if(!key){if(p.hasMember||knownMembers.has(p.key))return;noInviterPeople.set(p.key,p);return;}
+                if(knownNames.has(key))return;
+                if(!groups.has(key))groups.set(key,{name:p.inviter,people:new Map()});
+                groups.get(key).people.set(p.key,p);
             });
-
-            if (noInviterCount > 0) {
-                const row = document.createElement('div');
-                row.className = 'flex items-center justify-between gap-3 rounded-lg border border-gray-500/40 bg-black/25 px-3 py-2';
-                const details = document.createElement('div');
-                const label = document.createElement('p');
-                label.className = 'font-medium text-gray-200';
-                label.textContent = 'No inviter entered';
-                const meta = document.createElement('p');
-                meta.className = 'text-[10px] text-gray-400 mt-1';
-                meta.textContent = noInviterCheckedIn + ' checked in · ' + (noInviterCount - noInviterCheckedIn) + ' not checked in';
-                details.append(label, meta);
-                const count = document.createElement('span');
-                count.className = 'shrink-0 rounded border border-gray-500/40 bg-gray-900/50 px-3 py-1 text-sm font-semibold text-gray-100 tabular-nums';
-                count.textContent = String(noInviterCount);
-                count.title = noInviterCount + ' RSVP(s) with no inviter entered';
-                row.append(details, count);
-                rewardList.appendChild(row);
-            }
+            const summarize=m=>{const a=Array.from(m.values());return {total:a.length,checkedIn:a.filter(p=>p.checkedIn).length,checkedInPaid:a.filter(p=>p.checkedIn&&p.paid).length};};
+            const entries=Array.from(groups.values()).map(g=>({name:g.name,...summarize(g.people)})).sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
+            const without=summarize(noInviterPeople);
+            if(!entries.length&&!without.total){const p=document.createElement('p');p.className='text-xs text-gray-300 py-2';p.textContent='No unknown inviter names or RSVPs without an inviter.';list.appendChild(p);return;}
+            const addRow=(label,c,style,title)=>{
+                const row=document.createElement('div');row.className='flex items-center justify-between gap-3 rounded-lg border px-3 py-2 '+style;
+                const details=document.createElement('div');details.className='min-w-0';
+                const name=document.createElement('p');name.className='font-medium break-words';name.textContent=label;
+                const meta=document.createElement('p');meta.className='text-[10px] text-gray-300 mt-1';meta.textContent=c.checkedIn+' checked in · '+c.checkedInPaid+' checked in & paid · '+(c.total-c.checkedIn)+' not checked in';
+                details.append(name,meta);
+                const count=document.createElement('span');count.className='shrink-0 rounded border px-3 py-1 text-sm font-semibold tabular-nums '+(label==='No inviter entered'?'border-gray-500/40 bg-gray-900/50 text-gray-100':'border-amber-400/40 bg-amber-950/40 text-amber-100');count.textContent=String(c.total);count.title=title;
+                row.append(details,count);list.appendChild(row);
+            };
+            entries.forEach(e=>addRow(e.name,e,'border-gold/30 bg-black/25',e.total+' distinct RSVPs entered this unknown inviter name'));
+            if(without.total)addRow('No inviter entered',without,'border-gray-500/40 bg-black/25',without.total+' RSVPs have no inviter entered');
         }
 
         async function toggleGuestDrinkUpgrade(id, data, welcomeDrinkEarned) {
@@ -1601,23 +1576,25 @@
                 cachedGuestSnapshot = snapshot;
                 cachedGuestDocs = snapshot.docs;
                 listError.classList.add('hidden');
-                const categoryTotals = {
-                    Albatross: { total: 0, paid: 0 },
-                    Basics: { total: 0, paid: 0 },
-                    RSVPs: { total: 0, paid: 0 }
-                };
-                snapshot.docs.forEach((guestDoc) => {
-                    const data = guestDoc.data();
-                    const category = getGuestCategory(data);
-                    categoryTotals[category].total++;
-                    if (data.paid) categoryTotals[category].paid++;
+                const categoryPeople = new Map();
+                snapshot.docs.forEach(guestDoc => {
+                    const data=guestDoc.data()||{}, key=normalizeGuestName(data.name)||guestDoc.id;
+                    let person=categoryPeople.get(key);
+                    if(!person){person={data,paid:Boolean(data.paid),amountPaid:data.paid&&data.amountPaid!=null?Number(data.amountPaid):null,isImportedMember:isImportedMemberRecord(data)};categoryPeople.set(key,person);}
+                    else {
+                        person.paid=person.paid||Boolean(data.paid);
+                        if(data.paid&&data.amountPaid!=null&&Number.isFinite(Number(data.amountPaid)))person.amountPaid=Number(data.amountPaid);
+                        if(isImportedMemberRecord(data)&&!person.isImportedMember){person.data=data;person.isImportedMember=true;}
+                    }
                 });
-                const totalGuestRecords = snapshot.size;
-                const totalPaidRecords = snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().paid)).length;
+                const categoryTotals={Albatross:{total:0,paid:0},Basics:{total:0,paid:0},RSVPs:{total:0,paid:0}};
+                categoryPeople.forEach(person=>{const category=getGuestCategory(person.data);categoryTotals[category].total++;if(person.paid)categoryTotals[category].paid++;});
+                const totalGuestRecords=categoryPeople.size;
+                const totalPaidRecords=Array.from(categoryPeople.values()).filter(person=>person.paid).length;
                 const nonAlbatrossTotal = categoryTotals.Basics.total + categoryTotals.RSVPs.total;
                 const nonAlbatrossPaid = categoryTotals.Basics.paid + categoryTotals.RSVPs.paid;
                 const formatRate = (albatross, rest) => {
-                    if (!rest || !Number(albatross)) return '—';
+                    if (!Number(rest)) return '—';
                     return (Number(albatross) / Number(rest)).toFixed(1);
                 };
                 document.getElementById('guestTotalCount').textContent = totalGuestRecords;
@@ -1634,31 +1611,24 @@
                 document.getElementById('guestPaidStandardMixRatio').textContent = formatRate(categoryTotals.Albatross.paid, categoryTotals.Basics.paid);
                 const issuedNameKeys = new Set(snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
 
-                // Count checked-in referrals for live rewards, plus all referral names for the admin reconciliation list.
-                const checkedInReferralsByInviter = new Map();
-                const referralTrackingByInviter = new Map();
-                snapshot.forEach((guestDoc) => {
-                    const referredGuest = guestDoc.data();
-                    const inviterName = String(referredGuest.invitedBy || '').trim();
-                    const inviterKey = normalizeGuestName(inviterName);
-                    if (!inviterKey) return;
-
-                    if (!referralTrackingByInviter.has(inviterKey)) {
-                        referralTrackingByInviter.set(inviterKey, { name: inviterName, guestIds: new Set(), checkedInGuestIds: new Set() });
-                    }
-                    const tracking = referralTrackingByInviter.get(inviterKey);
-                    tracking.guestIds.add(guestDoc.id);
-                    if (referredGuest.checkedIn) tracking.checkedInGuestIds.add(guestDoc.id);
-
-                    if (referredGuest.checkedIn) {
-                        if (!checkedInReferralsByInviter.has(inviterKey)) {
-                            checkedInReferralsByInviter.set(inviterKey, { name: inviterName, guestIds: new Set() });
-                        }
-                        checkedInReferralsByInviter.get(inviterKey).guestIds.add(guestDoc.id);
-                    }
+                const referralPeople = new Map();
+                snapshot.forEach(guestDoc=>{
+                    const d=guestDoc.data()||{}, personKey=normalizeGuestName(d.name)||guestDoc.id;
+                    let p=referralPeople.get(personKey);
+                    if(!p){p={name:String(d.name||'').trim(),inviter:'',checkedIn:false,paid:false};referralPeople.set(personKey,p);}
+                    const inv=String(d.invitedBy||'').trim();if(inv&&!p.inviter)p.inviter=inv;
+                    p.checkedIn=p.checkedIn||Boolean(d.checkedIn);p.paid=p.paid||Boolean(d.paid);
                 });
-
-                renderInternationsImportPreview();
+                const referralTrackingByInviter=new Map();
+                referralPeople.forEach((p,personKey)=>{
+                    const name=String(p.inviter||'').trim(),key=normalizeGuestName(name);if(!key)return;
+                    if(!referralTrackingByInviter.has(key))referralTrackingByInviter.set(key,{name,guestIds:new Set(),checkedInGuestIds:new Set(),qualifiedGuestIds:new Set()});
+                    const tr=referralTrackingByInviter.get(key);tr.guestIds.add(personKey);
+                    if(p.checkedIn)tr.checkedInGuestIds.add(personKey);
+                    if(p.checkedIn&&p.paid)tr.qualifiedGuestIds.add(personKey);
+                });
+                const checkedInReferralsByInviter=new Map(Array.from(referralTrackingByInviter.entries()).map(([key,tr])=>[key,{name:tr.name,guestIds:tr.checkedInGuestIds}]));
+                renderInternationsImportPreview();                renderInternationsImportPreview();
 
                 const hotelOpenContainer = document.getElementById('guestNotCheckedInContainer');
                 const hotelCheckedContainer = document.getElementById('guestCheckedInContainer');
@@ -1675,9 +1645,7 @@
                     const key = normalizeGuestName(item.data.name);
                     if (!key) return;
                     const current = guestByNameKey.get(key);
-                    if (!current || (!isInterNationsMember(current.data) && isInterNationsMember(item.data))) {
-                        guestByNameKey.set(key, item);
-                    }
+                    if (!current || (isImportedMemberRecord(item.data) && !isImportedMemberRecord(current.data))) guestByNameKey.set(key,item);
                 });
 
                 cachedUnaccountedReferrals = [];
@@ -1750,7 +1718,7 @@
                     // forecast; check-in status is tracked separately for operations.
                     const invitedCount = referralTrackingByInviter.get(inviterKey)?.guestIds.size || 0;
                     const welcomeDrinkEarned = hasEarnedReferralDrink(data, invitedCount);
-                    const isMemberRecord = isInterNationsMember(data);
+                    const isMemberRecord = isInterNationsMember(data) || Boolean(findImportedMemberData(data));
                     const isPaymentCard = mode === 'payment';
                     const isPaid = Boolean(data.paid);
                     const tier = getGuestTier(data);
