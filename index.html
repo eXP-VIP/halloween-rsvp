@@ -617,7 +617,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Production build 2026.10.16.4</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Production build 2026.10.16.5</p>
         </div>
     </footer>
 
@@ -1525,6 +1525,7 @@
                         inviter: '',
                         checkedIn: false,
                         paid: false,
+                        checkedInPaid: false,
                         hasRsvp: false
                     };
                     people.set(key, person);
@@ -1533,6 +1534,7 @@
                 if (inviter && !person.inviter) person.inviter = inviter;
                 person.checkedIn = person.checkedIn || Boolean(data.checkedIn);
                 person.paid = person.paid || Boolean(data.paid);
+                person.checkedInPaid = person.checkedInPaid || (Boolean(data.checkedIn) && Boolean(data.paid));
                 person.hasRsvp = person.hasRsvp || !isImportedMemberRecord(data);
             });
 
@@ -1562,7 +1564,7 @@
                 return {
                     total: entries.length,
                     checkedIn: entries.filter(person => person.checkedIn).length,
-                    checkedInPaid: entries.filter(person => person.checkedIn && person.paid).length
+                    checkedInPaid: entries.filter(person => person.checkedInPaid).length
                 };
             };
             const entries = Array.from(unknownInviters.values())
@@ -1720,7 +1722,7 @@
                     const personKey = normalizeGuestName(data.name) || guestDoc.id;
                     let person = referralPeople.get(personKey);
                     if (!person) {
-                        person = { name: String(data.name || '').trim(), inviter: '', checkedIn: false, paid: false, data };
+                        person = { name: String(data.name || '').trim(), inviter: '', checkedIn: false, paid: false, qualifiedReferral: false, data };
                         referralPeople.set(personKey, person);
                     } else if (isImportedMemberRecord(data) && !isImportedMemberRecord(person.data)) {
                         // When the same person has an imported membership and an RSVP record,
@@ -1731,6 +1733,10 @@
                     if (inviter && !person.inviter) person.inviter = inviter;
                     person.checkedIn = person.checkedIn || Boolean(data.checkedIn);
                     person.paid = person.paid || Boolean(data.paid);
+                    // A referral qualifies only when the same RSVP record is both checked in and paid.
+                    // Do not combine check-in from a duplicate record with payment from another one.
+                    person.qualifiedReferral = person.qualifiedReferral ||
+                        (!isImportedMemberRecord(data) && Boolean(data.checkedIn) && Boolean(data.paid));
                 });
                 const referralTrackingByInviter = new Map();
                 referralPeople.forEach((person, personKey) => {
@@ -1743,7 +1749,7 @@
                     const tr = referralTrackingByInviter.get(key);
                     tr.guestIds.add(personKey);
                     if (person.checkedIn) tr.checkedInGuestIds.add(personKey);
-                    if (person.checkedIn && person.paid) tr.qualifiedGuestIds.add(personKey);
+                    if (person.qualifiedReferral) tr.qualifiedGuestIds.add(personKey);
                 });
                 const checkedInReferralsByInviter=new Map(Array.from(referralTrackingByInviter.entries()).map(([key,tr])=>[key,{name:tr.name,guestIds:tr.checkedInGuestIds}]));
                 renderInternationsImportPreview();
@@ -1909,7 +1915,7 @@
                         const paymentButton = document.createElement('button');
                         paymentButton.type = 'button';
                         paymentButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
-                            (isPaid ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100' : 'border-gold/50 bg-gold/15 text-amber-100 hover:bg-gold/25');
+                            (isPaid ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100 hover:bg-emerald-800/50' : 'border-gold/50 bg-gold/15 text-amber-100 hover:bg-gold/25');
                         paymentButton.textContent = isPaid ? 'MARK UNPAID' : 'MARK PAID';
                         paymentButton.setAttribute('aria-pressed', String(isPaid));
                         paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned));
