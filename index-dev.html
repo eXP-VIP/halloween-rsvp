@@ -594,6 +594,7 @@
                             <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                         </div>
                     </div>
+                    <p class="text-xs text-gray-400 mb-3">Step 1: verify the guest is on the list and record their arrival. Payment and final admission are handled in the second section.</p>
                     <div id="hotelSortControls" class="flex flex-wrap items-center gap-2 mb-4" role="group" aria-label="Sort check-in lists">
                         <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                         <button type="button" class="sort-option" data-sort-group="checkin" data-sort="firstName" aria-pressed="false" onclick="setGuestSort('firstName')">First name</button>
@@ -618,6 +619,7 @@
                                 <input type="search" id="paymentSearchInput" oninput="filterPaymentGuests()" aria-label="Search payment list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                             </div>
                         </div>
+                        <p class="text-xs text-gray-400 mb-3">Step 2: collect admission payment, offer eligible drink upgrades, issue welcome-drink chips when entitled, and hand over the admission wristband.</p>
                         <div id="paymentSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort payment lists">
                             <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                             <button type="button" class="sort-option" data-sort-group="payment" data-sort="firstName" aria-pressed="false" onclick="setPaymentSort('firstName')">First name</button>
