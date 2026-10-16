@@ -664,9 +664,16 @@
                         <p id="noCheckedGuests" class="text-xs text-gray-500 py-2 hidden">No guests checked in yet.</p>
                     </div>
                     <div id="combinedGuestListSection" class="mb-6 hidden">
-                        <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">All guests <span id="combinedGuestCount" class="text-amber-100">(0)</span></p>
-                        <div class="space-y-2 max-h-[32rem] overflow-y-auto pr-1" id="combinedGuestContainer"></div>
-                        <p id="noCombinedGuests" class="text-xs text-gray-500 py-2 hidden">No guests have been registered yet.</p>
+                        <div class="mb-5">
+                            <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">All guests <span id="combinedGuestCount" class="text-amber-100">(0)</span></p>
+                            <div class="space-y-2 max-h-[32rem] overflow-y-auto pr-1" id="combinedGuestContainer"></div>
+                            <p id="noCombinedGuests" class="text-xs text-gray-500 py-2 hidden">No guests need further processing.</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Paid <span id="combinedPaidCount" class="text-emerald-200">(0)</span></p>
+                            <div class="space-y-2 max-h-[32rem] overflow-y-auto pr-1" id="combinedPaidContainer"></div>
+                            <p id="noCombinedPaidGuests" class="text-xs text-gray-500 py-2 hidden">No guests have completed all required steps yet.</p>
+                        </div>
                     </div>
                     </section>
                     <section id="internationsPaymentPanel" class="staff-panel">
@@ -844,7 +851,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.7</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.8</p>
         </div>
     </footer>
 
@@ -1680,7 +1687,7 @@
             const description = document.getElementById('hotelCheckInDescription');
             if (title) title.textContent = singleTeamCombinedMode ? 'Guest Check-in & Admission' : 'Guest-list Verification';
             if (description) description.textContent = singleTeamCombinedMode
-                ? 'Check in guests, record admission payment and manage welcome-drink entitlements from one list.'
+                ? 'Check in guests, record admission payment and manage welcome-drink entitlements from one list. Fully processed guests move to Paid.'
                 : 'Verify that the guest is on the list and record their arrival.';
             const paymentDescription = document.getElementById('paymentDescription');
             if (paymentDescription) paymentDescription.textContent =
@@ -2153,11 +2160,13 @@
                 const hotelOpenContainer = document.getElementById('guestNotCheckedInContainer');
                 const hotelCheckedContainer = document.getElementById('guestCheckedInContainer');
                 const combinedContainer = document.getElementById('combinedGuestContainer');
+                const combinedPaidContainer = document.getElementById('combinedPaidContainer');
                 const unpaidContainer = document.getElementById('internationsUnpaidContainer');
                 const paidContainer = document.getElementById('internationsPaidContainer');
                 hotelOpenContainer.replaceChildren();
                 hotelCheckedContainer.replaceChildren();
                 combinedContainer.replaceChildren();
+                combinedPaidContainer.replaceChildren();
                 unpaidContainer.replaceChildren();
                 paidContainer.replaceChildren();
 
@@ -2185,6 +2194,12 @@
                     const chipRequired = referralEarned || rule.mode === 'included' ||
                         (rule.mode === 'upgrade' && Boolean(data.welcomeDrinkUpgradeSelected)) || issued;
                     return !chipRequired || issued;
+                }
+
+                /** In the combined workflow, completion also requires arrival to be recorded. */
+                function isCombinedWorkflowComplete(item) {
+                    const data = item.data || {};
+                    return Boolean(data.checkedIn) && isPaymentWorkflowComplete(item);
                 }
 
                 const checkedInGuests = guestDocs.filter((item) => Boolean(item.data.checkedIn));
@@ -2400,10 +2415,20 @@
                 notCheckedIn.forEach((item) => hotelOpenContainer.appendChild(makeGuestCard(item, 'hotel')));
                 checkedIn.forEach((item) => hotelCheckedContainer.appendChild(makeGuestCard(item, 'hotel')));
                 if (singleTeamCombinedMode) {
-                    [...guestDocs].sort(compareNames).forEach((item) => combinedContainer.appendChild(makeGuestCard(item, 'combined')));
+                    const pendingCombinedGuests = guestDocs.filter((item) => !isCombinedWorkflowComplete(item)).sort(compareNames);
+                    const completedCombinedGuests = guestDocs.filter((item) => isCombinedWorkflowComplete(item)).sort(compareNames);
+                    pendingCombinedGuests.forEach((item) => combinedContainer.appendChild(makeGuestCard(item, 'combined')));
+                    completedCombinedGuests.forEach((item) => combinedPaidContainer.appendChild(makeGuestCard(item, 'combined')));
+                    document.getElementById('combinedGuestCount').textContent = '(' + pendingCombinedGuests.length + ')';
+                    document.getElementById('combinedPaidCount').textContent = '(' + completedCombinedGuests.length + ')';
+                    document.getElementById('noCombinedGuests').classList.toggle('hidden', pendingCombinedGuests.length > 0);
+                    document.getElementById('noCombinedPaidGuests').classList.toggle('hidden', completedCombinedGuests.length > 0);
+                } else {
+                    document.getElementById('combinedGuestCount').textContent = '(0)';
+                    document.getElementById('combinedPaidCount').textContent = '(0)';
+                    document.getElementById('noCombinedGuests').classList.add('hidden');
+                    document.getElementById('noCombinedPaidGuests').classList.add('hidden');
                 }
-                document.getElementById('combinedGuestCount').textContent = '(' + guestDocs.length + ')';
-                document.getElementById('noCombinedGuests').classList.toggle('hidden', guestDocs.length > 0);
                 document.getElementById('noUncheckGuests').classList.toggle('hidden', notCheckedIn.length > 0);
                 document.getElementById('noCheckedGuests').classList.toggle('hidden', checkedIn.length > 0);
 
@@ -2646,6 +2671,7 @@
             applySortToContainer('guestNotCheckedInContainer',guestSortBy,'',-1);
             applySortToContainer('guestCheckedInContainer',guestSortBy,'',1);
             applySortToContainer('combinedGuestContainer',guestSortBy,'',-1);
+            applySortToContainer('combinedPaidContainer',guestSortBy,'',1);
             applySortToContainer('internationsUnpaidContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortCheckInOrder':'',1);
             applySortToContainer('internationsPaidContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortPaymentOrder':'',1);
             updateSortButtonStates();
@@ -2673,10 +2699,11 @@
         function filterHotelGuests() {
             const input = document.getElementById('hotelSearchInput');
             const query = (input ? input.value : '').trim().toLocaleLowerCase();
-            const counts = filterContainerCards(['guestNotCheckedInContainer', 'guestCheckedInContainer', 'combinedGuestContainer'], query);
+            const counts = filterContainerCards(['guestNotCheckedInContainer', 'guestCheckedInContainer', 'combinedGuestContainer', 'combinedPaidContainer'], query);
             document.getElementById('hotelOpenCount').textContent = '(' + counts.guestNotCheckedInContainer + ')';
             document.getElementById('hotelCheckedCount').textContent = '(' + counts.guestCheckedInContainer + ')';
             document.getElementById('combinedGuestCount').textContent = '(' + counts.combinedGuestContainer + ')';
+            document.getElementById('combinedPaidCount').textContent = '(' + counts.combinedPaidContainer + ')';
         }
 
         /** Apply the payment/referral search field to the corresponding review list. */
