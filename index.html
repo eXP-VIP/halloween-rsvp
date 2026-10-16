@@ -437,7 +437,7 @@
                                 </div>
                                 <div class="min-w-0">
                                     <table class="w-fit max-w-full table-auto border-collapse text-[10px] leading-4 text-gray-300 tabular-nums">
-                                        <thead class="sr-only"><tr><th>Category</th><th>Estimated</th><th>Separator</th><th>Issued</th></tr></thead>
+                                        <thead class="sr-only"><tr><th>Category</th><th>Total</th><th>Separator</th><th>Issued</th></tr></thead>
                                         <tbody>
                                             <tr><th scope="row" class="text-left font-normal pr-2">Referrals</th><td id="drinkReferralEstimate" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkReferralIssued" class="text-right">0</td></tr>
                                             <tr><th scope="row" class="text-left font-normal pr-2">Included</th><td id="drinkIncludedEstimate" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkIncludedIssued" class="text-right">0</td></tr>
@@ -554,8 +554,7 @@
                         <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                         <button type="button" class="sort-option" data-sort-group="guest" data-sort="firstName" aria-pressed="true" onclick="setGuestSort('firstName')">First name</button>
                         <button type="button" class="sort-option" data-sort-group="guest" data-sort="lastName" aria-pressed="false" onclick="setGuestSort('lastName')">Last Name</button>
-                        <button type="button" class="sort-option" data-sort-group="guest" data-sort="signupNewest" aria-pressed="false" onclick="setGuestSort('signupNewest')">
-                        Signup
+                        <button type="button" class="sort-option" data-sort-group="guest" data-sort="signupNewest" aria-pressed="false" onclick="setGuestSort('signupNewest')">Signup</button>
                     </div>
                     <div class="mb-4">
                         <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Not checked in <span id="hotelOpenCount" class="text-amber-100">(0)</span></p>
@@ -595,7 +594,7 @@
                         <section id="unrecognizedWelcomeDrinkSection" class="hidden rounded-xl border border-gold/40 bg-amber-950/25 p-4 mt-5" aria-labelledby="welcomeDrinkHeading">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
                             <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Unaccounted referrals</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-gray-300">Guests whose referral drinks are not yet accounted for, plus RSVPs without an inviter</span>
+                            <span class="text-[10px] uppercase tracking-wider text-gray-300">Unknown inviter names entered on RSVP forms, plus RSVPs without an inviter</span>
                         </div>
                         
                         <div id="welcomeDrinkList" class="space-y-2 text-sm text-gray-100">
@@ -1910,21 +1909,11 @@
                 document.getElementById('noCheckedGuests').classList.toggle('hidden', checkedIn.length > 0);
 
                 // Estimate drink entitlements for full attendance. Each normalized guest name can receive one chip.
-                const potentialReferralCounts = new Map();
-                guestDocs.forEach((item) => {
-                    const inviterName = String(item.data.invitedBy || '').trim();
-                    const inviterKey = normalizeGuestName(inviterName);
-                    if (!inviterKey) return;
-                    if (!potentialReferralCounts.has(inviterKey)) {
-                        potentialReferralCounts.set(inviterKey, { name: inviterName, guestIds: new Set() });
-                    }
-                    potentialReferralCounts.get(inviterKey).guestIds.add(item.doc.id);
-                });
                 const estimatedEarnedKeys = new Set(
-                    Array.from(potentialReferralCounts.entries())
+                    Array.from(referralTrackingByInviter.entries())
                         .filter(([key, record]) => {
                             const inviter = guestByNameKey.get(key);
-                            return Boolean(inviter) && hasEarnedReferralDrink(inviter.data, record.guestIds.size);
+                            return Boolean(inviter) && hasPotentialReferralDrink(inviter.data, record.guestIds.size);
                         })
                         .map(([key]) => key)
                 );
@@ -1957,15 +1946,15 @@
                 document.getElementById('drinkUpgradeEstimate').textContent = drinkForecastCounts.upgrades;
                 document.getElementById('drinkUpgradeIssued').textContent = drinkIssuedCounts.upgrades;
 
-                const totalCollected = guestDocs.filter((item) => Boolean(item.data.paid)).reduce((sum, item) => {
-                    if (item.data.amountPaid != null && Number.isFinite(Number(item.data.amountPaid))) return sum + Number(item.data.amountPaid);
-                    const key = normalizeGuestName(item.data.name);
-                    const referrals = checkedInReferralsByInviter.get(key)?.guestIds.size || 0;
-                    return sum + calculateGuestCharge(item.data, hasEarnedReferralDrink(item.data, referrals)).total;
+                const totalCollected = Array.from(categoryPeople.values()).filter(person => person.paid).reduce((sum, person) => {
+                    if (person.amountPaid != null && Number.isFinite(Number(person.amountPaid))) return sum + Number(person.amountPaid);
+                    const key = normalizeGuestName(person.data.name);
+                    const qualified = referralTrackingByInviter.get(key)?.qualifiedGuestIds.size || 0;
+                    return sum + calculateGuestCharge(person.data, hasEarnedReferralDrink(person.data, qualified)).total;
                 }, 0);
-                const maxFullAttendance = guestDocs.reduce((sum, item) => {
-                    const key = normalizeGuestName(item.data.name);
-                    return sum + calculateGuestCharge(item.data, estimatedEarnedKeys.has(key)).total;
+                const maxFullAttendance = Array.from(categoryPeople.values()).reduce((sum, person) => {
+                    const key = normalizeGuestName(person.data.name);
+                    return sum + calculateGuestCharge(person.data, estimatedEarnedKeys.has(key)).total;
                 }, 0);
                 document.getElementById('collectedAmount').textContent = formatEuro(totalCollected);
                 document.getElementById('fullAttendanceAmount').textContent = formatEuro(maxFullAttendance);
