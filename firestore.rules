@@ -119,6 +119,23 @@ service cloud.firestore {
         );
     }
 
+    // In single-team mode, InterNations may also change only check-in fields; the workflow document gates this exception.
+    function singleTeamInterNationsCheckInUpdate() {
+      return isInterNations()
+        && get(/databases/$(database)/documents/event_settings/workflow).data.get('twoStepCheckInEnabled', true) == false
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkedIn', 'checkedInAt'])
+        && request.resource.data.checkedIn is bool
+        && (
+          request.resource.data.checkedIn
+            ? (request.resource.data.get('checkedInAt', null) == request.time
+                || request.resource.data.get('checkedInAt', null) == resource.data.get('checkedInAt', null))
+            : request.resource.data.get('checkedInAt', null) == null
+              && resource.data.get('paid', false) != true
+              && resource.data.get('welcomeDrinkChipIssued', false) != true
+              && resource.data.get('welcomeDrinkUpgradeSelected', false) != true
+        );
+    }
+
     // Restrict payment staff updates to the explicit payment, qualifying-referral chip and drink-upgrade field allowlist.
     function interNationsPaymentUpdate() {
       return isInterNations()
@@ -143,7 +160,7 @@ service cloud.firestore {
     match /halloween_guests/{guestId} {
       allow get, list: if isActiveStaff();
       allow create: if isAdmin() || isPublicRsvpCreate();
-      allow update: if adminGuestUpdate() || hotelCheckInUpdate() || interNationsPaymentUpdate();
+      allow update: if adminGuestUpdate() || hotelCheckInUpdate() || singleTeamInterNationsCheckInUpdate() || interNationsPaymentUpdate();
       allow delete: if isAdmin();
     }
 
