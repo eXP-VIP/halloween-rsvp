@@ -640,7 +640,12 @@
                     <div class="staff-panel__header">
                         <h4 id="hotelCheckInTitle" class="staff-panel__title">Guest-list Verification</h4>
                         <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
-                            <button type="button" id="printGuestListBtn" class="sort-option" title="Open a clean, printable guest list">Print guest list</button>
+                            <label for="printPageCount" class="text-[10px] uppercase tracking-wider text-gray-400">Print layout</label>
+                            <select id="printPageCount" class="form-field w-auto py-2 text-xs" aria-label="Guest-list print layout" title="Choose a compact one-page roster or a more readable two-page roster">
+                                <option value="1">1 page · compact</option>
+                                <option value="2" selected>2 pages · larger text</option>
+                            </select>
+                            <button type="button" id="printGuestListBtn" class="sort-option" title="Print the guest list in the selected layout">Print guest list</button>
                             <span id="printGuestListStatus" class="text-[10px] text-gray-400" role="status" aria-live="polite"></span>
                             <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                         </div>
@@ -830,7 +835,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.10</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.11</p>
         </div>
     </footer>
 
@@ -2943,9 +2948,9 @@
         }
 
         /** Create a de-duplicated, surname-sorted print roster without exposing internal payment or referral data. */
-        /** Print a compact three-column alphabetized check-in roster for the door team. */
+        /** Print a four-column roster in the main guest list's currently selected sort order. */
         function printGuestList() {
-            // Prefer the imported membership record when the same normalized name also exists as a public RSVP.
+            // Prefer imported membership records when a normalized name also exists as a public RSVP.
             const unique = new Map();
             cachedGuestDocs.forEach(doc => {
                 const data = doc.data() || {};
@@ -2955,7 +2960,6 @@
                 if (!previous || isImportedMemberRecord(data)) unique.set(key, data);
             });
 
-            const guests = Array.from(unique.values());
             const splitName = data => {
                 const parts = String(data.name || '').trim().split(/\s+/).filter(Boolean);
                 return {
@@ -2964,18 +2968,78 @@
                     name: String(data.name || '')
                 };
             };
-
-            // Keep each of the three columns alphabetized from top to bottom and retain one global index.
-            guests.sort((a, b) => {
-                const aa = splitName(a), bb = splitName(b);
-                return aa.lastName.localeCompare(bb.lastName, undefined, { sensitivity: 'base' }) ||
-                    aa.firstName.localeCompare(bb.firstName, undefined, { sensitivity: 'base' });
+            const timestampMillis = value => {
+                if (!value) return null;
+                if (typeof value.toMillis === 'function') return value.toMillis();
+                if (value instanceof Date) return value.getTime();
+                const parsed = Date.parse(value);
+                return Number.isFinite(parsed) ? parsed : null;
+            };
+            const compareText = (a, b) => String(a || '').localeCompare(String(b || ''), undefined, {
+                numeric: true, sensitivity: 'base'
             });
 
+            const guests = Array.from(unique.values());
+            guests.sort((a, b) => {
+                const aa = splitName(a), bb = splitName(b);
+                if (guestSortBy === 'lastName') {
+                    return compareText(aa.lastName, bb.lastName) || compareText(aa.firstName, bb.firstName);
+                }
+                if (guestSortBy === 'signupNewest') {
+                    const timeA = timestampMillis(a.createdAt), timeB = timestampMillis(b.createdAt);
+                    if (timeA == null && timeB != null) return 1;
+                    if (timeA != null && timeB == null) return -1;
+                    if (timeA != null && timeB != null && timeA !== timeB) return timeB - timeA;
+                }
+                return compareText(aa.firstName, bb.firstName) || compareText(aa.lastName, bb.lastName);
+            });
+
+            const pageCount = document.getElementById('printPageCount').value === '1' ? 1 : 2;
             const escapeHtml = value => String(value || '').replace(/[&<>"']/g, char => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             }[char]));
-            const printWindow = window.open('', '_blank', 'width=1100,height=800');
+
+            // Divide both pages and columns as evenly as possible; each column remains a contiguous block of sorted names.
+            const splitEvenly = (items, count) => {
+                const result = [];
+                const baseSize = Math.floor(items.length / count);
+                const extra = items.length % count;
+                let offset = 0;
+                for (let i = 0; i < count; i++) {
+                    const size = baseSize + (i < extra ? 1 : 0);
+                    result.push(items.slice(offset, offset + size));
+                    offset += size;
+                }
+                return result;
+            };
+
+            const indexedGuests = guests.map((data, index) => ({
+                data: data,
+                index: index + 1,
+                name: splitName(data).name
+            }));
+            const pageGuestSets = splitEvenly(indexedGuests, pageCount);
+            const renderGuest = guest =>
+                '<div class="guest-row">' +
+                    '<span class="number">' + guest.index + '</span>' +
+                    '<span class="name">' + escapeHtml(guest.name) + '</span>' +
+                    '<span class="check"><span class="check-box" aria-label="Not checked in"></span></span>' +
+                '</div>';
+
+            let pageHtml = '';
+            pageGuestSets.forEach(pageGuests => {
+                const columns = splitEvenly(pageGuests, 4);
+                const columnHtml = columns.map(column =>
+                    '<div class="roster-column">' + column.map(renderGuest).join('') + '</div>'
+                ).join('');
+                pageHtml +=
+                    '<section class="print-page ' + (pageCount === 1 ? 'compact' : 'readable') + '">' +
+                        '<h1>The Dean After Dark — Guest List</h1>' +
+                        '<div class="roster-grid">' + columnHtml + '</div>' +
+                    '</section>';
+            });
+
+            const printWindow = window.open('', '_blank', 'width=1200,height=850');
             if (!printWindow) {
                 const status = document.getElementById('printGuestListStatus');
                 if (status) {
@@ -2985,65 +3049,51 @@
                 return;
             }
 
-            const columns = 3;
-            const rowsPerColumn = Math.ceil(guests.length / columns);
-            const renderGuestCells = index => {
-                if (index >= guests.length) {
-                    return '<td class="number empty"></td><td class="name empty"></td><td class="check empty"></td>';
-                }
-                return '<td class="number">' + (index + 1) + '</td><td class="name">' +
-                    escapeHtml(splitName(guests[index]).name) +
-                    '</td><td class="check"><span class="check-box" aria-label="Not checked in"></span></td>';
-            };
-
-            let rows = '';
-            for (let rowIndex = 0; rowIndex < rowsPerColumn; rowIndex++) {
-                // Column 1 has the first alphabetic block, column 2 the next block, and column 3 the final block.
-                rows += '<tr>' +
-                    renderGuestCells(rowIndex) +
-                    renderGuestCells(rowsPerColumn + rowIndex) +
-                    renderGuestCells((rowsPerColumn * 2) + rowIndex) +
-                    '</tr>';
-            }
-
             const printDocument = '<!doctype html><html><head><meta charset="utf-8">' +
                 '<title>The Dean After Dark — Guest List</title>' +
                 '<style>' +
-                '@page{size:A4 portrait;margin:7mm 7mm}' +
+                '@page{size:A4 landscape;margin:6mm}' +
                 '*{box-sizing:border-box}' +
-                'body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;font-size:8pt}' +
-                'h1{font-size:13pt;line-height:1.15;margin:0 0 2mm}' +
-                '.subtitle{font-size:7.5pt;color:#444;margin:0 0 3mm}' +
-                'table{width:100%;border-collapse:collapse;table-layout:fixed}' +
-                'thead{display:table-header-group}' +
-                'th,td{border:0.5pt solid #a7a7a7;padding:1.2mm 1.1mm;text-align:left;line-height:1.12;vertical-align:middle}' +
-                'th{background:#efefef;font-size:7pt;font-weight:700}' +
-                '.number{width:3.5%;text-align:right;color:#555;font-size:7pt}' +
-                '.name{width:26%;overflow-wrap:anywhere}' +
-                '.check{width:3.5%;text-align:center}' +
-                '.check-box{display:inline-block;width:9px;height:9px;border:1px solid #333;vertical-align:middle}' +
-                '.empty{border-color:transparent}' +
-                '@media print{tr{break-inside:avoid;page-break-inside:avoid}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}' +
-                '</style></head><body>' +
-                '<h1>The Dean After Dark — Guest List</h1>' +
-                '<p class="subtitle">The Dean Munich, Autograph Collection by Marriott · Saturday, 31 October 2026 · ' +
-                guests.length + ' guests · Sorted by surname</p>' +
-                '<table><thead><tr>' +
-                '<th class="number">#</th><th class="name">Guest name</th><th class="check">✓</th>' +
-                '<th class="number">#</th><th class="name">Guest name</th><th class="check">✓</th>' +
-                '<th class="number">#</th><th class="name">Guest name</th><th class="check">✓</th>' +
-                '</tr></thead><tbody>' + rows + '</tbody></table></body></html>';
+                'html,body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#111}' +
+                'h1{font-size:15pt;line-height:1.1;margin:0 0 3mm;font-weight:700}' +
+                '.roster-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4mm;align-items:start;width:100%}' +
+                '.roster-column{min-width:0}' +
+                '.guest-row{display:grid;grid-template-columns:5mm minmax(0,1fr) 4mm;gap:1mm;align-items:center;border-bottom:.3pt solid #ddd;break-inside:avoid;page-break-inside:avoid;line-height:1.05}' +
+                '.number{color:#555;text-align:right;font-size:7.5pt;font-variant-numeric:tabular-nums}' +
+                '.name{min-width:0;overflow-wrap:anywhere}' +
+                '.check{text-align:center}' +
+                '.check-box{display:inline-block;width:3mm;height:3mm;border:.7pt solid #333;vertical-align:middle}' +
+                '.compact .guest-row{min-height:3.9mm;padding:.15mm 0;font-size:8.2pt}' +
+                '.compact .name{font-size:8.2pt}' +
+                '.readable .guest-row{min-height:6.5mm;padding:.45mm 0;font-size:11.5pt}' +
+                '.readable .name{font-size:11.5pt}' +
+                '.readable .number{font-size:8.5pt}' +
+                '.readable .check-box{width:3.6mm;height:3.6mm}' +
+                '.print-page{width:100%}' +
+                '@media print{' +
+                    'body{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+                    '.print-page{break-after:page;page-break-after:always}' +
+                    '.print-page:last-child{break-after:auto;page-break-after:auto}' +
+                '}' +
+                '@media screen{' +
+                    'body{background:#eee;padding:12px}' +
+                    '.print-page{background:white;box-shadow:0 1px 8px #bbb;margin:0 auto 14px;padding:6mm;width:285mm;min-height:196mm}' +
+                '}' +
+                '</style></head><body>' + pageHtml + '</body></html>';
 
             printWindow.document.open();
             printWindow.document.write(printDocument);
             printWindow.document.close();
+            window.setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 400);
 
             const status = document.getElementById('printGuestListStatus');
             if (status) {
-                status.textContent = guests.length + ' names prepared in a compact three-column roster.';
+                status.textContent = guests.length + ' names prepared in ' + (pageCount === 1 ? 'four-column one-page layout.' : 'four-column two-page layout with larger text.');
                 status.classList.remove('text-red-300');
             }
-            setTimeout(() => { printWindow.focus(); printWindow.print(); }, 400);
         }
 
         // Event workflow setting is stored separately from admission pricing.
