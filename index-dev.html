@@ -681,7 +681,6 @@
         let pendingInternationsNameColumn = '';
         let cachedGuestDocs = [];
         let pricingUnsubscribe = null;
-        let cachedUnaccountedReferrals = [];
         const DEFAULT_PRICING = {
             basePrices: { basics: 15, paidMembers: 5, friends: 20 },
             drinkRules: {
@@ -1348,7 +1347,6 @@
             if (pricingUnsubscribe) { pricingUnsubscribe(); pricingUnsubscribe = null; }
             cachedGuestSnapshot = null;
             cachedGuestDocs = [];
-            cachedUnaccountedReferrals = [];
         }
 
         function showStaffLogin() {
@@ -1874,7 +1872,7 @@
                     if (!potentialReferralCounts.has(inviterKey)) {
                         potentialReferralCounts.set(inviterKey, { name: inviterName, guestIds: new Set() });
                     }
-                    potentialReferralCounts.get(inviterKey).guestIds.add(item.doc.id);
+                    potentialReferralCounts.get(inviterKey).guestIds.add(normalizeGuestName(item.data.name) || item.doc.id);
                 });
                 const estimatedEarnedKeys = new Set(
                     Array.from(potentialReferralCounts.entries())
