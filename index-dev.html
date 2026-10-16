@@ -590,6 +590,7 @@
                         <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Guest-list Verification</h4>
                         <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
                             <button type="button" id="printGuestListBtn" class="sort-option" title="Open a clean, printable guest list">Print guest list</button>
+                            <span id="printGuestListStatus" class="text-[10px] text-gray-400" role="status" aria-live="polite"></span>
                             <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                         </div>
                     </div>
@@ -2659,7 +2660,11 @@
             }[char]));
             const printWindow = window.open('', '_blank', 'width=900,height=700');
             if (!printWindow) {
-                setAdminStatus('internationsImportStatus', 'The print window was blocked. Allow pop-ups for this site and try again.', true);
+                const status = document.getElementById('printGuestListStatus');
+                if (status) {
+                    status.textContent = 'Pop-up blocked; allow pop-ups for this site and try again.';
+                    status.classList.add('text-red-300');
+                }
                 return;
             }
             const rows = guests.map((data, index) => {
@@ -2674,6 +2679,11 @@
             printWindow.document.open();
             printWindow.document.write(html);
             printWindow.document.close();
+            const status = document.getElementById('printGuestListStatus');
+            if (status) {
+                status.textContent = guests.length + ' names prepared for printing.';
+                status.classList.remove('text-red-300');
+            }
             setTimeout(() => { printWindow.focus(); printWindow.print(); }, 400);
         }
 
