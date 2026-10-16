@@ -3072,7 +3072,7 @@
                         : 0;
                     // Average legibility matters most, but the worst-fitting name is deliberately weighted
                     // so one exceptionally long name can change the chosen orientation or column count.
-                    const score = averageFont * 0.76 + smallestFont * 0.24
+                    const score = averageFont * 0.55 + smallestFont * 0.45
                         - verySmallFraction * 1.25 - columns * 0.055;
                     const candidate = {
                         orientation, mode, columns, usableWidthMm, usableHeightMm,
