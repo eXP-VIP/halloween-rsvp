@@ -524,8 +524,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button type="button" id="savePricingButton" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest mt-4">Save pricing</button>
-                        <p id="pricingSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-3"></p>
+                        <p id="pricingSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-4">Pricing changes save automatically.</p>
                     </section>
                     <section id="internationsImportPanel" class="rounded-xl border border-sky-400/40 bg-sky-950/20 p-4 mb-5">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
@@ -850,82 +849,95 @@
             });
         }
 
-        document.getElementById('savePricingButton').addEventListener('click', async () => {
-            const button = document.getElementById('savePricingButton');
+        let pricingSaveInProgress = false;
+        let pricingSaveRequested = false;
+        async function savePricingSettings() {
+            pricingSaveRequested = true;
+            if (pricingSaveInProgress) return;
+            pricingSaveInProgress = true;
             const status = document.getElementById('pricingSaveStatus');
-            if (!db) { status.textContent = 'The database is not connected.'; return; }
-            const readAmount = (id, label) => {
-                const n = Number(document.getElementById(id).value);
-                if (!Number.isFinite(n) || n < 0) throw new Error(label + ' must be zero or a positive amount.');
-                return Math.round(n);
-            };
-            const readPositiveInteger = (id, label) => {
-                const n = Number(document.getElementById(id).value);
-                if (!Number.isInteger(n) || n < 1) throw new Error(label + ' must be a whole number of at least 1.');
-                return n;
-            };
-            let next;
+            if (!db) {
+                pricingSaveRequested = false;
+                status.textContent = 'The database is not connected.';
+                pricingSaveInProgress = false;
+                return;
+            }
             try {
-                next = {
-                    basePrices: {
-                        basics: readAmount('basePriceBasics', 'Basics admission price'),
-                        paidMembers: readAmount('basePricePaidMembers', 'Albatross admission price'),
-                        friends: readAmount('basePriceFriends', 'RSVPs admission price')
-                    },
-                    drinkRules: {
-                        basics: { mode: document.getElementById('drinkModeBasics').value, price: readAmount('drinkPriceBasics', 'Basics drink upgrade') },
-                        paidMembers: { mode: document.getElementById('drinkModePaidMembers').value, price: readAmount('drinkPricePaidMembers', 'Albatross drink upgrade') },
-                        friends: { mode: document.getElementById('drinkModeFriends').value, price: readAmount('drinkPriceFriends', 'RSVPs drink upgrade') }
-                    },
-                    referralRules: {
-                        basics: {
-                            eligible: document.getElementById('referralEligibleBasics').checked,
-                            threshold: readPositiveInteger('referralThresholdBasics', 'Basics referral threshold')
-                        },
-                        paidMembers: {
-                            eligible: document.getElementById('referralEligiblePaidMembers').checked,
-                            threshold: readPositiveInteger('referralThresholdPaidMembers', 'Albatross referral threshold')
-                        },
-                        friends: {
-                            eligible: document.getElementById('referralEligibleFriends').checked,
-                            threshold: readPositiveInteger('referralThresholdFriends', 'RSVP referral threshold')
-                        }
+                while (pricingSaveRequested) {
+                    pricingSaveRequested = false;
+                    const amount = (id, label) => {
+                        const n = Number(document.getElementById(id).value);
+                        if (!Number.isFinite(n) || n < 0) throw new Error(label + ' must be zero or a positive amount.');
+                        return Math.round(n);
+                    };
+                    const whole = (id, label) => {
+                        const n = Number(document.getElementById(id).value);
+                        if (!Number.isInteger(n) || n < 1) throw new Error(label + ' must be a whole number of at least 1.');
+                        return n;
+                    };
+                    let next;
+                    try {
+                        next = {
+                            basePrices: {
+                                basics: amount('basePriceBasics', 'Basics admission price'),
+                                paidMembers: amount('basePricePaidMembers', 'Albatross admission price'),
+                                friends: amount('basePriceFriends', 'RSVPs admission price')
+                            },
+                            drinkRules: {
+                                basics: { mode: document.getElementById('drinkModeBasics').value, price: amount('drinkPriceBasics', 'Basics drink upgrade') },
+                                paidMembers: { mode: document.getElementById('drinkModePaidMembers').value, price: amount('drinkPricePaidMembers', 'Albatross drink upgrade') },
+                                friends: { mode: document.getElementById('drinkModeFriends').value, price: amount('drinkPriceFriends', 'RSVPs drink upgrade') }
+                            },
+                            referralRules: {
+                                basics: { eligible: document.getElementById('referralEligibleBasics').checked, threshold: whole('referralThresholdBasics', 'Basics referral threshold') },
+                                paidMembers: { eligible: document.getElementById('referralEligiblePaidMembers').checked, threshold: whole('referralThresholdPaidMembers', 'Albatross referral threshold') },
+                                friends: { eligible: document.getElementById('referralEligibleFriends').checked, threshold: whole('referralThresholdFriends', 'RSVP referral threshold') }
+                            }
+                        };
+                    } catch (error) {
+                        status.textContent = error.message;
+                        continue;
                     }
-                };
-            } catch (error) {
-                status.textContent = error.message;
-                return;
-            }
-            if (Object.values(next.drinkRules).some((rule) => !['included', 'upgrade', 'not_allowed'].includes(rule.mode))) {
-                status.textContent = 'Select a valid welcome-drink rule for each category.';
-                return;
-            }
-            button.disabled = true;
-            status.textContent = 'Saving pricing settings…';
-            try {
-                await db.collection('event_settings').doc('pricing').set({
-                    ...next,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-                pricingSettings = normalizePricingSettings(next);
-                renderPricingForm();
-                status.textContent = 'Pricing saved. Guest totals are updating.';
-                if (document.getElementById('guestlistSection') && !document.getElementById('guestlistSection').classList.contains('hidden')) loadLiveGuestlist();
-            } catch (error) {
-                console.error('Pricing settings save failed:', error);
-                status.textContent = 'Could not save pricing. Check database permissions and try again.';
+                    if (Object.values(next.drinkRules).some(rule => !['included', 'upgrade', 'not_allowed'].includes(rule.mode))) {
+                        status.textContent = 'Select a valid welcome-drink rule for each category.';
+                        continue;
+                    }
+                    status.textContent = 'Saving pricing settings…';
+                    try {
+                        await db.collection('event_settings').doc('pricing').set({
+                            ...next, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                        pricingSettings = normalizePricingSettings(next);
+                        status.textContent = 'Pricing saved automatically.';
+                        if (document.getElementById('guestlistSection') && !document.getElementById('guestlistSection').classList.contains('hidden')) loadLiveGuestlist();
+                    } catch (error) {
+                        console.error('Pricing settings save failed:', error);
+                        status.textContent = 'Could not save pricing. Check database permissions and try again.';
+                    }
+                }
             } finally {
-                button.disabled = false;
+                pricingSaveInProgress = false;
+                if (pricingSaveRequested) void savePricingSettings();
             }
-        });
-
-        ['Basics', 'PaidMembers', 'Friends'].forEach((tier) => {
-            const mode = document.getElementById('drinkMode' + tier);
-            if (mode) mode.addEventListener('change', () => {
-                const price = document.getElementById('drinkPrice' + tier);
-                if (price) price.disabled = mode.value !== 'upgrade';
+        }
+        ['basePriceBasics','basePricePaidMembers','basePriceFriends',
+         'drinkModeBasics','drinkModePaidMembers','drinkModeFriends',
+         'drinkPriceBasics','drinkPricePaidMembers','drinkPriceFriends',
+         'referralEligibleBasics','referralEligiblePaidMembers','referralEligibleFriends',
+         'referralThresholdBasics','referralThresholdPaidMembers','referralThresholdFriends'
+        ].forEach(id => {
+            const input = document.getElementById(id);
+            if (!input) return;
+            input.addEventListener('change', () => {
+                if (id.startsWith('drinkMode')) {
+                    const tier = id.slice('drinkMode'.length);
+                    const price = document.getElementById('drinkPrice' + tier);
+                    if (price) price.disabled = input.value !== 'upgrade';
+                }
+                void savePricingSettings();
             });
         });
+
         renderPricingForm();
 
         function normalizeGuestName(value) {
