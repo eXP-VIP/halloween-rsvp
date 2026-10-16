@@ -247,6 +247,48 @@
             .venue-shot.concept { grid-column: auto; height: 230px; }
         }
 
+
+        /* Guest-card actions share sizing. Green means the operation is complete and clicking will undo it. */
+        .guest-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            padding: 8px 12px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.055em;
+            line-height: 1.2;
+            white-space: nowrap;
+            transition: background-color .2s ease, border-color .2s ease;
+        }
+        .guest-action-btn--undo {
+            border-color: rgba(52, 211, 153, 0.58);
+            background: rgba(6, 78, 59, 0.76);
+            color: #d1fae5;
+        }
+        .guest-action-btn--undo:hover:not(:disabled) {
+            background: rgba(6, 95, 70, 0.92);
+            border-color: rgba(110, 231, 183, 0.78);
+        }
+        .guest-action-btn--forward {
+            border-color: rgba(212, 175, 55, 0.52);
+            background: rgba(212, 175, 55, 0.10);
+            color: #ffedb5;
+        }
+        .guest-action-btn--forward:hover:not(:disabled) {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: rgba(234, 208, 128, 0.78);
+        }
+        .guest-action-btn:disabled,
+        .guest-action-btn.is-disabled {
+            cursor: not-allowed;
+            opacity: 0.42;
+        }
+
         /* STAFF CONSOLE DESIGN SYSTEM
            Keep operational and admin panels aligned; accent colours are reserved for data/status meaning. */
         .staff-panel {
@@ -761,8 +803,8 @@
                             <div class="flex items-end"><button id="createStaffUserBtn" type="submit" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Create user</button></div>
                         </form>
                         <div class="flex flex-wrap items-center gap-2 mt-4 mb-2">
-                            <button id="refreshStaffUsersBtn" type="button" class="sort-option">Refresh users</button>
-                            <span class="text-[10px] text-gray-400">Usernames are used at sign-in; no mailbox is required.</span>
+                            <button id="refreshStaffUsersBtn" type="button" class="sort-option" title="Fetch the latest staff role records and check their Firebase Authentication status">Reload staff list</button>
+                            <span class="text-[10px] text-gray-400">Reloads staff roles and checks whether each sign-in account exists and is enabled.</span>
                         </div>
                         <p id="staffUsersStatus" class="text-xs text-gray-300 mb-3" role="status" aria-live="polite">Load staff accounts to manage their roles and access.</p>
                         <div id="staffUsersList" class="space-y-2"></div>
@@ -773,7 +815,7 @@
                             <h4 id="databaseBackupHeading" class="staff-panel__title">Database Backup & Restore</h4>
                             <span class="staff-panel__meta">Admin only</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-3">The backup includes guest records, event settings, and staff role records. It does not include Firebase Authentication accounts or passwords. Restore replaces these event collections with the selected backup, so review the file carefully before confirming.</p>
+                        <p class="text-xs text-gray-300 mb-3">Downloads a JSON snapshot of guest records, event settings, staff roles and the retained legacy referral collection. Firebase Authentication accounts and passwords are excluded. This tool works only when the secure admin Cloud Functions are deployed and healthy. Restore replaces these collections, so take a current backup and review the selected file before confirming.</p>
                         <div class="flex flex-wrap gap-2 items-center">
                             <button id="createDatabaseBackupBtn" type="button" class="sort-option">Download backup (.json)</button>
                             <label for="restoreDatabaseFileInput" class="sort-option cursor-pointer">Choose backup to restore</label>
@@ -2236,8 +2278,8 @@
 
                         const paymentButton = document.createElement('button');
                         paymentButton.type = 'button';
-                        paymentButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
-                            (isPaid ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100 hover:bg-emerald-800/50' : 'border-gold/50 bg-gold/15 text-amber-100 hover:bg-gold/25');
+                        paymentButton.className = 'guest-action-btn ' +
+                            (isPaid ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
                         paymentButton.textContent = isPaid ? 'MARK UNPAID' : 'MARK PAID';
                         paymentButton.setAttribute('aria-pressed', String(isPaid));
                         paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned));
@@ -2246,7 +2288,8 @@
                         if (drinkEntitled) {
                             const chipButton = document.createElement('button');
                             chipButton.type = 'button';
-                            chipButton.className = 'shrink-0 rounded border border-emerald-500/50 bg-emerald-900/40 px-3 py-2 text-xs font-semibold tracking-wider text-emerald-100 hover:bg-emerald-800/50';
+                            chipButton.className = 'guest-action-btn ' +
+                                (chipAlreadyIssued ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
                             chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
                             chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
                             chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
@@ -2258,14 +2301,15 @@
                         if (currentStaffRole === 'admin' && guestMeta.textContent) details.appendChild(guestMeta);
                         const checkInButton = document.createElement('button');
                         checkInButton.type = 'button';
-                        checkInButton.className = 'shrink-0 px-3 py-2 text-xs font-serif rounded ' + (checkedIn ? 'bg-emerald-700 text-white' : 'bg-gold/15 text-gold border border-gold/40');
+                        checkInButton.className = 'guest-action-btn ' +
+                            (checkedIn ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
                         const checkInUndoBlocked = checkedIn && (isPaid || chipAlreadyIssued || Boolean(data.welcomeDrinkUpgradeSelected));
                         checkInButton.textContent = checkedIn ? 'UNDO CHECK-IN' : 'CHECK IN';
                         checkInButton.title = checkInUndoBlocked
                             ? 'First mark the guest unpaid, undo the issued drink chip and remove any selected upgrade in Payment status.'
                             : (checkedIn ? 'Undo check-in. This is not a check-out.' : 'Mark this guest as checked in.');
                         checkInButton.disabled = checkInUndoBlocked;
-                        if (checkInUndoBlocked) checkInButton.className += ' opacity-40 cursor-not-allowed';
+                        if (checkInUndoBlocked) checkInButton.classList.add('is-disabled');
                         checkInButton.setAttribute('aria-pressed', String(checkedIn));
                         checkInButton.setAttribute('aria-label', checkInUndoBlocked
                             ? 'Cannot undo check-in for ' + (data.name || 'this guest') + ' until payment, chip and upgrade are reversed'
@@ -2581,13 +2625,57 @@
 
         /** Call an admin-only Firebase callable; authorization is checked on the server, not trusted from the UI. */
         // PRIVILEGED ADMIN UTILITIES: mutations and backup/restore are authorized again in Cloud Functions.
+        function describeAdminFunctionError(name, error) {
+            const code = String((error && error.code) || '').toLowerCase();
+            const operation = name === 'adminListStaffUsers'
+                ? 'loading staff accounts'
+                : name === 'adminCreateDatabaseBackup'
+                    ? 'creating the backup'
+                    : name === 'adminRestoreDatabaseBackup'
+                        ? 'restoring the backup'
+                        : 'performing this admin operation';
+
+            if (code.includes('not-found') || code.includes('unimplemented')) {
+                return 'The secure admin function "' + name + '" is not deployed in europe-west1. The page alone cannot perform this operation. Deploy the functions described in DEV_ADMIN_BACKEND_SETUP.md, then retry.';
+            }
+            if (code.includes('internal')) {
+                if (name === 'adminListStaffUsers') {
+                    return 'Firebase returned INTERNAL while loading staff accounts. This button reads event_users and checks each account in Firebase Authentication. The server function failed; check Firebase Console → Functions → Logs for adminListStaffUsers and confirm its runtime permissions.';
+                }
+                if (name === 'adminCreateDatabaseBackup') {
+                    return 'Firebase returned INTERNAL while creating the backup. No backup file was downloaded. Check Firebase Console → Functions → Logs for adminCreateDatabaseBackup and confirm that the function is deployed and has Firestore read access.';
+                }
+                return 'Firebase returned INTERNAL while ' + operation + '. Check Firebase Console → Functions → Logs for ' + name + ' before retrying.';
+            }
+            if (code.includes('unauthenticated')) {
+                return 'Your staff session is no longer authenticated. Sign out and sign in again, then retry.';
+            }
+            if (code.includes('permission-denied')) {
+                return 'Firebase denied this operation. Confirm that the signed-in account has an active Admin role in event_users and that the server function permissions are correct.';
+            }
+            if (code.includes('unavailable') || code.includes('deadline-exceeded')) {
+                return 'The Firebase admin service is unavailable or timed out. Check the service status and function logs, then retry.';
+            }
+            return (error && error.message) || 'Could not complete the admin operation. Check the Firebase Functions logs for ' + name + '.';
+        }
+
         async function callSecureAdminFunction(name, payload) {
             if (!functionsApi || typeof functionsApi.httpsCallable !== 'function') {
-                throw new Error('The secure admin backend is not configured. Follow DEV_ADMIN_BACKEND_SETUP.md to deploy the callable functions.');
+                throw new Error('The Firebase Functions client is not configured in this page. Confirm the Firebase SDK and europe-west1 configuration.');
             }
-            const callable = functionsApi.httpsCallable(name);
-            const result = await callable(payload || {});
-            return result && result.data ? result.data : {};
+            try {
+                const callable = functionsApi.httpsCallable(name);
+                const result = await callable(payload || {});
+                return result && result.data ? result.data : {};
+            } catch (error) {
+                console.error('Secure admin callable failed:', {
+                    functionName: name,
+                    code: error && error.code,
+                    message: error && error.message,
+                    details: error && error.details
+                });
+                throw new Error(describeAdminFunctionError(name, error));
+            }
         }
 
         /** Show success/error feedback consistently in admin panels. */
@@ -2611,20 +2699,30 @@
         async function loadStaffUsers() {
             const status = document.getElementById('staffUsersStatus');
             const list = document.getElementById('staffUsersList');
+            const reloadButton = document.getElementById('refreshStaffUsersBtn');
             if (!status || !list || currentStaffRole !== 'admin') return;
-            status.textContent = 'Loading staff accounts…';
-            list.replaceChildren();
+
+            status.textContent = 'Loading staff accounts from Firebase…';
+            status.classList.remove('text-red-300', 'text-emerald-200');
+            if (reloadButton) reloadButton.disabled = true;
+
             try {
                 const result = await callSecureAdminFunction('adminListStaffUsers');
-                renderStaffUsers(result.users || []);
-                status.textContent = (result.users || []).length + ' staff role record(s). Changes are applied to Firebase Authentication and event_users.';
+                const users = Array.isArray(result.users) ? result.users : [];
+                renderStaffUsers(users);
+                status.textContent = users.length + ' staff account(s) loaded. The list includes role status and Firebase Authentication account availability.';
                 status.classList.remove('text-red-300');
                 status.classList.add('text-emerald-200');
             } catch (error) {
                 console.error('Staff user list failed:', error);
-                status.textContent = error && error.message ? error.message : 'Could not load staff accounts. Confirm the secure admin functions are deployed.';
+                status.textContent = error && error.message
+                    ? error.message
+                    : 'Could not load staff accounts. Check Firebase Functions logs for adminListStaffUsers.';
                 status.classList.remove('text-emerald-200');
                 status.classList.add('text-red-300');
+                // Keep the last rendered list visible so a transient backend failure does not erase the admin's context.
+            } finally {
+                if (reloadButton) reloadButton.disabled = false;
             }
         }
 
@@ -2845,7 +2943,9 @@
         }
 
         /** Create a de-duplicated, surname-sorted print roster without exposing internal payment or referral data. */
+        /** Print a compact three-column alphabetized check-in roster for the door team. */
         function printGuestList() {
+            // Prefer the imported membership record when the same normalized name also exists as a public RSVP.
             const unique = new Map();
             cachedGuestDocs.forEach(doc => {
                 const data = doc.data() || {};
@@ -2854,6 +2954,7 @@
                 const previous = unique.get(key);
                 if (!previous || isImportedMemberRecord(data)) unique.set(key, data);
             });
+
             const guests = Array.from(unique.values());
             const splitName = data => {
                 const parts = String(data.name || '').trim().split(/\s+/).filter(Boolean);
@@ -2863,15 +2964,18 @@
                     name: String(data.name || '')
                 };
             };
+
+            // Keep each of the three columns alphabetized from top to bottom and retain one global index.
             guests.sort((a, b) => {
                 const aa = splitName(a), bb = splitName(b);
                 return aa.lastName.localeCompare(bb.lastName, undefined, { sensitivity: 'base' }) ||
                     aa.firstName.localeCompare(bb.firstName, undefined, { sensitivity: 'base' });
             });
+
             const escapeHtml = value => String(value || '').replace(/[&<>"']/g, char => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             }[char]));
-            const printWindow = window.open('', '_blank', 'width=900,height=700');
+            const printWindow = window.open('', '_blank', 'width=1100,height=800');
             if (!printWindow) {
                 const status = document.getElementById('printGuestListStatus');
                 if (status) {
@@ -2880,21 +2984,63 @@
                 }
                 return;
             }
-            const rows = guests.map((data, index) => {
-                return '<tr><td class="number">' + (index + 1) + '</td><td>' + escapeHtml(splitName(data).name) +
-                    '</td><td class="check">□</td><td class="notes"></td></tr>';
-            }).join('');
-            const html = '<!doctype html><html><head><meta charset="utf-8"><title>The Dean After Dark — Guest List</title>' +
-                '<style>body{font:12px Arial,sans-serif;color:#111;margin:18mm}h1{font-size:20px;margin:0 0 5px}p{margin:4px 0 16px;color:#444}table{width:100%;border-collapse:collapse}th,td{border:1px solid #888;padding:6px 8px;text-align:left}th{background:#eee}.number{width:32px;color:#555}.check{width:95px;text-align:center;font-size:17px}.notes{width:150px}@media print{thead{display:table-header-group}tr{break-inside:avoid}}</style>' +
-                '</head><body><h1>The Dean After Dark — Guest List</h1><p>The Dean Munich, Autograph Collection by Marriott · Saturday, 31 October 2026 · ' +
-                guests.length + ' guests</p><table><thead><tr><th>#</th><th>Guest name</th><th>Guest-list check</th><th>Payment / wristband notes</th></tr></thead><tbody>' + rows +
-                '</tbody></table></body></html>';
+
+            const columns = 3;
+            const rowsPerColumn = Math.ceil(guests.length / columns);
+            const renderGuestCells = index => {
+                if (index >= guests.length) {
+                    return '<td class="number empty"></td><td class="name empty"></td><td class="check empty"></td>';
+                }
+                return '<td class="number">' + (index + 1) + '</td><td class="name">' +
+                    escapeHtml(splitName(guests[index]).name) +
+                    '</td><td class="check"><span class="check-box" aria-label="Not checked in"></span></td>';
+            };
+
+            let rows = '';
+            for (let rowIndex = 0; rowIndex < rowsPerColumn; rowIndex++) {
+                // Column 1 has the first alphabetic block, column 2 the next block, and column 3 the final block.
+                rows += '<tr>' +
+                    renderGuestCells(rowIndex) +
+                    renderGuestCells(rowsPerColumn + rowIndex) +
+                    renderGuestCells((rowsPerColumn * 2) + rowIndex) +
+                    '</tr>';
+            }
+
+            const printDocument = '<!doctype html><html><head><meta charset="utf-8">' +
+                '<title>The Dean After Dark — Guest List</title>' +
+                '<style>' +
+                '@page{size:A4 portrait;margin:7mm 7mm}' +
+                '*{box-sizing:border-box}' +
+                'body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;font-size:8pt}' +
+                'h1{font-size:13pt;line-height:1.15;margin:0 0 2mm}' +
+                '.subtitle{font-size:7.5pt;color:#444;margin:0 0 3mm}' +
+                'table{width:100%;border-collapse:collapse;table-layout:fixed}' +
+                'thead{display:table-header-group}' +
+                'th,td{border:0.5pt solid #a7a7a7;padding:1.2mm 1.1mm;text-align:left;line-height:1.12;vertical-align:middle}' +
+                'th{background:#efefef;font-size:7pt;font-weight:700}' +
+                '.number{width:3.5%;text-align:right;color:#555;font-size:7pt}' +
+                '.name{width:26%;overflow-wrap:anywhere}' +
+                '.check{width:3.5%;text-align:center}' +
+                '.check-box{display:inline-block;width:9px;height:9px;border:1px solid #333;vertical-align:middle}' +
+                '.empty{border-color:transparent}' +
+                '@media print{tr{break-inside:avoid;page-break-inside:avoid}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}' +
+                '</style></head><body>' +
+                '<h1>The Dean After Dark — Guest List</h1>' +
+                '<p class="subtitle">The Dean Munich, Autograph Collection by Marriott · Saturday, 31 October 2026 · ' +
+                guests.length + ' guests · Sorted by surname</p>' +
+                '<table><thead><tr>' +
+                '<th class="number">#</th><th class="name">Guest name</th><th class="check">✓</th>' +
+                '<th class="number">#</th><th class="name">Guest name</th><th class="check">✓</th>' +
+                '<th class="number">#</th><th class="name">Guest name</th><th class="check">✓</th>' +
+                '</tr></thead><tbody>' + rows + '</tbody></table></body></html>';
+
             printWindow.document.open();
-            printWindow.document.write(html);
+            printWindow.document.write(printDocument);
             printWindow.document.close();
+
             const status = document.getElementById('printGuestListStatus');
             if (status) {
-                status.textContent = guests.length + ' names prepared for printing.';
+                status.textContent = guests.length + ' names prepared in a compact three-column roster.';
                 status.classList.remove('text-red-300');
             }
             setTimeout(() => { printWindow.focus(); printWindow.print(); }, 400);
