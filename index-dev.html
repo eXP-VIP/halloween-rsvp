@@ -617,7 +617,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.3</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.4</p>
         </div>
     </footer>
 
@@ -1918,7 +1918,9 @@
                         if (drinkEntitled) {
                             const chipButton = document.createElement('button');
                             chipButton.type = 'button';
-                            chipButton.className = 'shrink-0 rounded border border-emerald-500/50 bg-emerald-900/40 px-3 py-2 text-xs font-semibold tracking-wider text-emerald-100 hover:bg-emerald-800/50';
+                            chipButton.className = chipAlreadyIssued
+                                ? 'shrink-0 rounded border border-emerald-500/50 bg-emerald-900/40 px-3 py-2 text-xs font-semibold tracking-wider text-emerald-100 hover:bg-emerald-800/50'
+                                : 'shrink-0 rounded border border-sky-400/50 bg-sky-950/40 px-3 py-2 text-xs font-semibold tracking-wider text-sky-100 hover:bg-sky-900/50';
                             chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
                             chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
                             chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
