@@ -1740,9 +1740,10 @@
                     const name = String(person.inviter || '').trim(), key = normalizeGuestName(name);
                     if (!key) return;
                     if(!referralTrackingByInviter.has(key))referralTrackingByInviter.set(key,{name,guestIds:new Set(),checkedInGuestIds:new Set(),qualifiedGuestIds:new Set()});
-                    const tr=referralTrackingByInviter.get(key);tr.guestIds.add(personKey);
-                    if(p.checkedIn)tr.checkedInGuestIds.add(personKey);
-                    if(p.checkedIn&&p.paid)tr.qualifiedGuestIds.add(personKey);
+                    const tr = referralTrackingByInviter.get(key);
+                    tr.guestIds.add(personKey);
+                    if (person.checkedIn) tr.checkedInGuestIds.add(personKey);
+                    if (person.checkedIn && person.paid) tr.qualifiedGuestIds.add(personKey);
                 });
                 const checkedInReferralsByInviter=new Map(Array.from(referralTrackingByInviter.entries()).map(([key,tr])=>[key,{name:tr.name,guestIds:tr.checkedInGuestIds}]));
                 renderInternationsImportPreview();
