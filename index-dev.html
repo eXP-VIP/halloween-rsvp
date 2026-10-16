@@ -1496,49 +1496,128 @@
         }
 
         function renderUnrecognizedWelcomeDrinkList() {
-            const list = document.getElementById('welcomeDrinkList'), section = document.getElementById('unrecognizedWelcomeDrinkSection');
+            const list = document.getElementById('welcomeDrinkList');
+            const section = document.getElementById('unrecognizedWelcomeDrinkSection');
             if (!list || !section) return;
             list.replaceChildren();
+
             const isAdmin = currentStaffRole === 'admin';
             section.classList.toggle('hidden', !isAdmin);
             if (!isAdmin) return;
-            const rows = cachedGuestDocs.map(doc => ({id:doc.id,data:doc.data()||{}}));
-            const knownNames = new Set(rows.map(x=>normalizeGuestName(x.data.name)).filter(Boolean));
+
+            const rows = cachedGuestDocs.map(doc => ({ id: doc.id, data: doc.data() || {} }));
+            const importedMemberNames = new Set(
+                rows.filter(item => isImportedMemberRecord(item.data))
+                    .map(item => normalizeGuestName(item.data.name))
+                    .filter(Boolean)
+            );
+            const knownNames = new Set(rows.map(item => normalizeGuestName(item.data.name)).filter(Boolean));
             const people = new Map();
-            rows.forEach(item=>{
-                const d=item.data,key=normalizeGuestName(d.name)||item.id;
-                let p=people.get(key);
-                if(!p){p={key,name:String(d.name||'').trim()||'(No name provided)',inviter:'',checkedIn:false,paid:false,hasRsvp:false};people.set(key,p);}
-                const inv=String(d.invitedBy||'').trim();if(inv&&!p.inviter)p.inviter=inv;
-                p.checkedIn=p.checkedIn||Boolean(d.checkedIn);p.paid=p.paid||Boolean(d.paid);
-                p.hasRsvp=p.hasRsvp||!isImportedMemberRecord(d);
+
+            rows.forEach(item => {
+                const data = item.data;
+                const key = normalizeGuestName(data.name) || item.id;
+                let person = people.get(key);
+                if (!person) {
+                    person = {
+                        key,
+                        name: String(data.name || '').trim() || '(No name provided)',
+                        inviter: '',
+                        checkedIn: false,
+                        paid: false,
+                        hasRsvp: false
+                    };
+                    people.set(key, person);
+                }
+                const inviter = String(data.invitedBy || '').trim();
+                if (inviter && !person.inviter) person.inviter = inviter;
+                person.checkedIn = person.checkedIn || Boolean(data.checkedIn);
+                person.paid = person.paid || Boolean(data.paid);
+                person.hasRsvp = person.hasRsvp || !isImportedMemberRecord(data);
             });
-            const groups=new Map(), noInviterPeople=new Map();
-            people.forEach(p=>{
-                if(!p.hasRsvp)return;
-                const key=normalizeGuestName(p.inviter);
-                // Count RSVP guests with no inviter even when the same person is also an imported member.
-                if(!key){noInviterPeople.set(p.key,p);return;}
-                // Only names entered as inviters that don't match any registered guest/member are unaccounted.
-                if(knownNames.has(key))return;
-                if(!groups.has(key))groups.set(key,{name:p.inviter,people:new Map()});
-                groups.get(key).people.set(p.key,p);
+
+            const unknownInviters = new Map();
+            const withoutInviter = new Map();
+            people.forEach(person => {
+                // An imported member who also submitted an RSVP remains a member,
+                // not an RSVP referral or an extra "no inviter" guest.
+                if (!person.hasRsvp || importedMemberNames.has(normalizeGuestName(person.name))) return;
+
+                const inviterKey = normalizeGuestName(person.inviter);
+                if (!inviterKey) {
+                    withoutInviter.set(person.key, person);
+                    return;
+                }
+
+                // Reconcile inviter names only when that name is not in the registered guest/member list.
+                if (knownNames.has(inviterKey)) return;
+                if (!unknownInviters.has(inviterKey)) {
+                    unknownInviters.set(inviterKey, { name: person.inviter, people: new Map() });
+                }
+                unknownInviters.get(inviterKey).people.set(person.key, person);
             });
-            const summarize=m=>{const a=Array.from(m.values());return {total:a.length,checkedIn:a.filter(p=>p.checkedIn).length,checkedInPaid:a.filter(p=>p.checkedIn&&p.paid).length};};
-            const entries=Array.from(groups.values()).map(g=>({name:g.name,...summarize(g.people)})).sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
-            const without=summarize(noInviterPeople);
-            if(!entries.length&&!without.total){const p=document.createElement('p');p.className='text-xs text-gray-300 py-2';p.textContent='No unknown inviter names or RSVPs without an inviter.';list.appendChild(p);return;}
-            const addRow=(label,c,style,title)=>{
-                const row=document.createElement('div');row.className='flex items-center justify-between gap-3 rounded-lg border px-3 py-2 '+style;
-                const details=document.createElement('div');details.className='min-w-0';
-                const name=document.createElement('p');name.className='font-medium break-words';name.textContent=label;
-                const meta=document.createElement('p');meta.className='text-[10px] text-gray-300 mt-1';meta.textContent=c.checkedIn+' checked in · '+c.checkedInPaid+' checked in & paid · '+(c.total-c.checkedIn)+' not checked in';
-                details.append(name,meta);
-                const count=document.createElement('span');count.className='shrink-0 rounded border px-3 py-1 text-sm font-semibold tabular-nums '+(label==='No inviter entered'?'border-gray-500/40 bg-gray-900/50 text-gray-100':'border-amber-400/40 bg-amber-950/40 text-amber-100');count.textContent=String(c.total);count.title=title;
-                row.append(details,count);list.appendChild(row);
+
+            const summarize = peopleByKey => {
+                const entries = Array.from(peopleByKey.values());
+                return {
+                    total: entries.length,
+                    checkedIn: entries.filter(person => person.checkedIn).length,
+                    checkedInPaid: entries.filter(person => person.checkedIn && person.paid).length
+                };
             };
-            entries.forEach(e=>addRow(e.name,e,'border-gold/30 bg-black/25',e.total+' distinct RSVPs entered this unknown inviter name'));
-            if(without.total)addRow('No inviter entered',without,'border-gray-500/40 bg-black/25',without.total+' RSVPs have no inviter entered');
+            const entries = Array.from(unknownInviters.values())
+                .map(group => ({ name: group.name, ...summarize(group.people) }))
+                .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+            const noInviter = summarize(withoutInviter);
+
+            if (!entries.length && !noInviter.total) {
+                const empty = document.createElement('p');
+                empty.className = 'text-xs text-gray-300 py-2';
+                empty.textContent = 'No unknown inviter names or RSVPs without an inviter.';
+                list.appendChild(empty);
+                return;
+            }
+
+            const addRow = (label, counts, style, title, neutral = false) => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between gap-3 rounded-lg border px-3 py-2 ' + style;
+                const details = document.createElement('div');
+                details.className = 'min-w-0';
+                const name = document.createElement('p');
+                name.className = 'font-medium break-words';
+                name.textContent = label;
+                const meta = document.createElement('p');
+                meta.className = 'text-[10px] text-gray-300 mt-1';
+                meta.textContent = counts.checkedIn + ' checked in · ' + counts.checkedInPaid +
+                    ' checked in & paid · ' + (counts.total - counts.checkedIn) + ' not checked in';
+                details.append(name, meta);
+
+                const count = document.createElement('span');
+                count.className = 'shrink-0 rounded border px-3 py-1 text-sm font-semibold tabular-nums ' +
+                    (neutral
+                        ? 'border-gray-500/40 bg-gray-900/50 text-gray-100'
+                        : 'border-amber-400/40 bg-amber-950/40 text-amber-100');
+                count.textContent = String(counts.total);
+                count.title = title;
+                row.append(details, count);
+                list.appendChild(row);
+            };
+
+            entries.forEach(entry => addRow(
+                entry.name,
+                entry,
+                'border-gold/30 bg-black/25',
+                entry.total + ' RSVPs entered this unknown inviter name'
+            ));
+            if (noInviter.total) {
+                addRow(
+                    'No inviter entered',
+                    noInviter,
+                    'border-gray-500/40 bg-black/25',
+                    noInviter.total + ' RSVP guests have no inviter entered',
+                    true
+                );
+            }
         }
 
         async function toggleGuestDrinkUpgrade(id, data, welcomeDrinkEarned) {
@@ -1636,16 +1715,30 @@
                 const issuedNameKeys = new Set(snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
 
                 const referralPeople = new Map();
-                snapshot.forEach(guestDoc=>{
-                    const d=guestDoc.data()||{}, personKey=normalizeGuestName(d.name)||guestDoc.id;
-                    let p=referralPeople.get(personKey);
-                    if(!p){p={name:String(d.name||'').trim(),inviter:'',checkedIn:false,paid:false};referralPeople.set(personKey,p);}
-                    const inv=String(d.invitedBy||'').trim();if(inv&&!p.inviter)p.inviter=inv;
-                    p.checkedIn=p.checkedIn||Boolean(d.checkedIn);p.paid=p.paid||Boolean(d.paid);
+                snapshot.forEach(guestDoc => {
+                    const data = guestDoc.data() || {};
+                    const personKey = normalizeGuestName(data.name) || guestDoc.id;
+                    let person = referralPeople.get(personKey);
+                    if (!person) {
+                        person = { name: String(data.name || '').trim(), inviter: '', checkedIn: false, paid: false, data };
+                        referralPeople.set(personKey, person);
+                    } else if (isImportedMemberRecord(data) && !isImportedMemberRecord(person.data)) {
+                        // When the same person has an imported membership and an RSVP record,
+                        // use the membership record for all referral/category calculations.
+                        person.data = data;
+                    }
+                    const inviter = String(data.invitedBy || '').trim();
+                    if (inviter && !person.inviter) person.inviter = inviter;
+                    person.checkedIn = person.checkedIn || Boolean(data.checkedIn);
+                    person.paid = person.paid || Boolean(data.paid);
                 });
-                const referralTrackingByInviter=new Map();
-                referralPeople.forEach((p,personKey)=>{
-                    const name=String(p.inviter||'').trim(),key=normalizeGuestName(name);if(!key)return;
+                const referralTrackingByInviter = new Map();
+                referralPeople.forEach((person, personKey) => {
+                    // Referral rewards are for non-member RSVP guests. A person also found in
+                    // the imported membership list must never count as a friend referral.
+                    if (getGuestTier(person.data) !== 'friends') return;
+                    const name = String(person.inviter || '').trim(), key = normalizeGuestName(name);
+                    if (!key) return;
                     if(!referralTrackingByInviter.has(key))referralTrackingByInviter.set(key,{name,guestIds:new Set(),checkedInGuestIds:new Set(),qualifiedGuestIds:new Set()});
                     const tr=referralTrackingByInviter.get(key);tr.guestIds.add(personKey);
                     if(p.checkedIn)tr.checkedInGuestIds.add(personKey);
