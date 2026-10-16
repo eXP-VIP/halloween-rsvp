@@ -851,7 +851,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.8</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.16.9</p>
         </div>
     </footer>
 
@@ -2268,17 +2268,20 @@
                     typeBadge.textContent = getGuestCategory(data).toLocaleUpperCase();
                     if (currentStaffRole === 'admin' || mode === 'combined') titleLine.appendChild(typeBadge);
                     if (mode === 'combined') {
-                        const checkInStateBadge = document.createElement('span');
-                        checkInStateBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
-                            (checkedIn ? 'border-emerald-400/50 bg-emerald-950/50 text-emerald-100' : 'border-amber-400/50 bg-amber-950/40 text-amber-100');
-                        checkInStateBadge.textContent = checkedIn ? 'CHECKED IN' : 'NOT CHECKED IN';
-                        titleLine.appendChild(checkInStateBadge);
+                        // Show only completed status badges; pending states are already clear from the available action buttons.
+                        if (checkedIn) {
+                            const checkInStateBadge = document.createElement('span');
+                            checkInStateBadge.className = 'inline-flex items-center rounded-full border border-emerald-400/50 bg-emerald-950/50 px-2 py-1 text-[9px] font-semibold tracking-wider text-emerald-100';
+                            checkInStateBadge.textContent = 'CHECKED IN';
+                            titleLine.appendChild(checkInStateBadge);
+                        }
 
-                        const paymentStateBadge = document.createElement('span');
-                        paymentStateBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
-                            (isPaid ? 'border-emerald-400/50 bg-emerald-950/50 text-emerald-100' : 'border-sky-400/50 bg-sky-950/40 text-sky-100');
-                        paymentStateBadge.textContent = isPaid ? 'PAID' : 'UNPAID';
-                        titleLine.appendChild(paymentStateBadge);
+                        if (isPaid) {
+                            const paymentStateBadge = document.createElement('span');
+                            paymentStateBadge.className = 'inline-flex items-center rounded-full border border-emerald-400/50 bg-emerald-950/50 px-2 py-1 text-[9px] font-semibold tracking-wider text-emerald-100';
+                            paymentStateBadge.textContent = 'PAID';
+                            titleLine.appendChild(paymentStateBadge);
+                        }
                     }
 
                     const guestMeta = document.createElement('p');
