@@ -574,16 +574,18 @@
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Paid</p>
                                     </div>
                                 </div>
-                                <table class="w-fit max-w-full table-auto border-collapse text-[10px] leading-4 text-gray-300 tabular-nums">
-                                    <thead class="sr-only"><tr><th>Category</th><th>Total</th><th>Separator</th><th>Paid</th></tr></thead>
-                                    <tbody>
-                                        <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Albatross</th><td id="guestAlbatrossTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestAlbatrossPaid" class="text-right">0</td></tr>
-                                        <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Basics</th><td id="guestBasicsTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestBasicsPaid" class="text-right">0</td></tr>
-                                        <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">RSVPs</th><td id="guestFriendsTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestFriendsPaid" class="text-right">0</td></tr>
-                                        <tr><th scope="row" class="text-left font-semibold text-gold pr-2 whitespace-nowrap">Rate Full</th><td id="guestMixRatio" class="text-right font-semibold text-gold">—</td><td class="text-center px-1 text-gray-500">/</td><td id="guestPaidMixRatio" class="text-right font-semibold text-gold">—</td></tr>
-                                        <tr><th scope="row" class="text-left font-semibold text-gray-300 pr-2 whitespace-nowrap">Rate Std.</th><td id="guestStandardMixRatio" class="text-right font-semibold text-gray-300">—</td><td class="text-center px-1 text-gray-500">/</td><td id="guestPaidStandardMixRatio" class="text-right font-semibold text-gray-300">—</td></tr>
-                                    </tbody>
-                                </table>
+                                <div class="min-w-0 flex justify-end">
+                                    <table class="w-fit max-w-full table-auto border-collapse text-[10px] leading-4 text-gray-300 tabular-nums">
+                                        <thead class="sr-only"><tr><th>Category</th><th>Total</th><th>Separator</th><th>Paid</th></tr></thead>
+                                        <tbody>
+                                            <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Albatross</th><td id="guestAlbatrossTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestAlbatrossPaid" class="text-right">0</td></tr>
+                                            <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Basics</th><td id="guestBasicsTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestBasicsPaid" class="text-right">0</td></tr>
+                                            <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">RSVPs</th><td id="guestFriendsTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestFriendsPaid" class="text-right">0</td></tr>
+                                            <tr><th scope="row" class="text-left font-semibold text-gold pr-2 whitespace-nowrap">Rate Full</th><td id="guestMixRatio" class="text-right font-semibold text-gold">—</td><td class="text-center px-1 text-gray-500">/</td><td id="guestPaidMixRatio" class="text-right font-semibold text-gold">—</td></tr>
+                                            <tr><th scope="row" class="text-left font-semibold text-gray-300 pr-2 whitespace-nowrap">Rate Std.</th><td id="guestStandardMixRatio" class="text-right font-semibold text-gray-300">—</td><td class="text-center px-1 text-gray-500">/</td><td id="guestPaidStandardMixRatio" class="text-right font-semibold text-gray-300">—</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                                                 <div class="staff-metric-card">
@@ -600,7 +602,7 @@
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Issued</p>
                                     </div>
                                 </div>
-                                <div class="min-w-0">
+                                <div class="min-w-0 flex justify-end">
                                     <table class="w-fit max-w-full table-auto border-collapse text-[10px] leading-4 text-gray-300 tabular-nums">
                                         <thead class="sr-only"><tr><th>Category</th><th>Total</th><th>Separator</th><th>Issued</th></tr></thead>
                                         <tbody>
@@ -626,13 +628,13 @@
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Paid</p>
                                     </div>
                                 </div>
-                                <div class="min-w-0">
+                                <div class="min-w-0 flex justify-end">
                                     <table class="w-fit max-w-full table-auto border-collapse text-[10px] leading-4 text-gray-300 tabular-nums" aria-label="Ticket revenue by category">
-                                        <thead><tr class="text-[9px] uppercase tracking-wide text-gray-500"><th scope="col" class="text-left font-medium pr-2">Category</th><th scope="col" class="text-right font-medium">Ticket</th><th scope="col" class="text-center font-medium px-1">/</th><th scope="col" class="text-right font-medium">Potential</th><th scope="col" class="text-center font-medium px-1">/</th><th scope="col" class="text-right font-medium">Paid</th></tr></thead>
+                                        <thead class="sr-only"><tr><th scope="col">Category and ticket</th><th scope="col">Potential</th><th scope="col">Separator</th><th scope="col">Paid</th></tr></thead>
                                         <tbody>
-                                            <tr class="border-t border-white/5"><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Albatross</th><td id="paymentAlbatrossTicket" class="text-right whitespace-nowrap">€5</td><td class="text-center px-1 text-gray-500">/</td><td id="paymentAlbatrossPotential" class="text-right whitespace-nowrap">€0</td><td class="text-center px-1 text-gray-500">/</td><td id="paymentAlbatrossPaid" class="text-right whitespace-nowrap text-sky-200">€0</td></tr>
-                                            <tr class="border-t border-white/5"><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Basics</th><td id="paymentBasicsTicket" class="text-right whitespace-nowrap">€15</td><td class="text-center px-1 text-gray-500">/</td><td id="paymentBasicsPotential" class="text-right whitespace-nowrap">€0</td><td class="text-center px-1 text-gray-500">/</td><td id="paymentBasicsPaid" class="text-right whitespace-nowrap text-sky-200">€0</td></tr>
-                                            <tr class="border-t border-white/5"><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">RSVPs</th><td id="paymentRsvpsTicket" class="text-right whitespace-nowrap">€20</td><td class="text-center px-1 text-gray-500">/</td><td id="paymentRsvpsPotential" class="text-right whitespace-nowrap">€0</td><td class="text-center px-1 text-gray-500">/</td><td id="paymentRsvpsPaid" class="text-right whitespace-nowrap text-sky-200">€0</td></tr>
+                                            <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Albatross (<span id="paymentAlbatrossTicket">5&nbsp;€</span>)</th><td id="paymentAlbatrossPotential" class="text-right whitespace-nowrap">0&nbsp;€</td><td class="text-center px-1 text-gray-500">/</td><td id="paymentAlbatrossPaid" class="text-right whitespace-nowrap text-sky-200">0&nbsp;€</td></tr>
+                                            <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Basics (<span id="paymentBasicsTicket">15&nbsp;€</span>)</th><td id="paymentBasicsPotential" class="text-right whitespace-nowrap">0&nbsp;€</td><td class="text-center px-1 text-gray-500">/</td><td id="paymentBasicsPaid" class="text-right whitespace-nowrap text-sky-200">0&nbsp;€</td></tr>
+                                            <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">RSVPs (<span id="paymentRsvpsTicket">20&nbsp;€</span>)</th><td id="paymentRsvpsPotential" class="text-right whitespace-nowrap">0&nbsp;€</td><td class="text-center px-1 text-gray-500">/</td><td id="paymentRsvpsPaid" class="text-right whitespace-nowrap text-sky-200">0&nbsp;€</td></tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -842,7 +844,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.17.3</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.17.4</p>
         </div>
     </footer>
 
