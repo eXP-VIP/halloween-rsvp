@@ -550,11 +550,13 @@
                             <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                         </div>
                     </div>
-                    <div id="hotelSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort check-in lists">
-                        <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Guest list:</span>
-                        <button type="button" class="sort-option" data-sort-group="guest" data-sort="firstName" aria-pressed="true" onclick="setGuestSort('firstName')">First name</button>
-                        <button type="button" class="sort-option" data-sort-group="guest" data-sort="lastName" aria-pressed="false" onclick="setGuestSort('lastName')">Last Name</button>
-                        <button type="button" class="sort-option" data-sort-group="guest" data-sort="signupNewest" aria-pressed="false" onclick="setGuestSort('signupNewest')">Signup</button>
+                    <div id="hotelSortControls" class="flex items-center gap-3 mb-4" role="group" aria-label="Sort check-in lists">
+                        <label for="guestSortSelect" class="text-[10px] uppercase tracking-wider text-gray-400 whitespace-nowrap">Sort by</label>
+                        <select id="guestSortSelect" class="form-field text-sm py-2 px-3 w-auto min-w-36" aria-label="Sort check-in guest list" onchange="setGuestSort(this.value)">
+                            <option value="firstName">First name</option>
+                            <option value="lastName">Last Name</option>
+                            <option value="signupNewest">Signup</option>
+                        </select>
                     </div>
                     <div class="mb-4">
                         <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Not checked in <span id="hotelOpenCount" class="text-amber-100">(0)</span></p>
@@ -1312,7 +1314,9 @@
             if (!STAFF_ROLES.includes(role)) throw new Error('The account does not have a valid staff role.');
             currentStaffRole = role;
             guestSortBy = role === 'admin' ? 'signupNewest' : 'firstName';
-            // Apply the role-specific default immediately; the live snapshot reapplies it to loaded cards.
+            const guestSortSelect = document.getElementById('guestSortSelect');
+            if (guestSortSelect) guestSortSelect.value = guestSortBy;
+            // Admin defaults to newest sign-up; Hotel defaults to first name.
             applyGuestSorts();
             const show = (id, visible) => {
                 const element = document.getElementById(id);
@@ -1648,7 +1652,7 @@
                     if(p.checkedIn&&p.paid)tr.qualifiedGuestIds.add(personKey);
                 });
                 const checkedInReferralsByInviter=new Map(Array.from(referralTrackingByInviter.entries()).map(([key,tr])=>[key,{name:tr.name,guestIds:tr.checkedInGuestIds}]));
-                renderInternationsImportPreview();                renderInternationsImportPreview();
+                renderInternationsImportPreview();
 
                 const hotelOpenContainer = document.getElementById('guestNotCheckedInContainer');
                 const hotelCheckedContainer = document.getElementById('guestCheckedInContainer');
@@ -1776,7 +1780,7 @@
                                         : 'border-amber-300 bg-amber-300/20 text-amber-100 shadow-sm shadow-amber-400/20');
                             badge.textContent = referralBadgeState === 'insufficient'
                                 ? 'REFERRAL INSUFFICIENT'
-                                : referralBadgeState === 'pending' ? 'REFERRAL PENDING' : 'REFERRAL DRINK';
+                                : referralBadgeState === 'pending' ? 'REFERRAL PENDING' : 'REFERRALS DRINK';
                             badge.title = referralBadgeState === 'insufficient'
                                 ? 'Not enough registered referrals yet to reach this category’s threshold.'
                                 : referralBadgeState === 'pending'
@@ -1790,10 +1794,10 @@
                             const upgradeButton = document.createElement('button');
                             upgradeButton.type = 'button';
                             upgradeButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
-                                (charge.upgradeSelected ? 'border-sky-400/50 bg-sky-900/40 text-sky-100' : 'border-sky-400/40 bg-sky-950/30 text-sky-100 hover:bg-sky-900/50');
+                                (charge.upgradeSelected ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100 hover:bg-emerald-800/50' : 'border-sky-400/40 bg-sky-950/30 text-sky-100 hover:bg-sky-900/50');
                             upgradeButton.textContent = charge.upgradeSelected
                                 ? 'UNDO UPGRADE'
-                                : 'ADD DRINK +' + formatEuro(charge.upgradePrice);
+                                : 'DRINK UPGRADE +' + formatEuro(charge.upgradePrice);
                             upgradeButton.title = 'Paid upgrade: ' + formatEuro(charge.upgradePrice);
                             upgradeButton.addEventListener('click', () => toggleGuestDrinkUpgrade(doc.id, data, welcomeDrinkEarned));
                             actions.appendChild(upgradeButton);
@@ -2078,16 +2082,16 @@
             cards.forEach(card=>container.appendChild(card));
         }
         function updateSortButtonStates() {
-            document.querySelectorAll('.sort-option[data-sort-group="guest"]').forEach(button=>{
-                button.setAttribute('aria-pressed',String(button.dataset.sort===guestSortBy));
-            });
+            const guestSortSelect = document.getElementById('guestSortSelect');
+            if (guestSortSelect && guestSortSelect.value !== guestSortBy) guestSortSelect.value = guestSortBy;
             document.querySelectorAll('.sort-option[data-sort-group="payment"]').forEach(button=>{
                 button.setAttribute('aria-pressed',String(button.dataset.sort===paymentSortBy));
             });
         }
         function setGuestSort(sortBy) {
-            if(!['firstName','lastName','signupNewest'].includes(sortBy))return;
-            guestSortBy=sortBy;applyGuestSorts();
+            if (!['firstName', 'lastName', 'signupNewest'].includes(sortBy)) return;
+            guestSortBy = sortBy;
+            applyGuestSorts();
         }
         function setPaymentSort(sortBy) {
             if(!['firstName','lastName','timeOrder'].includes(sortBy))return;
