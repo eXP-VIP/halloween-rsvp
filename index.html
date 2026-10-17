@@ -15,9 +15,9 @@
     <meta property="og:image:secure_url" content="https://sign-up.partybag.com/Halloween4WhatsApp.jpg" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1689" />
-    <meta property="og:image:height" content=1399" />
+    <meta property="og:image:height" content="1399" />
 
-    <title>The Dean After Dark — Staff Tools Development</title>
+    <title>The Dean After Dark | RSVP &amp; Staff Tools (DEV)</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -39,17 +39,20 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
+        /* Design tokens shared by the page, controls and status indicators. */
         :root {
             --gold: #d4af37;
             --gold-light: #f3e5ab;
             --obsidian: #08080a;
         }
+        /* Base document typography and overflow behavior. */
         body {
             background-color: var(--obsidian);
             color: #e2e8f0;
             font-family: 'Montserrat', sans-serif;
             overflow-x: hidden;
         }
+        /* Public-facing event backdrop; staff tools reuse the same page shell. */
         .halloween-bg {
             background-image:
                 linear-gradient(to bottom,
@@ -62,6 +65,7 @@
             background-repeat: no-repeat;
             background-attachment: fixed;
         }
+        /* Reusable translucent panel treatment for public and staff sections. */
         .glass-panel {
             background: rgba(12, 12, 16, 0.70);
             backdrop-filter: blur(10px);
@@ -76,6 +80,7 @@
             border: 1px solid rgba(212, 175, 55, 0.62);
             box-shadow: 0 0 30px rgba(212, 175, 55, 0.19);
         }
+        /* Decorative headline treatment; hero-title overrides it where contrast needs a solid fill. */
         .gold-text-gradient {
             background: linear-gradient(135deg, #fff8df 0%, #d4af37 52%, #aa7c11 100%);
             -webkit-background-clip: text;
@@ -113,6 +118,7 @@
             color: #fffdf6 !important;
             text-shadow: 0 2px 7px rgba(0,0,0,.98);
         }
+        /* Shared styling for direct contact and calendar actions. */
         .whatsapp-contact-btn {
             display: inline-flex;
             align-items: center;
@@ -164,6 +170,7 @@
         @media (max-width: 640px) {
             .calendar-option-btn { width: 100%; max-width: 320px; }
         }
+        /* Primary action style used for RSVP and high-priority staff actions. */
         .gold-btn {
             background: linear-gradient(135deg, #ead080 0%, #d4af37 48%, #aa7c11 100%);
             color: #090909;
@@ -177,6 +184,7 @@
             filter: brightness(1.06);
         }
         .gold-btn:disabled { cursor: wait; opacity: .7; }
+        /* Event-space image gallery and responsive image treatments. */
         .venue-gallery {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -214,6 +222,7 @@
             text-transform: uppercase;
             background: linear-gradient(transparent, rgba(0,0,0,.82));
         }
+        /* Consistent accessible input styling for public forms and staff controls. */
         .form-field {
             width: 100%;
             background: rgba(8, 8, 10, .88);
@@ -225,6 +234,7 @@
             transition: border-color .2s ease, box-shadow .2s ease;
         }
         .form-field:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212,175,55,.10); }
+        /* Compact filter/sort controls; aria-pressed communicates active sorting. */
         .sort-option { border: 1px solid rgba(212,175,55,.35); border-radius: 7px; color: #d8d3c8; padding: 7px 11px; font-size: 10px; letter-spacing: .04em; background: rgba(8,8,10,.55); }
         .sort-option[aria-pressed="true"] { color: #08080a; background: var(--gold); border-color: var(--gold); font-weight: 700; }
         .form-field::placeholder { color: #85818a; }
@@ -235,10 +245,153 @@
             .venue-shot { height: 230px; }
             .venue-shot.concept { grid-column: auto; height: 230px; }
         }
+
+
+        /* Guest-card actions share sizing. Green means the operation is complete and clicking will undo it. */
+        .guest-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            padding: 8px 12px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.055em;
+            line-height: 1.2;
+            white-space: nowrap;
+            transition: background-color .2s ease, border-color .2s ease;
+        }
+        .guest-action-btn--undo {
+            border-color: rgba(52, 211, 153, 0.58);
+            background: rgba(6, 78, 59, 0.76);
+            color: #d1fae5;
+        }
+        .guest-action-btn--undo:hover:not(:disabled) {
+            background: rgba(6, 95, 70, 0.92);
+            border-color: rgba(110, 231, 183, 0.78);
+        }
+        .guest-action-btn--forward {
+            border-color: rgba(212, 175, 55, 0.52);
+            background: rgba(212, 175, 55, 0.10);
+            color: #ffedb5;
+        }
+        .guest-action-btn--forward:hover:not(:disabled) {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: rgba(234, 208, 128, 0.78);
+        }
+        .guest-action-btn:disabled,
+        .guest-action-btn.is-disabled {
+            cursor: not-allowed;
+            opacity: 0.42;
+        }
+
+        /* STAFF CONSOLE DESIGN SYSTEM
+           Keep operational and admin panels aligned; accent colours are reserved for data/status meaning. */
+        .staff-panel {
+            margin: 0 0 1rem;
+            padding: 1rem;
+            border: 1px solid rgba(212, 175, 55, 0.28);
+            border-radius: 0.85rem;
+            background: rgba(8, 8, 10, 0.42);
+            min-width: 0;
+        }
+        .staff-panel__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem 1rem;
+            margin-bottom: 0.85rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        }
+        .staff-panel__title {
+            margin: 0;
+            color: var(--gold-light);
+            font-family: 'Cinzel', serif;
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.09em;
+            line-height: 1.45;
+            text-transform: uppercase;
+        }
+        .staff-panel__meta {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            max-width: 100%;
+            padding: 0.2rem 0.55rem;
+            border: 1px solid rgba(212, 175, 55, 0.24);
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.24);
+            color: #c7c3ba;
+            font-size: 0.625rem;
+            letter-spacing: 0.055em;
+            line-height: 1.5;
+            text-transform: uppercase;
+        }
+        .staff-panel--nested {
+            margin: 1rem 0 0;
+            padding: 0.85rem;
+            background: rgba(0, 0, 0, 0.22);
+        }
+        .staff-tools-heading {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem 1rem;
+            margin: 1.5rem 0 0.75rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.32);
+        }
+        .staff-tools-heading h4,
+        .staff-subheading {
+            margin: 0;
+            color: var(--gold-light);
+            font-family: 'Cinzel', serif;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            line-height: 1.5;
+            text-transform: uppercase;
+        }
+        .staff-tools-heading p {
+            margin: 0;
+            color: #a9a6a0;
+            font-size: 0.65rem;
+            letter-spacing: 0.04em;
+        }
+        .staff-metric-card {
+            min-width: 0;
+            padding: 0.85rem;
+            border: 1px solid rgba(212, 175, 55, 0.22);
+            border-radius: 0.65rem;
+            background: rgba(0, 0, 0, 0.28);
+        }
+        .staff-metric-card > p:first-child {
+            min-height: 1.5rem;
+            display: flex;
+            align-items: flex-end;
+            color: #c9c5bc;
+            font-size: 0.65rem;
+            letter-spacing: 0.055em;
+            text-transform: uppercase;
+        }
+        @media (max-width: 640px) {
+            .staff-panel { padding: 0.85rem; }
+            .staff-panel__header { align-items: flex-start; }
+            .staff-tools-heading { margin-top: 1.1rem; }
+        }
+
+        /* Page modes keep the public landing content out of staff and RSVP-confirmation views. */
         body.staff-mode main > header,
         body.staff-mode main > section,
         body.staff-mode footer { display: none !important; }
-        body.staff-mode main { padding-top: 1rem; padding-bottom: 1rem; }
+        body.staff-mode main { max-width: 80rem; padding-top: 1rem; padding-bottom: 1rem; }
         body.staff-mode #hostessPortal { margin-top: 0; margin-bottom: 0; }
         body.confirmation-mode main > header,
         body.confirmation-mode main > section:not(#rsvp-section),
@@ -246,13 +399,16 @@
         body.confirmation-mode main { padding-top: 1rem; padding-bottom: 1rem; }
         body.confirmation-mode #rsvpIntro { display: none !important; }
         body.confirmation-mode #rsvp-section { margin-bottom: 1rem; }
+        /* Respect the visitor’s reduced-motion preference. */
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
         }
     </style>
 </head>
 <body class="halloween-bg min-h-screen relative flex flex-col selection:bg-gold selection:text-black">
+    <!-- Public RSVP page: staff and confirmation modes are toggled by the script below. -->
     <main class="relative z-10 flex-1 container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
+        <!-- Event identity, date and primary navigation into registration. -->
         <header class="hero-copy text-center mb-8 sm:mb-10">
             <p class="font-serif text-gold tracking-[0.28em] uppercase text-xs sm:text-sm mb-3">A Private Halloween Soirée</p>
             <h1 class="hero-title font-serif text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-wider uppercase leading-tight mb-3">The Dean<br class="sm:hidden"> After Dark</h1>
@@ -299,6 +455,7 @@
             </div>
         </section>
 
+        <!-- Event concept, space descriptions and venue imagery. -->
         <section class="glass-panel rounded-2xl p-5 sm:p-9 mb-7 sm:mb-9 gold-border">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-7 sm:gap-8">
                 <div>
@@ -318,6 +475,7 @@
             </div>
         </section>
 
+        <!-- Public RSVP form and in-place confirmation state. Keep the form to name plus optional inviter. -->
         <section class="glass-panel rounded-2xl p-5 sm:p-9 gold-border-glow mb-7 sm:mb-9" id="rsvp-section">
             <div id="rsvpIntro" class="text-center mb-7">
                 <p class="font-serif text-xs tracking-[0.2em] text-gold uppercase mb-2">Your place starts here</p>
@@ -363,18 +521,23 @@
             <div id="errorMessage" role="alert" aria-live="assertive" class="hidden mt-6 p-5 rounded-lg bg-red-950/60 border border-red-400/40 text-center text-red-200 text-sm leading-relaxed"></div>
         </section>
 
-        <!-- Staff-only interface. A client-side PIN is not real security; see deployment note accompanying this file. -->
+        <!-- Staff-only interface. The DEV login is Firebase Authentication backed; keep authorization enforced by Firestore rules and Cloud Functions. -->
+        <!-- Staff console: reveal operational tools only after Firebase Authentication and an active role profile have been verified. -->
         <div id="hostessPortal" class="hidden relative z-20 w-full mt-8 mb-8">
-            <div class="glass-panel rounded-2xl p-5 sm:p-8 max-w-3xl w-full mx-auto gold-border-glow">
-                <div class="flex justify-between items-center mb-5 border-b border-gold/20 pb-4">
-                    <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Check-in</h3>
-                    <button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="glass-panel rounded-2xl p-5 sm:p-8 max-w-6xl w-full mx-auto gold-border-glow">
+                <div class="flex justify-between items-center gap-4 mb-5 border-b border-gold/20 pb-4">
+                    <div class="min-w-0">
+                        <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Management Portal</h3>
+                        <p class="text-xs text-gray-400 mt-1">Guest list, check-in, payment and event administration</p>
+                    </div>
+                    <button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white shrink-0"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
                 <div id="staffLoginSection" class="space-y-4 py-5">
                     <div class="text-center mb-5">
                         <p class="text-sm text-gray-200">Sign in with your assigned username and password.</p>
                         <p class="text-xs text-amber-200 mt-2">The administrator creates accounts and assigns roles. No email address is needed.</p>
                     </div>
+                    <!-- Staff sign-in accepts a username; JavaScript maps it to a synthetic Firebase Authentication email alias. -->
                     <form id="staffLoginForm" class="space-y-4 max-w-md mx-auto">
                         <div>
                             <label for="staffUsername" class="form-label">Username</label>
@@ -390,12 +553,18 @@
                     <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">Firebase Authentication or Firestore is unavailable. Check the project configuration and security rules.</p>
                 </div>
                 <div id="guestlistSection" class="hidden">
+                    <h4 class="staff-subheading mb-2">Signed in</h4>
                     <div id="staffIdentityBar" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gold/20 bg-black/30 px-3 py-2 mb-4">
                         <p id="staffIdentity" class="text-[10px] text-gray-300 break-all">Signed in</p>
-                        <span class="text-[9px] text-emerald-200 uppercase tracking-wider">Authenticated</span>
+                        <span class="text-[9px] text-emerald-200 uppercase tracking-wider">SIGNED IN</span>
                     </div>
-                    <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
-                        <div class="rounded-lg border border-gold/25 bg-black/35 p-3 min-w-0">
+                    <div id="eventCheckInModeBanner" class="rounded-lg border border-amber-400/40 bg-amber-950/30 px-3 py-2 mb-4" role="status" aria-live="polite">
+                        <p id="eventCheckInModeTitle" class="text-xs font-semibold uppercase tracking-wider text-amber-100">EVENT CHECK-IN INACTIVE · TEST MODE</p>
+                        <p id="eventCheckInModeMessage" class="text-xs text-gray-200 mt-1">Check-ins, payments, drink upgrades and chip actions are temporary in this browser tab. Real guest registrations remain saved.</p>
+                    </div>
+                    <h4 class="staff-subheading mb-2">Live event overview</h4>
+                    <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                        <div class="staff-metric-card">
                             <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</p>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                                 <div class="flex items-center gap-2">
@@ -405,28 +574,30 @@
                                     </div>
                                     <span class="text-2xl text-gray-500">/</span>
                                     <div class="min-w-0">
-                                        <p id="guestPaidCount" class="text-3xl font-semibold text-sky-200 tabular-nums">0</p>
+                                        <p id="guestPaidCount" class="text-3xl font-semibold text-emerald-200 tabular-nums">0</p>
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Paid</p>
                                     </div>
                                 </div>
-                                <table class="w-fit max-w-full table-auto border-collapse text-[10px] leading-4 text-gray-300 tabular-nums">
-                                    <thead class="sr-only"><tr><th>Category</th><th>Total</th><th>Separator</th><th>Paid</th></tr></thead>
-                                    <tbody>
-                                        <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Albatross</th><td id="guestAlbatrossTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestAlbatrossPaid" class="text-right">0</td></tr>
-                                        <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Basics</th><td id="guestBasicsTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestBasicsPaid" class="text-right">0</td></tr>
-                                        <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">RSVPs</th><td id="guestFriendsTotal" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestFriendsPaid" class="text-right">0</td></tr>
-                                        <tr><th scope="row" class="text-left font-semibold text-gold pr-2 whitespace-nowrap">Rate Full</th><td id="guestMixRatio" class="text-right font-semibold text-gold">—</td><td class="text-center px-1 text-gray-500">/</td><td id="guestPaidMixRatio" class="text-right font-semibold text-gold">—</td></tr>
-                                        <tr><th scope="row" class="text-left font-semibold text-gray-300 pr-2 whitespace-nowrap">Rate Std.</th><td id="guestStandardMixRatio" class="text-right font-semibold text-gray-300">—</td><td class="text-center px-1 text-gray-500">/</td><td id="guestPaidStandardMixRatio" class="text-right font-semibold text-gray-300">—</td></tr>
-                                    </tbody>
-                                </table>
+                                <div class="min-w-0 flex justify-end">
+                                    <table class="w-fit max-w-full table-auto border-collapse text-[10px] leading-4 text-gray-300 tabular-nums">
+                                        <thead class="sr-only"><tr><th>Category</th><th>Total</th><th>Separator</th><th>Paid</th></tr></thead>
+                                        <tbody>
+                                            <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Albatross</th><td id="guestAlbatrossTotal" class="text-right text-gold">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestAlbatrossPaid" class="text-right text-emerald-200">0</td></tr>
+                                            <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Basics</th><td id="guestBasicsTotal" class="text-right text-gold">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestBasicsPaid" class="text-right text-emerald-200">0</td></tr>
+                                            <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">RSVPs</th><td id="guestFriendsTotal" class="text-right text-gold">0</td><td class="text-center px-1 text-gray-500">/</td><td id="guestFriendsPaid" class="text-right text-emerald-200">0</td></tr>
+                                            <tr><th scope="row" class="text-left font-semibold text-violet-300 pr-2 whitespace-nowrap">Rate Full</th><td id="guestMixRatio" class="text-right font-semibold text-violet-300">—</td><td class="text-center px-1 text-gray-500">/</td><td id="guestPaidMixRatio" class="text-right font-semibold text-violet-300">—</td></tr>
+                                            <tr><th scope="row" class="text-left font-semibold text-violet-300 pr-2 whitespace-nowrap">Rate Std.</th><td id="guestStandardMixRatio" class="text-right font-semibold text-violet-300">—</td><td class="text-center px-1 text-gray-500">/</td><td id="guestPaidStandardMixRatio" class="text-right font-semibold text-violet-300">—</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
-                                                <div class="rounded-lg border border-amber-400/40 bg-amber-950/30 p-3 min-w-0">
+                                                <div class="staff-metric-card">
                             <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Welcome drinks</p>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                                 <div class="flex items-center gap-2">
                                     <div class="min-w-0">
-                                        <p id="drinkEstimateTotal" class="text-3xl font-semibold text-amber-200 tabular-nums">0</p>
+                                        <p id="drinkEstimateTotal" class="text-3xl font-semibold text-gold tabular-nums">0</p>
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Total</p>
                                     </div>
                                     <span class="text-2xl text-gray-500">/</span>
@@ -435,39 +606,148 @@
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Issued</p>
                                     </div>
                                 </div>
-                                <div class="min-w-0">
+                                <div class="min-w-0 flex justify-end">
                                     <table class="w-fit max-w-full table-auto border-collapse text-[10px] leading-4 text-gray-300 tabular-nums">
                                         <thead class="sr-only"><tr><th>Category</th><th>Total</th><th>Separator</th><th>Issued</th></tr></thead>
                                         <tbody>
-                                            <tr><th scope="row" class="text-left font-normal pr-2">Referrals</th><td id="drinkReferralEstimate" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkReferralIssued" class="text-right">0</td></tr>
-                                            <tr><th scope="row" class="text-left font-normal pr-2">Included</th><td id="drinkIncludedEstimate" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkIncludedIssued" class="text-right">0</td></tr>
-                                            <tr><th scope="row" class="text-left font-normal pr-2">Upgrades</th><td id="drinkUpgradeEstimate" class="text-right">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkUpgradeIssued" class="text-right">0</td></tr>
+                                            <tr><th scope="row" class="text-left font-normal pr-2">Referrals</th><td id="drinkReferralEstimate" class="text-right text-gold">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkReferralIssued" class="text-right text-emerald-200">0</td></tr>
+                                            <tr><th scope="row" class="text-left font-normal pr-2">Included</th><td id="drinkIncludedEstimate" class="text-right text-gold">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkIncludedIssued" class="text-right text-emerald-200">0</td></tr>
+                                            <tr><th scope="row" class="text-left font-normal pr-2">Upgrades</th><td id="drinkUpgradeEstimate" class="text-right text-gold">0</td><td class="text-center px-1 text-gray-500">/</td><td id="drinkUpgradeIssued" class="text-right text-emerald-200">0</td></tr>
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
                         </div>
-                        <div id="collectedMetric" class="rounded-lg border border-sky-400/30 bg-sky-950/25 p-3 min-w-0">
-                            <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Payments</p>
-                            <div class="flex items-start gap-3 mt-2">
-                                <div class="min-w-0">
-                                    <p id="fullAttendanceAmount" class="text-xl sm:text-2xl font-semibold text-white tabular-nums">€0</p>
-                                    <p class="text-[10px] uppercase tracking-wider text-gray-400">Gross Potential</p>
+                        <div id="collectedMetric" class="staff-metric-card">
+                            <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Payments (€)</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="min-w-0">
+                                        <p id="fullAttendanceAmount" class="text-3xl font-semibold text-gold tabular-nums">0</p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Potential</p>
+                                    </div>
+                                    <span class="text-2xl text-gray-500">/</span>
+                                    <div class="min-w-0">
+                                        <p id="collectedAmount" class="text-3xl font-semibold text-emerald-200 tabular-nums">0</p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Paid</p>
+                                    </div>
                                 </div>
-                                <span class="text-xl text-gray-500">/</span>
-                                <div class="min-w-0">
-                                    <p id="collectedAmount" class="text-xl sm:text-2xl font-semibold text-sky-200 tabular-nums">€0</p>
-                                    <p class="text-[10px] uppercase tracking-wider text-gray-400">Paid</p>
+                                <div class="min-w-0 flex justify-end">
+                                    <table class="w-fit max-w-full table-auto border-collapse text-[10px] leading-4 text-gray-300 tabular-nums" aria-label="Ticket revenue by category">
+                                        <thead class="sr-only"><tr><th scope="col">Category and ticket</th><th scope="col">Potential</th><th scope="col">Separator</th><th scope="col">Paid</th></tr></thead>
+                                        <tbody>
+                                            <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Albatross (<span id="paymentAlbatrossTicket">5</span>)</th><td id="paymentAlbatrossPotential" class="text-right whitespace-nowrap text-gold">0</td><td class="text-center px-1 text-gray-500">/</td><td id="paymentAlbatrossPaid" class="text-right whitespace-nowrap text-emerald-200">0</td></tr>
+                                            <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">Basics (<span id="paymentBasicsTicket">15</span>)</th><td id="paymentBasicsPotential" class="text-right whitespace-nowrap text-gold">0</td><td class="text-center px-1 text-gray-500">/</td><td id="paymentBasicsPaid" class="text-right whitespace-nowrap text-emerald-200">0</td></tr>
+                                            <tr><th scope="row" class="text-left font-normal pr-2 whitespace-nowrap">RSVPs (<span id="paymentRsvpsTicket">20</span>)</th><td id="paymentRsvpsPotential" class="text-right whitespace-nowrap text-gold">0</td><td class="text-center px-1 text-gray-500">/</td><td id="paymentRsvpsPaid" class="text-right whitespace-nowrap text-emerald-200">0</td></tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <section id="adminPricingPanel" class="rounded-xl border border-gold/40 bg-black/30 p-4 mb-5">
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-3">
-                            <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Admin · Prices</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-amber-200">Role-controlled staff access</span>
+                    
+                    
+
+                    
+
+                    <!-- Destructive admin utility: restore replaces the supported event collections and must remain admin-only and confirmation-gated. -->
+                    
+
+                    <p id="guestlistError" class="text-red-300 text-sm hidden mb-3">Could not load the guest list. Check the database connection and access rules.</p>
+                    <section id="hotelCheckInPanel" class="staff-panel">
+                    <div class="staff-panel__header">
+                        <h4 id="hotelCheckInTitle" class="staff-panel__title">Guest-list Verification</h4>
+                        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
+                            <button type="button" id="printGuestListBtn" class="sort-option" title="Automatically choose page orientation, columns and font size; include both roster versions in one PDF">Print / Save PDF</button>
+                            <span id="printGuestListStatus" class="text-[10px] text-gray-400" role="status" aria-live="polite"></span>
+                            <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                         </div>
-                        <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules and referral eligibility for each category. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid. Referral badges are informational; drink eligibility still follows each category’s rule.</p>
+                    </div>
+                    <p id="hotelCheckInDescription" class="text-xs text-gray-400 mb-3">Verify that the guest is on the list and record their arrival.</p>
+                    <div id="hotelSortControls" class="flex flex-wrap items-center gap-2 mb-4" role="group" aria-label="Sort check-in lists">
+                        <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
+                        <button type="button" class="sort-option" data-sort-group="checkin" data-sort="firstName" aria-pressed="false" onclick="setGuestSort('firstName')">First name</button>
+                        <button type="button" class="sort-option" data-sort-group="checkin" data-sort="lastName" aria-pressed="false" onclick="setGuestSort('lastName')">Last Name</button>
+                        <button type="button" class="sort-option" data-sort-group="checkin" data-sort="signupNewest" aria-pressed="false" onclick="setGuestSort('signupNewest')">Signup</button>
+                    </div>
+                    <div id="notCheckedInListSection" class="mb-4">
+                        <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Not checked in <span id="hotelOpenCount" class="text-amber-100">(0)</span></p>
+                        <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestNotCheckedInContainer"></div>
+                        <p id="noUncheckGuests" class="text-xs text-gray-500 py-2 hidden">Everyone is checked in.</p>
+                    </div>
+                    <div id="checkedInListSection" class="mb-6">
+                        <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Checked in <span id="hotelCheckedCount" class="text-emerald-200">(0)</span></p>
+                        <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestCheckedInContainer"></div>
+                        <p id="noCheckedGuests" class="text-xs text-gray-500 py-2 hidden">No guests checked in yet.</p>
+                    </div>
+                    <div id="combinedGuestListSection" class="mb-6 hidden">
+                        <div class="mb-5">
+                            <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">All guests <span id="combinedGuestCount" class="text-amber-100">(0)</span></p>
+                            <div class="space-y-2 max-h-[32rem] overflow-y-auto pr-1" id="combinedGuestContainer"></div>
+                            <p id="noCombinedGuests" class="text-xs text-gray-500 py-2 hidden">No guests need further processing.</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Paid <span id="combinedPaidCount" class="text-emerald-200">(0)</span></p>
+                            <div class="space-y-2 max-h-[32rem] overflow-y-auto pr-1" id="combinedPaidContainer"></div>
+                            <p id="noCombinedPaidGuests" class="text-xs text-gray-500 py-2 hidden">No guests have completed all required steps yet.</p>
+                        </div>
+                    </div>
+                    </section>
+                    <section id="internationsPaymentPanel" class="staff-panel">
+                        <div class="staff-panel__header">
+                            <h4 class="staff-panel__title">Payment, Welcome Drinks & Final Admission</h4>
+                            <div class="flex w-full sm:w-auto">
+                                <input type="search" id="paymentSearchInput" oninput="filterPaymentGuests()" aria-label="Search payment list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
+                            </div>
+                        </div>
+                        <p id="paymentDescription" class="text-xs text-gray-400 mb-3">Collect admission payment, manage eligible drink upgrades, issue welcome-drink chips when entitled and hand over the admission wristband.</p>
+                        <div id="paymentSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort payment lists">
+                            <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
+                            <button type="button" class="sort-option" data-sort-group="payment" data-sort="firstName" aria-pressed="false" onclick="setPaymentSort('firstName')">First name</button>
+                            <button type="button" class="sort-option" data-sort-group="payment" data-sort="lastName" aria-pressed="false" onclick="setPaymentSort('lastName')">Last Name</button>
+                            <button type="button" class="sort-option" data-sort-group="payment" data-sort="timeOrder" aria-pressed="true" onclick="setPaymentSort('timeOrder')">Check-in order</button>
+                        </div>
+                        <div class="mb-4">
+                            <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Awaiting payment <span id="internationsUnpaidCount" class="text-amber-200">(0)</span></p>
+                            <div class="space-y-2 max-h-80 overflow-y-auto pr-1" id="internationsUnpaidContainer"></div>
+                            <p id="noInternationsUnpaid" class="text-xs text-gray-500 py-2 hidden">No checked-in guests are awaiting payment.</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Paid <span id="internationsPaidCount" class="text-emerald-200">(0)</span></p>
+                            <div class="space-y-2 max-h-80 overflow-y-auto pr-1" id="internationsPaidContainer"></div>
+                            <p id="noInternationsPaid" class="text-xs text-gray-500 py-2 hidden">No checked-in guests have been marked paid yet.</p>
+                        </div>
+                    
+                        <section id="unrecognizedWelcomeDrinkSection" class="staff-panel staff-panel--nested hidden" aria-labelledby="welcomeDrinkHeading">
+                        <div class="staff-panel__header">
+                            <h4 id="welcomeDrinkHeading" class="staff-panel__title">Unaccounted referrals</h4>
+                            <span class="staff-panel__meta">Inviter names that do not match a registered guest or member</span>
+                        </div>
+                        
+                        <div id="welcomeDrinkList" class="space-y-2 text-sm text-gray-100">
+                        </div>
+                    </section>
+                    </section>
+                    <!-- Admin-only configuration follows the staff's day-to-day check-in and payment workflow. -->
+                    <div id="adminToolsHeading" class="hidden staff-tools-heading" aria-label="Admin configuration">
+                        <h4>Administration &amp; configuration</h4>
+                        <p>Admin only · changes affect event operations</p>
+                    </div>
+
+                    <section id="adminPricingPanel" class="staff-panel">
+                        <div class="staff-panel__header">
+                            <h4 class="staff-panel__title">Event Settings</h4>
+                            <span class="staff-panel__meta">Pricing, welcome drinks and admission workflow</span>
+                        </div>
+                        <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules, referral eligibility and the admission workflow. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid.</p>
+                        <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
+                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="eventCheckInActive" type="checkbox" class="mt-1 accent-amber-300"><span><strong>Event check-in active (live mode)</strong><span class="block text-xs text-gray-400 mt-1">Inactive: check-ins, payments, drink upgrades and chip actions are simulated only in each browser tab session. Active: those actions are saved to the real guest records. Public guest registrations are always saved normally.</span></span></label>
+                            <p id="eventCheckInActiveStatus" role="status" aria-live="polite" class="text-xs text-amber-100 mt-2">Event check-in is inactive. Testing changes are session-only.</p>
+                        </div>
+                        <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
+                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="twoStepCheckInEnabled" type="checkbox" class="mt-1 accent-amber-300" checked><span><strong>Two-step check-in</strong><span class="block text-xs text-gray-400 mt-1">Enabled: Hotel staff verify arrivals; InterNations staff handle payment and final admission. Disabled: InterNations sees one guest list with check-in and admission actions.</span></span></label>
+                            <p id="workflowSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-300 mt-2">Two-step check-in is enabled by default.</p>
+                        </div>
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
@@ -526,83 +806,38 @@
                         </div>
                         <p id="pricingSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-4">Pricing changes save automatically.</p>
                     </section>
-                    <section id="internationsImportPanel" class="rounded-xl border border-sky-400/40 bg-sky-950/20 p-4 mb-5">
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
-                            <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">Import InterNations guest list</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-sky-200">CSV / Excel · repeatable import</span>
+
+                    <section id="internationsImportPanel" class="staff-panel">
+                        <div class="staff-panel__header">
+                            <h4 class="staff-panel__title">Import InterNations guest list</h4>
+                            <span class="staff-panel__meta">CSV / Excel · repeatable import</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-3">Choose the latest InterNations export. First and last names are combined automatically; the Status field is saved as the InterNations member type/status. Existing check-in, payment and chip status are preserved.</p>
+                        <p class="text-xs text-gray-300 mb-3">Choose the full current InterNations Members-List export. Missing names are removed from the imported member list; matched guests keep their check-in, payment and chip status. An RSVP guest who is also a member remains a member for calculations.</p>
                         <label for="internationsFileInput" class="form-label">Guest-list spreadsheet</label>
                         <input id="internationsFileInput" type="file" accept=".xlsx,.xls,.csv,.ods" class="form-field text-sm mb-3">
                         <div id="internationsImportOptions" class="hidden space-y-3">
                             <p class="text-xs text-sky-100">Names are combined automatically from First Name + Last Name. The Status field is imported as the member type/status.</p>
                             <div id="internationsImportPreview" class="rounded-lg border border-sky-400/20 bg-black/30 p-3 text-xs text-gray-200"></div>
-                            <button type="button" id="confirmInternationsImport" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Import / Update InterNations Names</button>
+                            <button type="button" id="confirmInternationsImport" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Synchronize full InterNations Members-List</button>
                         </div>
                         <p id="internationsImportStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-3"></p>
                     </section>
-                    
-                    <p id="guestlistError" class="text-red-300 text-sm hidden mb-3">Could not load the guest list. Check the database connection and access rules.</p>
-                    <section id="hotelCheckInPanel">
-                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
-                        <h4 class="font-serif uppercase tracking-wider text-gold text-sm">Check-in</h4>
-                        <div class="flex w-full sm:w-auto">
-                            <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
+
+                    <section id="databaseBackupPanel" class="staff-panel hidden" aria-labelledby="databaseBackupHeading">
+                        <div class="staff-panel__header">
+                            <h4 id="databaseBackupHeading" class="staff-panel__title">Database Backup & Restore</h4>
+                            <span class="staff-panel__meta">Admin only</span>
                         </div>
-                    </div>
-                    <div id="hotelSortControls" class="flex items-center gap-3 mb-4" role="group" aria-label="Sort check-in lists">
-                        <label for="guestSortSelect" class="text-[10px] uppercase tracking-wider text-gray-400 whitespace-nowrap">Sort by</label>
-                        <select id="guestSortSelect" class="form-field text-sm py-2 px-3 w-auto min-w-36" aria-label="Sort check-in guest list" onchange="setGuestSort(this.value)">
-                            <option value="firstName">First name</option>
-                            <option value="lastName">Last Name</option>
-                            <option value="signupNewest">Signup</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Not checked in <span id="hotelOpenCount" class="text-amber-100">(0)</span></p>
-                        <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestNotCheckedInContainer"></div>
-                        <p id="noUncheckGuests" class="text-xs text-gray-500 py-2 hidden">Everyone is checked in.</p>
-                    </div>
-                    <div class="mb-6">
-                        <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Checked in <span id="hotelCheckedCount" class="text-emerald-200">(0)</span></p>
-                        <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestCheckedInContainer"></div>
-                        <p id="noCheckedGuests" class="text-xs text-gray-500 py-2 hidden">No guests checked in yet.</p>
-                    </div>
+                        <p class="text-xs text-gray-300 mb-3">Export and restore work directly through Firestore under your signed-in Admin permissions; no Cloud Functions or billing plan upgrade is required. The JSON file includes guest records and event settings only. Staff accounts, roles and passwords are not included. Restore replaces all current guest records and event settings, so download a fresh backup first and review the selected file before confirming.</p>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <button id="createDatabaseBackupBtn" type="button" class="sort-option">Download backup (.json)</button>
+                            <label for="restoreDatabaseFileInput" class="sort-option cursor-pointer">Choose backup to restore</label>
+                            <input id="restoreDatabaseFileInput" type="file" accept=".json,application/json" class="hidden">
+                            <button id="restoreDatabaseBackupBtn" type="button" disabled class="sort-option opacity-40 cursor-not-allowed">Restore selected backup</button>
+                        </div>
+                        <p id="databaseBackupStatus" class="text-xs text-gray-300 mt-3" role="status" aria-live="polite">Create a backup before making bulk changes.</p>
                     </section>
-                    <section id="internationsPaymentPanel" class="rounded-xl border border-sky-400/40 bg-sky-950/20 p-4 mt-6">
-                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
-                            <h4 class="font-serif uppercase tracking-wider text-sky-100 text-sm">Checked-in guests · Payment status</h4>
-                            <div class="flex w-full sm:w-auto">
-                                <input type="search" id="paymentSearchInput" oninput="filterPaymentGuests()" aria-label="Search payment list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
-                            </div>
-                        </div>
-                        <div id="paymentSortControls" class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Sort payment lists">
-                            <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Payment list:</span>
-                            <button type="button" class="sort-option" data-sort-group="payment" data-sort="firstName" aria-pressed="false" onclick="setPaymentSort('firstName')">First name</button>
-                            <button type="button" class="sort-option" data-sort-group="payment" data-sort="lastName" aria-pressed="false" onclick="setPaymentSort('lastName')">Last Name</button>
-                            <button type="button" class="sort-option" data-sort-group="payment" data-sort="timeOrder" aria-pressed="true" onclick="setPaymentSort('timeOrder')">Check-in order</button>
-                        </div>
-                        <div class="mb-4">
-                            <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Awaiting payment <span id="internationsUnpaidCount" class="text-amber-200">(0)</span></p>
-                            <div class="space-y-2 max-h-80 overflow-y-auto pr-1" id="internationsUnpaidContainer"></div>
-                            <p id="noInternationsUnpaid" class="text-xs text-gray-500 py-2 hidden">No checked-in guests are awaiting payment.</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Paid <span id="internationsPaidCount" class="text-emerald-200">(0)</span></p>
-                            <div class="space-y-2 max-h-80 overflow-y-auto pr-1" id="internationsPaidContainer"></div>
-                            <p id="noInternationsPaid" class="text-xs text-gray-500 py-2 hidden">No checked-in guests have been marked paid yet.</p>
-                        </div>
-                    
-                        <section id="unrecognizedWelcomeDrinkSection" class="hidden rounded-xl border border-gold/40 bg-amber-950/25 p-4 mt-5" aria-labelledby="welcomeDrinkHeading">
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
-                            <h4 id="welcomeDrinkHeading" class="font-serif uppercase tracking-wider text-amber-100 text-sm">Unaccounted referrals</h4>
-                            <span class="text-[10px] uppercase tracking-wider text-gray-300">Unknown inviter names entered on RSVP forms, plus RSVPs without an inviter</span>
-                        </div>
-                        
-                        <div id="welcomeDrinkList" class="space-y-2 text-sm text-gray-100">
-                        </div>
-                    </section>
-                    </section>
+
                 </div>
             </div>
         </div>
@@ -617,11 +852,12 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Production build 2026.10.16.5</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.17.13</p>
         </div>
     </footer>
 
     <script>
+        // UI helpers are grouped by domain; Firestore security rules enforce staff permissions.
         // Existing Firebase web-app configuration. These values connect to the original project.
         const firebaseConfig = {
             apiKey: "AIzaSyBvcXFzc65H5RyVYUsYa7ANUoxASRWPKZ0",
@@ -666,6 +902,7 @@
             }
         }
 
+        /** Show the private WhatsApp group link only when its configured URL matches the expected invite-link shape. */
         function configureGroupInviteButton() {
             const link = document.getElementById('groupInviteLink');
             const url = String(WHATSAPP_GROUP_INVITE_URL || '').trim();
@@ -682,7 +919,87 @@
         let pendingInternationsNameColumn = '';
         let cachedGuestDocs = [];
         let pricingUnsubscribe = null;
+        let workflowSettingsUnsubscribe = null;
+        let twoStepCheckInEnabled = true;
+        // Fail safe: the real event workflow is inactive until an Admin explicitly activates it.
+        let eventCheckInActive = false;
+        const SESSION_GUEST_OVERRIDE_KEY = 'the-dean-after-dark-checkin-test-state-v1';
+        let sessionGuestOverrides = readSessionGuestOverrides();
+        let singleTeamCombinedMode = false;
         let cachedUnaccountedReferrals = [];
+        /** Load per-tab test changes. sessionStorage is never sent to Firestore and is cleared when the tab closes or mode changes. */
+        function readSessionGuestOverrides() {
+            try {
+                const value = JSON.parse(sessionStorage.getItem(SESSION_GUEST_OVERRIDE_KEY) || '{}');
+                return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+            } catch (_) {
+                return {};
+            }
+        }
+        function clearSessionGuestOverrides() {
+            sessionGuestOverrides = {};
+            try { sessionStorage.removeItem(SESSION_GUEST_OVERRIDE_KEY); } catch (_) {}
+        }
+        /** Return a guest's persisted data overlaid with test-only state while the real event is inactive. */
+        function getEffectiveGuestData(guestDoc) {
+            const data = guestDoc.data() || {};
+            if (eventCheckInActive) return data;
+            const override = sessionGuestOverrides[guestDoc.id];
+            return override ? { ...data, ...override } : data;
+        }
+        /** Retain the Firestore document ID and reference while exposing session-overlaid data to the renderer. */
+        function makeEffectiveGuestDoc(guestDoc) {
+            return { id: guestDoc.id, ref: guestDoc.ref, data: () => getEffectiveGuestData(guestDoc) };
+        }
+        /** Refresh the visible list after an in-tab test action without changing any guest record in Firestore. */
+        function refreshGuestlistView() {
+            const section = document.getElementById('guestlistSection');
+            if (section && !section.classList.contains('hidden')) loadLiveGuestlist();
+        }
+        /** Use Firestore timestamps in live mode and serializable local timestamps in test mode. */
+        function guestActionTimestamp() {
+            return eventCheckInActive ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString();
+        }
+        /** Record an operational action either as a real update or as tab-local simulation data. */
+        async function applyGuestStateUpdate(id, update) {
+            if (!db || !id) throw new Error('The guest database is not connected.');
+            if (!eventCheckInActive) {
+                sessionGuestOverrides[id] = { ...(sessionGuestOverrides[id] || {}), ...update };
+                try { sessionStorage.setItem(SESSION_GUEST_OVERRIDE_KEY, JSON.stringify(sessionGuestOverrides)); } catch (_) {}
+                refreshGuestlistView();
+                return;
+            }
+            await db.collection('halloween_guests').doc(id).update(update);
+        }
+        /** Update the persistent mode banner and status shown to every staff role. */
+        function updateEventCheckInModeUI() {
+            const active = eventCheckInActive;
+            const checkbox = document.getElementById('eventCheckInActive');
+            if (checkbox) checkbox.checked = active;
+            const status = document.getElementById('eventCheckInActiveStatus');
+            if (status) status.textContent = active
+                ? 'ACTIVE: check-ins, payments, upgrades and chip actions are saved permanently to the real guest records.'
+                : 'INACTIVE: staff actions are simulated in this browser tab only. Public registrations remain permanent.';
+            const banner = document.getElementById('eventCheckInModeBanner');
+            const title = document.getElementById('eventCheckInModeTitle');
+            const message = document.getElementById('eventCheckInModeMessage');
+            if (banner) {
+                banner.classList.toggle('border-amber-400/40', !active);
+                banner.classList.toggle('bg-amber-950/30', !active);
+                banner.classList.toggle('border-emerald-400/40', active);
+                banner.classList.toggle('bg-emerald-950/20', active);
+            }
+            if (title) {
+                title.classList.toggle('text-amber-100', !active);
+                title.classList.toggle('text-emerald-100', active);
+                title.textContent = active ? 'EVENT CHECK-IN ACTIVE · LIVE MODE' : 'EVENT CHECK-IN INACTIVE · TEST MODE';
+            }
+            if (message) message.textContent = active
+                ? 'Check-ins, payments, drink upgrades and chip actions are saved to the real guest records.'
+                : 'Check-ins, payments, drink upgrades and chip actions are temporary in this browser tab. Real guest registrations remain saved.';
+        }
+
+        // Defaults for admission tiers, drink treatment and referral rewards; event_settings/pricing can override them.
         const DEFAULT_PRICING = {
             basePrices: { basics: 15, paidMembers: 5, friends: 20 },
             drinkRules: {
@@ -698,6 +1015,8 @@
         };
         let pricingSettings = JSON.parse(JSON.stringify(DEFAULT_PRICING));
 
+        /** Normalize event pricing settings and fill supported defaults so partial or older documents remain safe to render. */
+        // PRICING AND REFERRAL RULES: centralize decisions so cards and admin controls use the same calculations.
         function normalizePricingSettings(value) {
             const raw = value || {};
             const amount = (candidate, fallback) => {
@@ -740,9 +1059,11 @@
             };
         }
 
+        /** Identify guests originating from the imported InterNations list rather than a public RSVP. */
         function isImportedMemberRecord(data) {
             return Boolean(data && (data.guestType === 'internations_member' || data.source === 'internations_import'));
         }
+        /** Find the imported membership record associated with a guest using normalized matching rules. */
         function findImportedMemberData(data) {
             const key = normalizeGuestName(data && data.name);
             if (!key) return isImportedMemberRecord(data) ? data : null;
@@ -752,34 +1073,41 @@
             });
             return match ? (match.data() || {}) : (isImportedMemberRecord(data) ? data : null);
         }
+        /** Central membership predicate for member-specific pricing and referral rules. */
         function isInterNationsMember(data) { return isImportedMemberRecord(data); }
+        /** Map a guest record to the stable pricing tier used by admission calculations. */
         function getGuestTier(data) {
             const member = findImportedMemberData(data);
             if (member) return String(member.interNationsStatus || (data && data.interNationsStatus) || '').toLocaleLowerCase().includes('basic') ? 'basics' : 'paidMembers';
             return 'friends';
         }
 
+        /** Return the guest’s normalized category for labels, pricing and workflow decisions. */
         function getGuestCategory(data) {
             const tier = getGuestTier(data);
             return tier === 'basics' ? 'Basics' : tier === 'paidMembers' ? 'Albatross' : 'RSVPs';
         }
 
+        /** Determine whether the guest’s category participates in the configured referral-drink programme. */
         function isReferralDrinkEligible(data) {
             const tier = getGuestTier(data);
             const referralRule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
             return Boolean(referralRule.eligible);
         }
 
+        /** Check whether qualifying referrals have reached this guest’s configured reward threshold. */
         function hasEarnedReferralDrink(data, qualifiedReferralCount) {
             const tier = getGuestTier(data), rule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
             const drink = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
             return isReferralDrinkEligible(data) && drink.mode !== 'included' && Number(qualifiedReferralCount || 0) >= rule.threshold;
         }
+        /** Check whether registered referrals may meet the threshold once payment/qualification is complete. */
         function hasPotentialReferralDrink(data, registeredReferralCount) {
             const tier = getGuestTier(data), rule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
             const drink = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
             return isReferralDrinkEligible(data) && drink.mode !== 'included' && Number(registeredReferralCount || 0) >= rule.threshold;
         }
+        /** Derive one mutually exclusive referral badge state from eligibility, pending and earned conditions. */
         function getReferralBadgeState(data, registeredReferralCount, qualifiedReferralCount) {
             const tier = getGuestTier(data);
             const rule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
@@ -795,16 +1123,19 @@
             return 'earned';
         }
 
+        /** Read the persisted welcome-drink chip state, including supported legacy field shapes. */
         function isGuestDrinkChipIssued(data) {
             const key = normalizeGuestName(data && data.name);
             if (key && cachedGuestDocs.some((doc) => normalizeGuestName(doc.data().name) === key && Boolean(doc.data().welcomeDrinkChipIssued))) return true;
             return Boolean(data && data.welcomeDrinkChipIssued);
         }
 
+        /** Format a monetary amount consistently for the German event-admission context. */
         function formatEuro(value) {
             return Math.round(Number(value || 0)).toLocaleString('de-DE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
         }
 
+        /** Calculate the amount due from the guest tier, configured drink rules and earned-drink status. */
         function calculateGuestCharge(data, welcomeDrinkEarned) {
             const tier = getGuestTier(data);
             const basePrice = Number(pricingSettings.basePrices[tier] || 0);
@@ -823,6 +1154,7 @@
             };
         }
 
+        /** Populate the admin pricing controls from the normalized settings document. */
         function renderPricingForm() {
             const fields = {
                 basePriceBasics: pricingSettings.basePrices.basics,
@@ -857,6 +1189,7 @@
 
         let pricingSaveInProgress = false;
         let pricingSaveRequested = false;
+        /** Validate and persist admin-managed admission, drink and referral pricing rules. */
         async function savePricingSettings() {
             pricingSaveRequested = true;
             if (pricingSaveInProgress) return;
@@ -946,10 +1279,13 @@
 
         renderPricingForm();
 
+        /** Normalize spacing and casing so imported names can be compared and de-duplicated consistently. */
+        // IMPORT PIPELINE: spreadsheet exports vary, so normalization and duplicate handling are shared by preview and import.
         function normalizeGuestName(value) {
             return String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
         }
 
+        /** Extract first/last-name fields from spreadsheet rows with varying column headers. */
         function readImportedNameParts(row) {
             const firstHeader = pendingInternationsHeaders.find((header) => /^(first|given)\s*name$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
             const lastHeader = pendingInternationsHeaders.find((header) => /^(last|family|sur)\s*name$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
@@ -964,10 +1300,12 @@
             };
         }
 
+        /** Resolve a display name from an imported row without assuming one fixed export format. */
         function readImportedGuestName(row) {
             return readImportedNameParts(row).name;
         }
 
+        /** Build the distinct imported guest-name set used for matching and duplicate prevention. */
         function getUniqueImportedNames() {
             const seen = new Map();
             let blankRows = 0;
@@ -984,33 +1322,58 @@
             return { entries: Array.from(seen.values()), blankRows, duplicateRows: pendingInternationsRows.length - seen.size - blankRows };
         }
 
+        /** Render a reviewable preview of the imported guest list before any import is committed. */
         function renderInternationsImportPreview() {
             const preview = document.getElementById('internationsImportPreview');
             const confirm = document.getElementById('confirmInternationsImport');
             if (!pendingInternationsRows.length || !pendingInternationsNameColumn) {
-                preview.textContent = '';
+                preview.replaceChildren();
                 confirm.disabled = true;
                 return;
             }
             const result = getUniqueImportedNames();
-            const existingKeys = new Set(cachedGuestDocs.map((doc) => normalizeGuestName(doc.data().name)).filter(Boolean));
-            const newNames = result.entries.filter((item) => !existingKeys.has(item.key));
+            const inputKeys = new Set(result.entries.map(item => item.key));
+            const existingKeys = new Set(cachedGuestDocs.map(doc => normalizeGuestName((doc.data() || {}).name)).filter(Boolean));
+            const newNames = result.entries.filter(item => !existingKeys.has(item.key));
             const matchingNames = result.entries.length - newNames.length;
+            const missingMembers = cachedGuestDocs.filter(doc => {
+                const data = doc.data() || {};
+                const key = normalizeGuestName(data.name);
+                return isImportedMemberRecord(data) && key && !inputKeys.has(key);
+            });
+            const looksLikeRsvp = data => Boolean(
+                data.rsvpSubmitted === true ||
+                data.rsvpSource === 'website' ||
+                data.source === 'website' ||
+                String(data.invitedBy || '').trim()
+            );
+            const preserveAsRsvp = missingMembers.filter(doc => looksLikeRsvp(doc.data() || {}));
+            const removeFromList = missingMembers.filter(doc => !looksLikeRsvp(doc.data() || {}));
             preview.replaceChildren();
             const summary = document.createElement('p');
             summary.className = 'font-semibold text-sm text-white mb-2';
-            summary.textContent = result.entries.length + ' unique names · ' + newNames.length + ' new · ' + matchingNames + ' already listed · ' + result.duplicateRows + ' repeated rows ignored';
+            summary.textContent = result.entries.length + ' unique members · ' + newNames.length + ' new · ' +
+                matchingNames + ' matched · ' + removeFromList.length + ' no longer on the member list · ' +
+                preserveAsRsvp.length + ' retained as RSVP guests · ' + result.duplicateRows + ' repeated rows ignored';
             preview.appendChild(summary);
             const note = document.createElement('p');
             note.className = 'text-gray-300 mb-2';
-            note.textContent = 'Matching names will be labelled InterNations member. Their existing check-in and welcome-drink chip status will be preserved.';
+            note.textContent = 'Confirming synchronizes to this full Members-List: new members are added, matches are updated, member-only records missing from the file are removed, and records marked as separate RSVPs are retained as RSVPs. Existing status is preserved for matches.';
             preview.appendChild(note);
-            const previewNames = document.createElement('p');
-            previewNames.className = 'text-gray-400 break-words';
-            previewNames.textContent = 'New names: ' + (newNames.slice(0, 8).map((item) => item.name).join(', ') || 'none') + (newNames.length > 8 ? ' …' : '');
-            preview.appendChild(previewNames);
+            const newNamesLine = document.createElement('p');
+            newNamesLine.className = 'text-gray-400 break-words mb-1';
+            newNamesLine.textContent = 'New names: ' + (newNames.slice(0, 10).map(item => item.name).join(', ') || 'none') + (newNames.length > 10 ? ' …' : '');
+            preview.appendChild(newNamesLine);
+            const removeNamesLine = document.createElement('p');
+            removeNamesLine.className = 'text-amber-200 break-words mb-1';
+            removeNamesLine.textContent = 'To remove: ' + (removeFromList.slice(0, 15).map(doc => doc.data().name || '(No name)').join(', ') || 'none') + (removeFromList.length > 15 ? ' …' : '');
+            preview.appendChild(removeNamesLine);
+            const retainedLine = document.createElement('p');
+            retainedLine.className = 'text-sky-200 break-words';
+            retainedLine.textContent = 'Keep as RSVPs: ' + (preserveAsRsvp.slice(0, 10).map(doc => doc.data().name || '(No name)').join(', ') || 'none') + (preserveAsRsvp.length > 10 ? ' …' : '');
+            preview.appendChild(retainedLine);
             confirm.disabled = result.entries.length === 0;
-            confirm.textContent = newNames.length ? 'Import ' + newNames.length + ' new name(s) and update matches' : 'Update matching InterNations names';
+            confirm.textContent = 'Synchronize Members-List (' + newNames.length + ' add · ' + removeFromList.length + ' remove)';
         }
 
         document.getElementById('internationsFileInput').addEventListener('change', async (event) => {
@@ -1068,26 +1431,61 @@
             if (!db) { status.textContent = 'The guest database is not connected.'; return; }
             const result = getUniqueImportedNames();
             if (!result.entries.length) { status.textContent = 'No valid guest names found.'; return; }
+
+            const inputKeys = new Set(result.entries.map(item => item.key));
+            const latestPreview = cachedGuestDocs.filter(doc => {
+                const data = doc.data() || {};
+                const key = normalizeGuestName(data.name);
+                return isImportedMemberRecord(data) && key && !inputKeys.has(key);
+            });
+            const looksLikeRsvp = data => Boolean(
+                data.rsvpSubmitted === true ||
+                data.rsvpSource === 'website' ||
+                data.source === 'website' ||
+                String(data.invitedBy || '').trim()
+            );
+            const removedPreview = latestPreview.filter(doc => !looksLikeRsvp(doc.data() || {}));
+            if (removedPreview.length) {
+                const names = removedPreview.slice(0, 12).map(doc => doc.data().name || '(No name)').join(', ');
+                const suffix = removedPreview.length > 12 ? ' and ' + (removedPreview.length - 12) + ' more' : '';
+                if (!window.confirm('This must be the FULL current InterNations Members-List. ' +
+                    removedPreview.length + ' imported-only guest record(s) are not in the new file and will be removed: ' +
+                    names + suffix + '. Continue with synchronization?')) return;
+            } else if (!window.confirm('Synchronize the full InterNations Members-List now? New members will be added and matching member records updated.')) {
+                return;
+            }
+
             button.disabled = true;
             const oldText = button.textContent;
-            button.textContent = 'IMPORTING…';
+            button.textContent = 'SYNCHRONIZING…';
             status.textContent = 'Checking the current guest list and preparing changes…';
             try {
                 const current = await db.collection('halloween_guests').get();
                 const byName = new Map();
-                current.forEach((doc) => {
-                    const key = normalizeGuestName(doc.data().name);
+                current.forEach(doc => {
+                    const key = normalizeGuestName((doc.data() || {}).name);
                     if (key && !byName.has(key)) byName.set(key, doc);
                 });
-                let added = 0, matched = 0;
+                let added = 0, matched = 0, removed = 0, retainedAsRsvp = 0;
                 const operations = [];
-                result.entries.forEach((entry) => {
+                const currentMissing = [];
+                const latestInputKeys = new Set(result.entries.map(item => item.key));
+
+                result.entries.forEach(entry => {
                     const existing = byName.get(entry.key);
                     if (existing) {
                         matched++;
+                        const prior = existing.data() || {};
+                        // Preserve a marker for a guest who had also submitted the public RSVP
+                        // before the membership-list import upgraded their classification.
+                        const wasRsvp = prior.rsvpSubmitted === true ||
+                            prior.rsvpSource === 'website' ||
+                            prior.source === 'website' ||
+                            Boolean(String(prior.invitedBy || '').trim());
                         const updateData = {
                             guestType: 'internations_member',
                             source: 'internations_import',
+                            rsvpSubmitted: wasRsvp,
                             importNameKey: entry.key,
                             importedAt: firebase.firestore.FieldValue.serverTimestamp(),
                             firstName: entry.firstName,
@@ -1109,6 +1507,7 @@
                             paidAt: null,
                             guestType: 'internations_member',
                             source: 'internations_import',
+                            rsvpSubmitted: false,
                             importNameKey: entry.key,
                             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                             importedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1117,30 +1516,63 @@
                         }});
                     }
                 });
+
+                current.forEach(doc => {
+                    const data = doc.data() || {};
+                    const key = normalizeGuestName(data.name);
+                    if (!isImportedMemberRecord(data) || !key || latestInputKeys.has(key)) return;
+                    currentMissing.push({ doc, data });
+                });
+                currentMissing.forEach(({doc, data}) => {
+                    const wasRsvp = data.rsvpSubmitted === true ||
+                        data.rsvpSource === 'website' ||
+                        data.source === 'website' ||
+                        Boolean(String(data.invitedBy || '').trim());
+                    if (wasRsvp) {
+                        retainedAsRsvp++;
+                        operations.push({ type: 'update', ref: doc.ref, data: {
+                            guestType: 'friend',
+                            source: 'website',
+                            rsvpSubmitted: true,
+                            importNameKey: firebase.firestore.FieldValue.delete(),
+                            importedAt: firebase.firestore.FieldValue.delete(),
+                            interNationsStatus: firebase.firestore.FieldValue.delete(),
+                            membershipRemovedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }});
+                    } else {
+                        removed++;
+                        operations.push({ type: 'delete', ref: doc.ref });
+                    }
+                });
+
                 for (let start = 0; start < operations.length; start += 400) {
                     const batch = db.batch();
-                    operations.slice(start, start + 400).forEach((op) => {
+                    operations.slice(start, start + 400).forEach(op => {
                         if (op.type === 'update') batch.update(op.ref, op.data);
+                        else if (op.type === 'delete') batch.delete(op.ref);
                         else batch.set(op.ref, op.data);
                     });
                     await batch.commit();
                 }
-                status.textContent = 'Import complete: ' + added + ' new guest(s) added, ' + matched + ' existing name(s) matched. Member status was updated where provided; existing check-in, payment and chip status were preserved.';
+                status.textContent = 'Synchronization complete: ' + added + ' new member(s) added, ' + matched +
+                    ' matched, ' + removed + ' member-only record(s) removed, and ' + retainedAsRsvp +
+                    ' records retained as RSVPs. Existing check-in, payment and chip status was preserved for matching records.';
                 pendingInternationsRows = [];
                 pendingInternationsHeaders = [];
                 pendingInternationsNameColumn = '';
                 document.getElementById('internationsImportOptions').classList.add('hidden');
                 document.getElementById('internationsFileInput').value = '';
             } catch (error) {
-                console.error('InterNations import failed:', error);
-                status.textContent = 'Import failed. No success was reported; check the guest list and database access rules before retrying. ' + (error.message || '');
+                console.error('InterNations synchronization failed:', error);
+                status.textContent = 'Synchronization failed. Review the guest list before retrying. ' + (error.message || '');
             } finally {
                 button.disabled = false;
                 button.textContent = oldText;
             }
         });
 
-
+        /** Escape reserved characters and line breaks for valid iCalendar text fields. */
+        // RSVP CONFIRMATION AND CALENDAR OUTPUT: these helpers support the public form without a navigation away.
         function escapeIcsText(value) {
             return String(value)
                 .replace(/\\/g, '\\\\')
@@ -1149,6 +1581,7 @@
                 .replace(/;/g, '\\;');
         }
 
+        /** Fold long iCalendar content lines before writing the downloadable calendar file. */
         function foldIcsLine(line) {
             const encoder = new TextEncoder();
             const chunks = [];
@@ -1169,6 +1602,7 @@
             return chunks.join('\r\n');
         }
 
+        /** Generate and download the event invitation as an .ics calendar file. */
         function downloadCalendarFile() {
             const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
             const location = escapeIcsText('The Dean Munich, Autograph Collection by Marriott, Landsberger Straße 68, 80339 München, Germany');
@@ -1236,6 +1670,7 @@
         const errorMessage = document.getElementById('errorMessage');
         let lastSubmittedGuest = null;
 
+        /** Render the in-place RSVP confirmation using the submitted guest details. */
         function showSubmittedGuest(guest) {
             document.getElementById('summaryName').textContent = guest.name;
             document.getElementById('summaryInvitedBy').textContent = guest.invitedBy || 'Not specified';
@@ -1243,6 +1678,7 @@
             configureGroupInviteButton();
         }
 
+        // Public RSVP write path. Do not expose guest-list reads or staff-only fields in this anonymous submission flow.
         form.addEventListener('submit', async function (event) {
             event.preventDefault();
             if (!form.reportValidity()) return;
@@ -1310,12 +1746,53 @@
             document.getElementById('guestName').focus({ preventScroll: true });
         });
 
+        /** Apply the configured one-step or two-step check-in workflow to visible staff panels. */
+        // AUTHENTICATION AND ROLE VISIBILITY: this controls presentation only; server/rules authorization remains authoritative.
+        function applyWorkflowRoleVisibility() {
+            const role = currentStaffRole;
+            singleTeamCombinedMode = !twoStepCheckInEnabled && (role === 'admin' || role === 'internations');
+            const checkInVisible = role === 'admin' || role === 'hotel' || (role === 'internations' && !twoStepCheckInEnabled);
+            const paymentVisible = (role === 'admin' || role === 'internations') && twoStepCheckInEnabled;
+            const checkInPanel = document.getElementById('hotelCheckInPanel');
+            const paymentPanel = document.getElementById('internationsPaymentPanel');
+            if (checkInPanel) checkInPanel.classList.toggle('hidden', !checkInVisible);
+            if (paymentPanel) paymentPanel.classList.toggle('hidden', !paymentVisible);
+
+            const title = document.getElementById('hotelCheckInTitle');
+            const description = document.getElementById('hotelCheckInDescription');
+            if (title) title.textContent = singleTeamCombinedMode ? 'Guest Check-in & Admission' : 'Guest-list Verification';
+            if (description) description.textContent = singleTeamCombinedMode
+                ? 'Manage payment, eligible drink upgrades and welcome-drink chips directly from the guest list. A separate Check In button is available only in the two-step workflow. Referral rewards still require referred guests to check in and pay.'
+                : 'Verify that the guest is on the list and record their arrival.';
+            const paymentDescription = document.getElementById('paymentDescription');
+            if (paymentDescription) paymentDescription.textContent =
+                'Collect admission payment, manage eligible drink upgrades, issue welcome-drink chips when entitled and hand over the admission wristband.';
+
+            const show = (id, visible) => {
+                const element = document.getElementById(id);
+                if (element) element.classList.toggle('hidden', !visible);
+            };
+            show('notCheckedInListSection', !singleTeamCombinedMode);
+            show('checkedInListSection', !singleTeamCombinedMode);
+            show('combinedGuestListSection', singleTeamCombinedMode);
+            const search = document.getElementById('hotelSearchInput');
+            if (search) {
+                search.placeholder = singleTeamCombinedMode ? 'Search all guests...' : 'Search guests...';
+                search.setAttribute('aria-label', singleTeamCombinedMode ? 'Search all guests' : 'Search check-in list');
+            }
+            const hint = document.getElementById('workflowSaveStatus');
+            if (hint && role !== 'admin') hint.textContent = role === 'hotel'
+                ? 'Hotel staff can verify arrivals. Payment and final admission are handled by InterNations.'
+                : (twoStepCheckInEnabled
+                    ? 'Hotel staff verify arrivals; InterNations staff handle payment and final admission.'
+                    : 'Check-in, payment and welcome-drink actions are available together in one list.');
+        }
+
+        /** Set the staff interface and available actions for the authenticated role returned by Firestore. */
         function applyStaffRole(role) {
             if (!STAFF_ROLES.includes(role)) throw new Error('The account does not have a valid staff role.');
             currentStaffRole = role;
             guestSortBy = role === 'admin' ? 'signupNewest' : 'firstName';
-            const guestSortSelect = document.getElementById('guestSortSelect');
-            if (guestSortSelect) guestSortSelect.value = guestSortBy;
             // Admin defaults to newest sign-up; Hotel defaults to first name.
             applyGuestSorts();
             const show = (id, visible) => {
@@ -1330,12 +1807,14 @@
                 statsGrid.classList.toggle('xl:grid-cols-3', role === 'admin');
                 statsGrid.classList.toggle('xl:grid-cols-2', role !== 'admin');
             }
+            show('adminToolsHeading', role === 'admin');
             show('adminPricingPanel', role === 'admin');
             show('internationsImportPanel', role === 'admin');
-            show('hotelCheckInPanel', role !== 'internations');
-            show('internationsPaymentPanel', role !== 'hotel');
+            show('databaseBackupPanel', role === 'admin');
+            applyWorkflowRoleVisibility();
         }
 
+        /** Display a staff sign-in or access-denied message in the dedicated feedback area. */
         function setStaffLoginError(message) {
             const error = document.getElementById('staffLoginError');
             error.textContent = message;
@@ -1344,6 +1823,7 @@
 
         const STAFF_AUTH_ALIAS_DOMAIN = 'staff.partybag.com';
 
+        /** Map the username entered by staff to the synthetic email-shaped Firebase Auth identifier. */
         function staffUsernameToAuthEmail(value) {
             const username = String(value || '').trim().toLowerCase();
             if (!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username)) {
@@ -1354,19 +1834,24 @@
             return username + '@' + STAFF_AUTH_ALIAS_DOMAIN;
         }
 
+        /** Translate Firebase Authentication error codes into actionable login messages. */
         function staffAuthErrorMessage(error) {
             if (error && error.code === 'staff/not-authorized') return error.message;
             if (error && error.code === 'staff/invalid-username') return error.message;
-            if (error && ['auth/invalid-credential', 'auth/user-not-found', 'auth/wrong-password', 'auth/invalid-email'].includes(error.code)) {
+            if (error && ['auth/invalid-credential', 'auth/invalid-login-credentials', 'auth/user-not-found', 'auth/wrong-password', 'auth/invalid-email'].includes(error.code)) {
                 return 'Username or password is incorrect.';
             }
+            if (error && error.code === 'auth/operation-not-allowed') return 'Firebase Email/Password sign-in is disabled. Enable it in Authentication → Sign-in method.';
+            if (error && error.code === 'auth/user-disabled') return 'This Firebase Authentication account is disabled. Enable the account in Authentication → Users.';
             if (error && error.code === 'auth/too-many-requests') return 'Too many sign-in attempts. Wait a while and try again.';
             if (error && error.code === 'auth/unauthorized-domain') return 'This website is not authorized for Firebase sign-in. Add sign-up.partybag.com to Firebase Authentication’s authorized domains.';
             if (error && error.code === 'auth/network-request-failed') return 'Network error while signing in. Check your connection and retry.';
-            if (error && error.code === 'permission-denied') return 'The staff role could not be checked. Confirm that the Firestore security rules have been published.';
-            return 'Sign-in could not be completed. Check your account setup and try again.';
+            if (error && (error.code === 'permission-denied' || error.code === 'firestore/permission-denied')) return 'The staff role could not be checked. Confirm that the role document exists in event_users and that Firestore rules allow this staff account to read it.';
+            if (error && error.code) return 'Sign-in could not be completed (' + error.code + '). Check the account setup and try again.';
+            return 'Sign-in could not be completed. Check the account setup and try again.';
         }
 
+        /** Unsubscribe from active Firestore listeners before logout or re-activation to avoid duplicate updates. */
         function stopStaffRealtimeListeners() {
             if (guestlistUnsubscribe) { guestlistUnsubscribe(); guestlistUnsubscribe = null; }
             if (pricingUnsubscribe) { pricingUnsubscribe(); pricingUnsubscribe = null; }
@@ -1375,6 +1860,7 @@
             cachedUnaccountedReferrals = [];
         }
 
+        /** Return the interface to the staff login state and hide role-protected tools. */
         function showStaffLogin() {
             activeStaffUid = null;
             currentStaffRole = null;
@@ -1385,6 +1871,7 @@
             document.getElementById('staffPassword').value = '';
         }
 
+        /** Resolve the signed-in user’s active event_users profile before enabling staff functionality. */
         async function activateStaffSession(user) {
             if (!user || !db) throw new Error('Firebase Authentication and Firestore must both be available.');
             if (activeStaffUid === user.uid && !document.getElementById('guestlistSection').classList.contains('hidden')) return;
@@ -1411,7 +1898,7 @@
                 }
                 applyStaffRole(profile.role);
                 activeStaffUid = user.uid;
-                document.getElementById('staffIdentity').textContent = profile.role === 'admin' ? 'Authenticated · ' + username + ' · Admin' : 'Authenticated · ' + username;
+                document.getElementById('staffIdentity').textContent = 'Signed in as ' + username + ' · ' + ({ admin: 'Admin', hotel: 'Hotel', internations: 'InterNations' }[profile.role] || profile.role);
                 document.getElementById('staffLoginSection').classList.add('hidden');
                 document.getElementById('guestlistSection').classList.remove('hidden');
                 document.getElementById('staffLoginError').classList.add('hidden');
@@ -1422,6 +1909,7 @@
             finally { if (staffActivationPromise === activation) staffActivationPromise = null; }
         }
 
+        /** Switch between the public event page and staff portal while preserving the login boundary. */
         function toggleHostessPortal() {
             const portal = document.getElementById('hostessPortal');
             const opening = portal.classList.contains('hidden');
@@ -1483,7 +1971,8 @@
                 currentAuthUser = user;
                 const portalOpen = !document.getElementById('hostessPortal').classList.contains('hidden');
                 if (!user) {
-                    if (activeStaffUid) showStaffLogin();
+                    // Fail closed: never leave any staff-role panels visible without an authenticated user.
+                    showStaffLogin();
                     return;
                 }
                 if (portalOpen) {
@@ -1495,133 +1984,99 @@
             });
         }
 
+        /** List referral records that could not be matched to an imported member for admin review. */
+        // STAFF GUEST-LIST OPERATIONS: actions below are driven by the latest Firestore snapshots and active staff role.
         function renderUnrecognizedWelcomeDrinkList() {
             const list = document.getElementById('welcomeDrinkList');
             const section = document.getElementById('unrecognizedWelcomeDrinkSection');
             if (!list || !section) return;
             list.replaceChildren();
-
             const isAdmin = currentStaffRole === 'admin';
             section.classList.toggle('hidden', !isAdmin);
             if (!isAdmin) return;
 
             const rows = cachedGuestDocs.map(doc => ({ id: doc.id, data: doc.data() || {} }));
-            const importedMemberNames = new Set(
-                rows.filter(item => isImportedMemberRecord(item.data))
-                    .map(item => normalizeGuestName(item.data.name))
-                    .filter(Boolean)
-            );
-            const knownNames = new Set(rows.map(item => normalizeGuestName(item.data.name)).filter(Boolean));
-            const people = new Map();
-
+            const registeredNames = new Set(rows.map(item => normalizeGuestName(item.data.name)).filter(Boolean));
+            const memberNames = new Set(rows.filter(item => isImportedMemberRecord(item.data))
+                .map(item => normalizeGuestName(item.data.name)).filter(Boolean));
+            const uniqueRsvps = new Map();
             rows.forEach(item => {
                 const data = item.data;
-                const key = normalizeGuestName(data.name) || item.id;
-                let person = people.get(key);
-                if (!person) {
-                    person = {
-                        key,
+                const personKey = normalizeGuestName(data.name) || item.id;
+                // Member records (including a member who also RSVP'd) remain members in all
+                // calculations and are not counted as RSVP referrals.
+                if (isImportedMemberRecord(data) || memberNames.has(normalizeGuestName(data.name))) return;
+                if (!uniqueRsvps.has(personKey)) {
+                    uniqueRsvps.set(personKey, {
+                        key: personKey,
                         name: String(data.name || '').trim() || '(No name provided)',
-                        inviter: '',
-                        checkedIn: false,
-                        paid: false,
-                        checkedInPaid: false,
-                        hasRsvp: false
-                    };
-                    people.set(key, person);
+                        inviter: String(data.invitedBy || '').trim(),
+                        checkedIn: Boolean(data.checkedIn),
+                        paid: Boolean(data.paid)
+                    });
+                } else {
+                    const person = uniqueRsvps.get(personKey);
+                    person.inviter = person.inviter || String(data.invitedBy || '').trim();
+                    person.checkedIn = person.checkedIn || Boolean(data.checkedIn);
+                    person.paid = person.paid || Boolean(data.paid);
                 }
-                const inviter = String(data.invitedBy || '').trim();
-                if (inviter && !person.inviter) person.inviter = inviter;
-                person.checkedIn = person.checkedIn || Boolean(data.checkedIn);
-                person.paid = person.paid || Boolean(data.paid);
-                person.checkedInPaid = person.checkedInPaid || (Boolean(data.checkedIn) && Boolean(data.paid));
-                person.hasRsvp = person.hasRsvp || !isImportedMemberRecord(data);
             });
 
             const unknownInviters = new Map();
-            const withoutInviter = new Map();
-            people.forEach(person => {
-                // An imported member who also submitted an RSVP remains a member,
-                // not an RSVP referral or an extra "no inviter" guest.
-                if (!person.hasRsvp || importedMemberNames.has(normalizeGuestName(person.name))) return;
-
-                const inviterKey = normalizeGuestName(person.inviter);
-                if (!inviterKey) {
-                    withoutInviter.set(person.key, person);
-                    return;
-                }
-
-                // Reconcile inviter names only when that name is not in the registered guest/member list.
-                if (knownNames.has(inviterKey)) return;
+            uniqueRsvps.forEach(person => {
+                const inviter = String(person.inviter || '').trim();
+                const inviterKey = normalizeGuestName(inviter);
+                // This reconciliation panel is specifically for names entered in "Invited by"
+                // that do not match any registered guest/member. No-inviter RSVPs are excluded.
+                if (!inviterKey || registeredNames.has(inviterKey)) return;
                 if (!unknownInviters.has(inviterKey)) {
-                    unknownInviters.set(inviterKey, { name: person.inviter, people: new Map() });
+                    unknownInviters.set(inviterKey, { name: inviter, people: new Map() });
                 }
                 unknownInviters.get(inviterKey).people.set(person.key, person);
             });
 
             const summarize = peopleByKey => {
-                const entries = Array.from(peopleByKey.values());
+                const people = Array.from(peopleByKey.values());
                 return {
-                    total: entries.length,
-                    checkedIn: entries.filter(person => person.checkedIn).length,
-                    checkedInPaid: entries.filter(person => person.checkedInPaid).length
+                    total: people.length,
+                    checkedIn: people.filter(person => person.checkedIn).length,
+                    checkedInPaid: people.filter(person => person.checkedIn && person.paid).length
                 };
             };
             const entries = Array.from(unknownInviters.values())
                 .map(group => ({ name: group.name, ...summarize(group.people) }))
                 .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-            const noInviter = summarize(withoutInviter);
 
-            if (!entries.length && !noInviter.total) {
+            if (!entries.length) {
                 const empty = document.createElement('p');
                 empty.className = 'text-xs text-gray-300 py-2';
-                empty.textContent = 'No unknown inviter names or RSVPs without an inviter.';
+                empty.textContent = 'No unrecognized inviter names are currently entered on RSVP forms.';
                 list.appendChild(empty);
                 return;
             }
 
-            const addRow = (label, counts, style, title, neutral = false) => {
+            entries.forEach(entry => {
                 const row = document.createElement('div');
-                row.className = 'flex items-center justify-between gap-3 rounded-lg border px-3 py-2 ' + style;
+                row.className = 'flex items-center justify-between gap-3 rounded-lg border border-gold/30 bg-black/25 px-3 py-2';
                 const details = document.createElement('div');
                 details.className = 'min-w-0';
                 const name = document.createElement('p');
                 name.className = 'font-medium break-words';
-                name.textContent = label;
+                name.textContent = entry.name;
                 const meta = document.createElement('p');
-                meta.className = 'text-[10px] text-gray-300 mt-1';
-                meta.textContent = counts.checkedIn + ' checked in · ' + counts.checkedInPaid +
-                    ' checked in & paid · ' + (counts.total - counts.checkedIn) + ' not checked in';
+                meta.className = 'text-[10px] text-gray-400 mt-1';
+                meta.textContent = entry.checkedIn + ' checked in · ' + entry.checkedInPaid + ' checked in and paid';
                 details.append(name, meta);
-
                 const count = document.createElement('span');
-                count.className = 'shrink-0 rounded border px-3 py-1 text-sm font-semibold tabular-nums ' +
-                    (neutral
-                        ? 'border-gray-500/40 bg-gray-900/50 text-gray-100'
-                        : 'border-amber-400/40 bg-amber-950/40 text-amber-100');
-                count.textContent = String(counts.total);
-                count.title = title;
+                count.className = 'shrink-0 rounded border border-amber-400/40 bg-amber-950/40 px-3 py-1 text-sm font-semibold text-amber-100 tabular-nums';
+                count.textContent = String(entry.total);
+                count.title = entry.total + ' RSVPs entered this unrecognized inviter name';
                 row.append(details, count);
                 list.appendChild(row);
-            };
-
-            entries.forEach(entry => addRow(
-                entry.name,
-                entry,
-                'border-gold/30 bg-black/25',
-                entry.total + ' RSVPs entered this unknown inviter name'
-            ));
-            if (noInviter.total) {
-                addRow(
-                    'No inviter entered',
-                    noInviter,
-                    'border-gray-500/40 bg-black/25',
-                    noInviter.total + ' RSVP guests have no inviter entered',
-                    true
-                );
-            }
+            });
         }
 
+        /** Apply or remove the configured paid drink upgrade for a guest and refresh the displayed charge. */
         async function toggleGuestDrinkUpgrade(id, data, welcomeDrinkEarned) {
             if (!db || !id) return;
             const tier = getGuestTier(data);
@@ -1635,15 +2090,15 @@
                 const update = {
                     welcomeDrinkUpgradeSelected: nextSelected,
                     welcomeDrinkUpgradePrice: nextSelected ? Number(rule.price || 0) : null,
-                    welcomeDrinkUpgradeUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    welcomeDrinkUpgradeUpdatedAt: guestActionTimestamp()
                 };
                 if (data.paid) {
                     update.paid = false;
                     update.paidAt = null;
                     update.amountPaid = null;
-                    update.paymentStatusUpdatedAt = firebase.firestore.FieldValue.serverTimestamp();
+                    update.paymentStatusUpdatedAt = guestActionTimestamp();
                 }
-                await db.collection('halloween_guests').doc(id).update(update);
+                await applyGuestStateUpdate(id, update);
             } catch (error) {
                 console.error('Welcome-drink upgrade update failed:', error);
                 const listError = document.getElementById('guestlistError');
@@ -1652,12 +2107,39 @@
             }
         }
 
+        /** Subscribe to workflow settings, pricing settings and guest changes, caching snapshots for consistent renders. */
+        // Live subscriptions retain unsubscribe handles so they can be stopped when a staff session ends.
         function loadLiveGuestlist() {
             const listError = document.getElementById('guestlistError');
             if (!db) {
                 listError.textContent = 'Firebase could not connect. Check the Firebase project configuration and Firestore rules.';
                 listError.classList.remove('hidden');
                 return;
+            }
+            if (!workflowSettingsUnsubscribe) {
+                workflowSettingsUnsubscribe = db.collection('event_settings').doc('workflow').onSnapshot((doc) => {
+                    const value = doc.exists ? doc.data() || {} : {};
+                    const previousWorkflowSetting = twoStepCheckInEnabled;
+                    const previousEventCheckInActive = eventCheckInActive;
+                    twoStepCheckInEnabled = value.twoStepCheckInEnabled !== false;
+                    eventCheckInActive = value.eventCheckInActive === true;
+                    if (previousEventCheckInActive !== eventCheckInActive) clearSessionGuestOverrides();
+                    updateEventCheckInModeUI();
+                    const input = document.getElementById('twoStepCheckInEnabled');
+                    if (input) input.checked = twoStepCheckInEnabled;
+                    const status = document.getElementById('workflowSaveStatus');
+                    if (status && currentStaffRole === 'admin') status.textContent = twoStepCheckInEnabled
+                        ? 'Two-step check-in is enabled.'
+                        : 'Single-team check-in is enabled.';
+                    applyWorkflowRoleVisibility();
+                    if ((previousWorkflowSetting !== twoStepCheckInEnabled || previousEventCheckInActive !== eventCheckInActive) && guestlistUnsubscribe) loadLiveGuestlist();
+                }, (error) => {
+                    console.error('Workflow settings listener failed:', error);
+                    eventCheckInActive = false;
+                    updateEventCheckInModeUI();
+                    const status = document.getElementById('workflowSaveStatus');
+                    if (status) status.textContent = 'Workflow setting could not be read. The default two-step workflow remains selected; event actions stay in safe test mode.';
+                });
             }
             if (!pricingUnsubscribe) {
                 pricingUnsubscribe = db.collection('event_settings').doc('pricing').onSnapshot((doc) => {
@@ -1679,10 +2161,11 @@
             guestlistUnsubscribe = db.collection('halloween_guests').onSnapshot((snapshot) => {
                 try {
                 cachedGuestSnapshot = snapshot;
-                cachedGuestDocs = snapshot.docs;
+                const effectiveGuestDocs = snapshot.docs.map(makeEffectiveGuestDoc);
+                cachedGuestDocs = effectiveGuestDocs;
                 listError.classList.add('hidden');
                 const categoryPeople = new Map();
-                snapshot.docs.forEach(guestDoc => {
+                effectiveGuestDocs.forEach(guestDoc => {
                     const data=guestDoc.data()||{}, key=normalizeGuestName(data.name)||guestDoc.id;
                     let person=categoryPeople.get(key);
                     if(!person){person={data,paid:Boolean(data.paid),amountPaid:data.paid&&data.amountPaid!=null?Number(data.amountPaid):null,isImportedMember:isImportedMemberRecord(data)};categoryPeople.set(key,person);}
@@ -1714,10 +2197,10 @@
                 document.getElementById('guestPaidMixRatio').textContent = formatRate(categoryTotals.Albatross.paid, nonAlbatrossPaid);
                 document.getElementById('guestStandardMixRatio').textContent = formatRate(categoryTotals.Albatross.total, categoryTotals.Basics.total);
                 document.getElementById('guestPaidStandardMixRatio').textContent = formatRate(categoryTotals.Albatross.paid, categoryTotals.Basics.paid);
-                const issuedNameKeys = new Set(snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
+                const issuedNameKeys = new Set(effectiveGuestDocs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
 
                 const referralPeople = new Map();
-                snapshot.forEach(guestDoc => {
+                effectiveGuestDocs.forEach(guestDoc => {
                     const data = guestDoc.data() || {};
                     const personKey = normalizeGuestName(data.name) || guestDoc.id;
                     let person = referralPeople.get(personKey);
@@ -1756,14 +2239,18 @@
 
                 const hotelOpenContainer = document.getElementById('guestNotCheckedInContainer');
                 const hotelCheckedContainer = document.getElementById('guestCheckedInContainer');
+                const combinedContainer = document.getElementById('combinedGuestContainer');
+                const combinedPaidContainer = document.getElementById('combinedPaidContainer');
                 const unpaidContainer = document.getElementById('internationsUnpaidContainer');
                 const paidContainer = document.getElementById('internationsPaidContainer');
                 hotelOpenContainer.replaceChildren();
                 hotelCheckedContainer.replaceChildren();
+                combinedContainer.replaceChildren();
+                combinedPaidContainer.replaceChildren();
                 unpaidContainer.replaceChildren();
                 paidContainer.replaceChildren();
 
-                const guestDocs = snapshot.docs.map((doc) => ({ doc, data: doc.data() }));
+                const guestDocs = effectiveGuestDocs.map((doc) => ({ doc, data: doc.data() }));
                 const guestByNameKey = new Map();
                 guestDocs.forEach((item) => {
                     const key = normalizeGuestName(item.data.name);
@@ -1774,6 +2261,7 @@
 
                 renderUnrecognizedWelcomeDrinkList();
 
+                /** Determine whether a guest has completed the payment/admission steps required by the active workflow. */
                 function isPaymentWorkflowComplete(item) {
                     const data = item.data || {};
                     if (!Boolean(data.paid)) return false;
@@ -1788,6 +2276,11 @@
                     return !chipRequired || issued;
                 }
 
+                /** In one-step mode, payment/drink completion moves guests to Paid without requiring check-in. */
+                function isCombinedWorkflowComplete(item) {
+                    return isPaymentWorkflowComplete(item);
+                }
+
                 const checkedInGuests = guestDocs.filter((item) => Boolean(item.data.checkedIn));
                 const compareNames = (a, b) => String(a.data.name || '').localeCompare(String(b.data.name || ''), undefined, { sensitivity: 'base' });
                 const timestampMillis = (value) => {
@@ -1799,6 +2292,7 @@
                 };
                 const checkInTime = (item) => timestampMillis(item.data.checkedInAt);
 
+                /** Render a guest card with role-appropriate controls, admission state, payment status and referral information. */
                 function makeGuestCard(item, mode) {
                     const doc = item.doc;
                     const data = item.data;
@@ -1811,7 +2305,7 @@
                     const welcomeDrinkEarned = hasEarnedReferralDrink(inviterIdentity, qualifiedCount);
                     const referralBadgeState = getReferralBadgeState(inviterIdentity, invitedCount, qualifiedCount);
                     const isMemberRecord = isInterNationsMember(data) || Boolean(findImportedMemberData(data));
-                    const isPaymentCard = mode === 'payment';
+                    const isPaymentCard = mode === 'payment' || mode === 'combined';
                     const isPaid = Boolean(data.paid);
                     const paymentComplete = isPaymentCard && isPaymentWorkflowComplete(item);
                     const tier = getGuestTier(data);
@@ -1826,7 +2320,7 @@
                         (isPaymentCard ? (paymentComplete ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-sky-950/30 border-sky-400/40') :
                         (checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'));
                     card.dataset.guestId = doc.id;
-                    card.dataset.listType = isPaymentCard ? 'payment' : 'hotel';
+                    card.dataset.listType = mode;
                     const nameParts = String(data.name || '').trim().split(/\s+/).filter(Boolean);
                     card.dataset.sortFirstName = String(data.firstName || nameParts[0] || '').toLocaleLowerCase();
                     card.dataset.sortLastName = String(data.lastName || nameParts.slice(1).join(' ') || '').toLocaleLowerCase();
@@ -1851,7 +2345,23 @@
                         (isMemberRecord ? 'border-sky-400/50 bg-sky-950/50 text-sky-100' : 'border-gray-500/50 bg-gray-800/60 text-gray-200');
                     const memberStatus = String(data.interNationsStatus || '').trim();
                     typeBadge.textContent = getGuestCategory(data).toLocaleUpperCase();
-                    if (currentStaffRole === 'admin') titleLine.appendChild(typeBadge);
+                    if (currentStaffRole === 'admin' || mode === 'combined') titleLine.appendChild(typeBadge);
+                    if (mode === 'combined') {
+                        // Show only completed status badges; pending states are already clear from the available action buttons.
+                        if (checkedIn) {
+                            const checkInStateBadge = document.createElement('span');
+                            checkInStateBadge.className = 'inline-flex items-center rounded-full border border-emerald-400/50 bg-emerald-950/50 px-2 py-1 text-[9px] font-semibold tracking-wider text-emerald-100';
+                            checkInStateBadge.textContent = 'CHECKED IN';
+                            titleLine.appendChild(checkInStateBadge);
+                        }
+
+                        if (isPaid) {
+                            const paymentStateBadge = document.createElement('span');
+                            paymentStateBadge.className = 'inline-flex items-center rounded-full border border-emerald-400/50 bg-emerald-950/50 px-2 py-1 text-[9px] font-semibold tracking-wider text-emerald-100';
+                            paymentStateBadge.textContent = 'PAID';
+                            titleLine.appendChild(paymentStateBadge);
+                        }
+                    }
 
                     const guestMeta = document.createElement('p');
                     guestMeta.className = 'text-xs text-gray-300 break-words mt-1';
@@ -1867,25 +2377,56 @@
                           (displayDate ? ' · Signed up: ' + displayDate : '');
 
                     const actions = document.createElement('div');
-                    actions.className = 'flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center';
+                    actions.className = mode === 'combined'
+                        ? 'flex w-full min-w-0 flex-wrap items-center gap-2 self-stretch sm:w-auto sm:shrink-0 sm:self-center'
+                        : 'flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center';
+
+                    const appendCheckInAction = () => {
+                        const checkInButton = document.createElement('button');
+                        checkInButton.type = 'button';
+                        checkInButton.className = 'guest-action-btn ' +
+                            (checkedIn ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
+                        const checkInUndoBlocked = checkedIn && (isPaid || chipAlreadyIssued || Boolean(data.welcomeDrinkUpgradeSelected));
+                        checkInButton.textContent = checkedIn ? 'UNDO CHECK-IN' : 'CHECK IN';
+                        checkInButton.title = checkInUndoBlocked
+                            ? 'First mark the guest unpaid, undo the issued drink chip and remove any selected upgrade in Payment status.'
+                            : (checkedIn ? 'Undo check-in. This is not a check-out.' : 'Mark this guest as checked in.');
+                        checkInButton.disabled = checkInUndoBlocked;
+                        if (checkInUndoBlocked) checkInButton.classList.add('is-disabled');
+                        checkInButton.setAttribute('aria-pressed', String(checkedIn));
+                        checkInButton.setAttribute('aria-label', checkInUndoBlocked
+                            ? 'Cannot undo check-in for ' + (data.name || 'this guest') + ' until payment, chip and upgrade are reversed'
+                            : (checkedIn ? 'Undo check-in for ' + (data.name || 'this guest') : 'Check in ' + (data.name || 'this guest')));
+                        checkInButton.addEventListener('click', () => toggleCheckIn(doc.id, checkedIn));
+                        actions.appendChild(checkInButton);
+                    };
+                    const appendDeleteAction = () => {
+                        const deleteButton = document.createElement('button');
+                        deleteButton.type = 'button';
+                        deleteButton.className = 'shrink-0 rounded border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200 hover:bg-red-900/70 transition-colors';
+                        deleteButton.textContent = 'DELETE';
+                        deleteButton.setAttribute('aria-label', 'Delete guest ' + (data.name || ''));
+                        deleteButton.addEventListener('click', () => deleteGuest(doc.id, data.name));
+                        actions.appendChild(deleteButton);
+                    };
 
                     if (isPaymentCard) {
                         if (referralBadgeState) {
                             const badge = document.createElement('span');
                             badge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-bold tracking-wider ' +
                                 (referralBadgeState === 'insufficient'
-                                    ? 'border-gray-300/70 bg-gray-200/10 text-gray-200'
+                                    ? 'border-slate-300/70 bg-slate-200/10 text-slate-200'
                                     : referralBadgeState === 'pending'
                                         ? 'border-amber-400/60 bg-amber-800/30 text-amber-100'
                                         : 'border-amber-300 bg-amber-300/20 text-amber-100 shadow-sm shadow-amber-400/20');
                             badge.textContent = referralBadgeState === 'insufficient'
                                 ? 'REFERRAL INSUFFICIENT'
-                                : referralBadgeState === 'pending' ? 'REFERRAL PENDING' : 'REFERRALS DRINK';
+                                : referralBadgeState === 'pending' ? 'REFERRAL PENDING' : 'REFERRAL DRINK';
                             badge.title = referralBadgeState === 'insufficient'
-                                ? 'Not enough registered referrals yet to reach this category’s threshold.'
+                                ? 'Some invited RSVPs are registered, but the required number have not yet checked in and paid.'
                                 : referralBadgeState === 'pending'
-                                    ? 'The threshold is registered, but not enough referred guests have both checked in and paid.'
-                                    : 'The required number of referred guests have checked in and paid.';
+                                    ? 'Enough referrals are registered, but the minimum number have not all checked in and paid yet.'
+                                    : 'Enough referred guests have checked in and paid. This guest can be issued a referral drink.';
                             titleLine.appendChild(badge);
                         }
 
@@ -1906,62 +2447,43 @@
                         details.appendChild(titleLine);
                         if (currentStaffRole === 'admin' && guestMeta.textContent) details.appendChild(guestMeta);
 
-                        const amount = document.createElement('span');
-                        amount.className = 'text-sm font-semibold text-white tabular-nums whitespace-nowrap';
-                        const paidAmount = data.amountPaid != null ? Number(data.amountPaid) : charge.total;
-                        amount.textContent = formatEuro(isPaid ? paidAmount : charge.total);
-                        actions.appendChild(amount);
+                        const canManageAdmission = mode === 'combined' || checkedIn;
+                        if (canManageAdmission) {
+                            const amount = document.createElement('span');
+                            amount.className = 'text-sm font-semibold text-white tabular-nums whitespace-nowrap';
+                            const paidAmount = data.amountPaid != null ? Number(data.amountPaid) : charge.total;
+                            amount.textContent = formatEuro(isPaid ? paidAmount : charge.total);
+                            actions.appendChild(amount);
 
-                        const paymentButton = document.createElement('button');
-                        paymentButton.type = 'button';
-                        paymentButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
-                            (isPaid ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100 hover:bg-emerald-800/50' : 'border-gold/50 bg-gold/15 text-amber-100 hover:bg-gold/25');
-                        paymentButton.textContent = isPaid ? 'MARK UNPAID' : 'MARK PAID';
-                        paymentButton.setAttribute('aria-pressed', String(isPaid));
-                        paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned));
-                        actions.appendChild(paymentButton);
+                            const paymentButton = document.createElement('button');
+                            paymentButton.type = 'button';
+                            paymentButton.className = 'guest-action-btn ' +
+                                (isPaid ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
+                            paymentButton.textContent = isPaid ? 'MARK UNPAID' : 'MARK PAID';
+                            paymentButton.setAttribute('aria-pressed', String(isPaid));
+                            paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned));
+                            actions.appendChild(paymentButton);
 
-                        if (drinkEntitled) {
-                            const chipButton = document.createElement('button');
-                            chipButton.type = 'button';
-                            chipButton.className = chipAlreadyIssued
-                                ? 'shrink-0 rounded border border-emerald-500/50 bg-emerald-900/40 px-3 py-2 text-xs font-semibold tracking-wider text-emerald-100 hover:bg-emerald-800/50'
-                                : 'shrink-0 rounded border border-sky-400/50 bg-sky-950/40 px-3 py-2 text-xs font-semibold tracking-wider text-sky-100 hover:bg-sky-900/50';
-                            chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
-                            chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
-                            chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
-                            actions.appendChild(chipButton);
+                            if (drinkEntitled) {
+                                const chipButton = document.createElement('button');
+                                chipButton.type = 'button';
+                                chipButton.className = 'guest-action-btn ' +
+                                    (chipAlreadyIssued ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
+                                chipButton.textContent = chipAlreadyIssued ? 'UNDO CHIP' : 'ISSUE CHIP';
+                                chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
+                                chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
+                                actions.appendChild(chipButton);
+                            }
+                        }
+                        if (mode === 'combined') {
+                            if (currentStaffRole === 'admin') appendDeleteAction();
                         }
                     } else {
                         // Hotel sees only the guest identity and check-in control.
                         details.appendChild(titleLine);
                         if (currentStaffRole === 'admin' && guestMeta.textContent) details.appendChild(guestMeta);
-                        const checkInButton = document.createElement('button');
-                        checkInButton.type = 'button';
-                        checkInButton.className = 'shrink-0 px-3 py-2 text-xs font-serif rounded ' + (checkedIn ? 'bg-emerald-700 text-white' : 'bg-gold/15 text-gold border border-gold/40');
-                        const checkInUndoBlocked = checkedIn && (isPaid || chipAlreadyIssued || Boolean(data.welcomeDrinkUpgradeSelected));
-                        checkInButton.textContent = checkedIn ? 'UNDO CHECK-IN' : 'CHECK IN';
-                        checkInButton.title = checkInUndoBlocked
-                            ? 'First mark the guest unpaid, undo the issued drink chip and remove any selected upgrade in Payment status.'
-                            : (checkedIn ? 'Undo check-in. This is not a check-out.' : 'Mark this guest as checked in.');
-                        checkInButton.disabled = checkInUndoBlocked;
-                        if (checkInUndoBlocked) checkInButton.className += ' opacity-40 cursor-not-allowed';
-                        checkInButton.setAttribute('aria-pressed', String(checkedIn));
-                        checkInButton.setAttribute('aria-label', checkInUndoBlocked
-                            ? 'Cannot undo check-in for ' + (data.name || 'this guest') + ' until payment, chip and upgrade are reversed'
-                            : (checkedIn ? 'Undo check-in for ' + (data.name || 'this guest') : 'Check in ' + (data.name || 'this guest')));
-                        checkInButton.addEventListener('click', () => toggleCheckIn(doc.id, checkedIn));
-                        actions.appendChild(checkInButton);
-
-                        if (currentStaffRole === 'admin') {
-                            const deleteButton = document.createElement('button');
-                            deleteButton.type = 'button';
-                            deleteButton.className = 'shrink-0 rounded border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200 hover:bg-red-900/70 transition-colors';
-                            deleteButton.textContent = 'DELETE';
-                            deleteButton.setAttribute('aria-label', 'Delete guest ' + (data.name || ''));
-                            deleteButton.addEventListener('click', () => deleteGuest(doc.id, data.name));
-                            actions.appendChild(deleteButton);
-                        }
+                        appendCheckInAction();
+                        if (currentStaffRole === 'admin') appendDeleteAction();
                     }
 
                     card.append(details, actions);
@@ -1972,6 +2494,21 @@
                 const checkedIn = guestDocs.filter((item) => Boolean(item.data.checkedIn)).sort(compareNames);
                 notCheckedIn.forEach((item) => hotelOpenContainer.appendChild(makeGuestCard(item, 'hotel')));
                 checkedIn.forEach((item) => hotelCheckedContainer.appendChild(makeGuestCard(item, 'hotel')));
+                if (singleTeamCombinedMode) {
+                    const pendingCombinedGuests = guestDocs.filter((item) => !isCombinedWorkflowComplete(item)).sort(compareNames);
+                    const completedCombinedGuests = guestDocs.filter((item) => isCombinedWorkflowComplete(item)).sort(compareNames);
+                    pendingCombinedGuests.forEach((item) => combinedContainer.appendChild(makeGuestCard(item, 'combined')));
+                    completedCombinedGuests.forEach((item) => combinedPaidContainer.appendChild(makeGuestCard(item, 'combined')));
+                    document.getElementById('combinedGuestCount').textContent = '(' + pendingCombinedGuests.length + ')';
+                    document.getElementById('combinedPaidCount').textContent = '(' + completedCombinedGuests.length + ')';
+                    document.getElementById('noCombinedGuests').classList.toggle('hidden', pendingCombinedGuests.length > 0);
+                    document.getElementById('noCombinedPaidGuests').classList.toggle('hidden', completedCombinedGuests.length > 0);
+                } else {
+                    document.getElementById('combinedGuestCount').textContent = '(0)';
+                    document.getElementById('combinedPaidCount').textContent = '(0)';
+                    document.getElementById('noCombinedGuests').classList.add('hidden');
+                    document.getElementById('noCombinedPaidGuests').classList.add('hidden');
+                }
                 document.getElementById('noUncheckGuests').classList.toggle('hidden', notCheckedIn.length > 0);
                 document.getElementById('noCheckedGuests').classList.toggle('hidden', checkedIn.length > 0);
 
@@ -2013,18 +2550,44 @@
                 document.getElementById('drinkUpgradeEstimate').textContent = drinkForecastCounts.upgrades;
                 document.getElementById('drinkUpgradeIssued').textContent = drinkIssuedCounts.upgrades;
 
-                const totalCollected = Array.from(categoryPeople.values()).filter(person => person.paid).reduce((sum, person) => {
-                    if (person.amountPaid != null && Number.isFinite(Number(person.amountPaid))) return sum + Number(person.amountPaid);
+                const categoryPaymentTotals = {
+                    Albatross: { potential: 0, paid: 0 },
+                    Basics: { potential: 0, paid: 0 },
+                    RSVPs: { potential: 0, paid: 0 }
+                };
+                let totalCollected = 0;
+                let maxFullAttendance = 0;
+                categoryPeople.forEach(person => {
                     const key = normalizeGuestName(person.data.name);
-                    const qualified = referralTrackingByInviter.get(key)?.qualifiedGuestIds.size || 0;
-                    return sum + calculateGuestCharge(person.data, hasEarnedReferralDrink(person.data, qualified)).total;
-                }, 0);
-                const maxFullAttendance = Array.from(categoryPeople.values()).reduce((sum, person) => {
-                    const key = normalizeGuestName(person.data.name);
-                    return sum + calculateGuestCharge(person.data, estimatedEarnedKeys.has(key)).total;
-                }, 0);
-                document.getElementById('collectedAmount').textContent = formatEuro(totalCollected);
-                document.getElementById('fullAttendanceAmount').textContent = formatEuro(maxFullAttendance);
+                    const category = getGuestCategory(person.data);
+                    const categoryTotal = categoryPaymentTotals[category] || categoryPaymentTotals.RSVPs;
+                    const potentialAmount = calculateGuestCharge(person.data, estimatedEarnedKeys.has(key)).total;
+                    categoryTotal.potential += potentialAmount;
+                    maxFullAttendance += potentialAmount;
+                    if (person.paid) {
+                        let paidAmount;
+                        if (person.amountPaid != null && Number.isFinite(Number(person.amountPaid))) {
+                            paidAmount = Number(person.amountPaid);
+                        } else {
+                            const qualified = referralTrackingByInviter.get(key)?.qualifiedGuestIds.size || 0;
+                            paidAmount = calculateGuestCharge(person.data, hasEarnedReferralDrink(person.data, qualified)).total;
+                        }
+                        categoryTotal.paid += paidAmount;
+                        totalCollected += paidAmount;
+                    }
+                });
+                const formatEuroAmount = (value) => Math.round(Number(value || 0)).toLocaleString('de-DE');
+                document.getElementById('collectedAmount').textContent = formatEuroAmount(totalCollected);
+                document.getElementById('fullAttendanceAmount').textContent = formatEuroAmount(maxFullAttendance);
+                document.getElementById('paymentAlbatrossTicket').textContent = formatEuroAmount(pricingSettings.basePrices.paidMembers);
+                document.getElementById('paymentAlbatrossPotential').textContent = formatEuroAmount(categoryPaymentTotals.Albatross.potential);
+                document.getElementById('paymentAlbatrossPaid').textContent = formatEuroAmount(categoryPaymentTotals.Albatross.paid);
+                document.getElementById('paymentBasicsTicket').textContent = formatEuroAmount(pricingSettings.basePrices.basics);
+                document.getElementById('paymentBasicsPotential').textContent = formatEuroAmount(categoryPaymentTotals.Basics.potential);
+                document.getElementById('paymentBasicsPaid').textContent = formatEuroAmount(categoryPaymentTotals.Basics.paid);
+                document.getElementById('paymentRsvpsTicket').textContent = formatEuroAmount(pricingSettings.basePrices.friends);
+                document.getElementById('paymentRsvpsPotential').textContent = formatEuroAmount(categoryPaymentTotals.RSVPs.potential);
+                document.getElementById('paymentRsvpsPaid').textContent = formatEuroAmount(categoryPaymentTotals.RSVPs.paid);
 
                 const unpaidGuests = checkedInGuests.filter((item) => !isPaymentWorkflowComplete(item)).sort((a, b) => {
                     const timeA = checkInTime(a), timeB = checkInTime(b);
@@ -2056,6 +2619,7 @@
             });
         }
 
+        /** Persist the welcome-drink chip action only when the guest meets the current reward eligibility rules. */
         async function markWelcomeDrinkChipIssued(id, guestName, currentlyIssued) {
             if (!db || !id) {
                 const listError = document.getElementById('guestlistError');
@@ -2065,9 +2629,9 @@
             }
             const nextIssued = !currentlyIssued;
             try {
-                await db.collection('halloween_guests').doc(id).update({
+                await applyGuestStateUpdate(id, {
                     welcomeDrinkChipIssued: nextIssued,
-                    welcomeDrinkChipIssuedAt: nextIssued ? firebase.firestore.FieldValue.serverTimestamp() : null,
+                    welcomeDrinkChipIssuedAt: nextIssued ? guestActionTimestamp() : null,
                     welcomeDrinkChipIssuedBy: nextIssued ? 'staff' : null
                 });
             } catch (error) {
@@ -2078,6 +2642,7 @@
             }
         }
 
+        /** Update check-in state while enforcing restrictions required by the active staff workflow. */
         async function toggleCheckIn(id, currentState) {
             if (!db) {
                 const listError = document.getElementById('guestlistError');
@@ -2088,9 +2653,16 @@
             try {
                 const guestRef = db.collection('halloween_guests').doc(id);
                 if (currentState) {
-                    const latest = await guestRef.get();
-                    if (!latest.exists) return;
-                    const latestData = latest.data() || {};
+                    let latestData = {};
+                    if (eventCheckInActive) {
+                        const latest = await guestRef.get();
+                        if (!latest.exists) return;
+                        latestData = latest.data() || {};
+                    } else {
+                        const latest = cachedGuestDocs.find((guestDoc) => guestDoc.id === id);
+                        if (!latest) return;
+                        latestData = latest.data() || {};
+                    }
                     const latestNameKey = normalizeGuestName(latestData.name);
                     const hasIssuedChip = Boolean(latestData.welcomeDrinkChipIssued ||
                         cachedGuestDocs.some((guestDoc) => normalizeGuestName(guestDoc.data().name) === latestNameKey && Boolean(guestDoc.data().welcomeDrinkChipIssued)));
@@ -2103,9 +2675,9 @@
                 }
                 const update = {
                     checkedIn: !currentState,
-                    checkedInAt: currentState ? null : firebase.firestore.FieldValue.serverTimestamp()
+                    checkedInAt: currentState ? null : guestActionTimestamp()
                 };
-                await guestRef.update(update);
+                await applyGuestStateUpdate(id, update);
             } catch (error) {
                 console.error('Check-in update failed:', error);
                 const listError = document.getElementById('guestlistError');
@@ -2114,6 +2686,7 @@
             }
         }
 
+        /** Record or undo payment and refresh dependent admission, referral reward and chip state. */
         async function toggleGuestPayment(id, guestName, currentlyPaid, data, welcomeDrinkEarned) {
             if (!db) {
                 const listError = document.getElementById('guestlistError');
@@ -2126,13 +2699,13 @@
                 const charge = calculateGuestCharge(data, welcomeDrinkEarned);
                 const update = {
                     paid: nextPaid,
-                    paidAt: nextPaid ? firebase.firestore.FieldValue.serverTimestamp() : null,
+                    paidAt: nextPaid ? guestActionTimestamp() : null,
                     amountPaid: nextPaid ? charge.total : null,
-                    paymentStatusUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    paymentStatusUpdatedAt: guestActionTimestamp()
                 };
                 // Issue chip is a separate staff action. Payment alone does not complete
                 // the workflow while a required welcome-drink chip remains outstanding.
-                await db.collection('halloween_guests').doc(id).update(update);
+                await applyGuestStateUpdate(id, update);
             } catch (error) {
                 console.error('Guest payment status update failed:', error);
                 const listError = document.getElementById('guestlistError');
@@ -2141,10 +2714,17 @@
             }
         }
 
+        /** Delete a guest record after UI confirmation and authorization checks. */
         async function deleteGuest(id, guestName) {
             if (!db) {
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'The guest database is not connected, so this guest could not be deleted.';
+                listError.classList.remove('hidden');
+                return;
+            }
+            if (!eventCheckInActive) {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Guest deletion is disabled in test mode so the real sign-up list cannot be changed.';
                 listError.classList.remove('hidden');
                 return;
             }
@@ -2162,6 +2742,8 @@
 
         let guestSortBy = 'firstName';
         let paymentSortBy = 'timeOrder';
+        /** Sort rendered cards using the chosen field and direction without rebuilding underlying data. */
+        // SEARCH AND SORT: keep the visible order/filter separate from persisted guest records.
         function applySortToContainer(containerId, sortBy, timeKey, timeDirection) {
             const container = document.getElementById(containerId);
             if (!container) return;
@@ -2183,30 +2765,38 @@
             });
             cards.forEach(card=>container.appendChild(card));
         }
+        /** Keep sort controls’ pressed states synchronized with the active sort settings. */
         function updateSortButtonStates() {
-            const guestSortSelect = document.getElementById('guestSortSelect');
-            if (guestSortSelect && guestSortSelect.value !== guestSortBy) guestSortSelect.value = guestSortBy;
-            document.querySelectorAll('.sort-option[data-sort-group="payment"]').forEach(button=>{
-                button.setAttribute('aria-pressed',String(button.dataset.sort===paymentSortBy));
+            document.querySelectorAll('.sort-option[data-sort-group="checkin"]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.sort === guestSortBy));
+            });
+            document.querySelectorAll('.sort-option[data-sort-group="payment"]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.sort === paymentSortBy));
             });
         }
+        /** Set the sort option for the main guest list and apply the resulting order. */
         function setGuestSort(sortBy) {
             if (!['firstName', 'lastName', 'signupNewest'].includes(sortBy)) return;
             guestSortBy = sortBy;
             applyGuestSorts();
         }
+        /** Set the sort option for payment/referral review and apply the resulting order. */
         function setPaymentSort(sortBy) {
             if(!['firstName','lastName','timeOrder'].includes(sortBy))return;
             paymentSortBy=sortBy;applyGuestSorts();
         }
+        /** Re-apply saved sort choices to each guest-list view after data or rendering changes. */
         function applyGuestSorts() {
             applySortToContainer('guestNotCheckedInContainer',guestSortBy,'',-1);
             applySortToContainer('guestCheckedInContainer',guestSortBy,'',1);
+            applySortToContainer('combinedGuestContainer',guestSortBy,'',-1);
+            applySortToContainer('combinedPaidContainer',guestSortBy,'',1);
             applySortToContainer('internationsUnpaidContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortCheckInOrder':'',1);
-            applySortToContainer('internationsPaidContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortPaymentOrder':'',1);
+            applySortToContainer('internationsPaidContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortCheckInOrder':'',1);
             updateSortButtonStates();
         }
 
+        /** Filter rendered guest cards by a normalized search query. */
         function filterContainerCards(containerIds, query) {
             const counts = {};
             containerIds.forEach((containerId) => {
@@ -2224,14 +2814,18 @@
             return counts;
         }
 
+        /** Apply the hotel/check-in search field to the guest cards shown to that role. */
         function filterHotelGuests() {
             const input = document.getElementById('hotelSearchInput');
             const query = (input ? input.value : '').trim().toLocaleLowerCase();
-            const counts = filterContainerCards(['guestNotCheckedInContainer', 'guestCheckedInContainer'], query);
+            const counts = filterContainerCards(['guestNotCheckedInContainer', 'guestCheckedInContainer', 'combinedGuestContainer', 'combinedPaidContainer'], query);
             document.getElementById('hotelOpenCount').textContent = '(' + counts.guestNotCheckedInContainer + ')';
             document.getElementById('hotelCheckedCount').textContent = '(' + counts.guestCheckedInContainer + ')';
+            document.getElementById('combinedGuestCount').textContent = '(' + counts.combinedGuestContainer + ')';
+            document.getElementById('combinedPaidCount').textContent = '(' + counts.combinedPaidContainer + ')';
         }
 
+        /** Apply the payment/referral search field to the corresponding review list. */
         function filterPaymentGuests() {
             const input = document.getElementById('paymentSearchInput');
             const query = (input ? input.value : '').trim().toLocaleLowerCase();
@@ -2239,6 +2833,577 @@
             document.getElementById('internationsUnpaidCount').textContent = '(' + counts.internationsUnpaidContainer + ')';
             document.getElementById('internationsPaidCount').textContent = '(' + counts.internationsPaidContainer + ')';
         }
+
+
+                // Browser-based Admin backup/restore uses only the signed-in user's existing Firestore permissions.
+        // Staff-account management was removed because safe Authentication account administration requires a trusted backend.
+        let pendingDatabaseBackup = null;
+        const RSVP_BACKUP_FORMAT = 'the-dean-rsvp-backup';
+        const RSVP_BACKUP_SCHEMA_VERSION = 2;
+        const RSVP_BACKUP_COLLECTIONS = ['halloween_guests', 'event_settings'];
+        const RSVP_BACKUP_MAX_DOCUMENTS = 8000;
+        const RSVP_BACKUP_MAX_FILE_BYTES = 8 * 1024 * 1024;
+
+        function setAdminStatus(id, message, isError) {
+            const element = document.getElementById(id);
+            if (!element) return;
+            element.textContent = message;
+            element.classList.toggle('text-red-300', Boolean(isError));
+            element.classList.toggle('text-emerald-200', !isError);
+        }
+
+        /** Convert Firestore values to JSON-safe markers while retaining timestamps and dates. */
+        function encodeBackupValue(value) {
+            if (value instanceof firebase.firestore.Timestamp) {
+                return { __firestoreType: 'timestamp', seconds: value.seconds, nanoseconds: value.nanoseconds };
+            }
+            if (value instanceof Date) {
+                return { __firestoreType: 'date', value: value.toISOString() };
+            }
+            if (value instanceof firebase.firestore.GeoPoint) {
+                return { __firestoreType: 'geopoint', latitude: value.latitude, longitude: value.longitude };
+            }
+            if (Array.isArray(value)) return value.map(encodeBackupValue);
+            if (value && typeof value === 'object') {
+                const result = {};
+                Object.keys(value).forEach(key => { result[key] = encodeBackupValue(value[key]); });
+                return result;
+            }
+            return value;
+        }
+
+        /** Restore the supported Firestore timestamp/date/geopoint markers from a backup file. */
+        function decodeBackupValue(value) {
+            if (Array.isArray(value)) return value.map(decodeBackupValue);
+            if (value && typeof value === 'object') {
+                if (value.__firestoreType === 'timestamp' &&
+                    Number.isInteger(value.seconds) &&
+                    Number.isInteger(value.nanoseconds) &&
+                    value.nanoseconds >= 0 && value.nanoseconds < 1000000000) {
+                    return new firebase.firestore.Timestamp(value.seconds, value.nanoseconds);
+                }
+                if (value.__firestoreType === 'date' && typeof value.value === 'string') {
+                    const date = new Date(value.value);
+                    if (!Number.isNaN(date.getTime())) return date;
+                    throw new Error('The backup contains an invalid date value.');
+                }
+                if (value.__firestoreType === 'geopoint' &&
+                    Number.isFinite(value.latitude) && Number.isFinite(value.longitude)) {
+                    return new firebase.firestore.GeoPoint(value.latitude, value.longitude);
+                }
+                const result = {};
+                Object.keys(value).forEach(key => { result[key] = decodeBackupValue(value[key]); });
+                return result;
+            }
+            return value;
+        }
+
+        /** Read only the two collections that the browser Admin role can safely back up and restore. */
+        async function downloadDatabaseBackup() {
+            const button = document.getElementById('createDatabaseBackupBtn');
+            if (currentStaffRole !== 'admin' || !db) {
+                setAdminStatus('databaseBackupStatus', 'Sign in with an active Admin account to create a backup.', true);
+                return;
+            }
+            button.disabled = true;
+            setAdminStatus('databaseBackupStatus', 'Reading guest records and event settings from Firestore…', false);
+            try {
+                const snapshots = await Promise.all(RSVP_BACKUP_COLLECTIONS.map(name => db.collection(name).get()));
+                const totalDocs = snapshots.reduce((sum, snapshot) => sum + snapshot.size, 0);
+                if (totalDocs > RSVP_BACKUP_MAX_DOCUMENTS) {
+                    throw new Error('This event contains more than 8,000 documents. Use a managed Firestore export for a database of this size.');
+                }
+                const collections = {};
+                snapshots.forEach((snapshot, index) => {
+                    const name = RSVP_BACKUP_COLLECTIONS[index];
+                    collections[name] = snapshot.docs.map(doc => ({ id: doc.id, data: encodeBackupValue(doc.data()) }));
+                });
+                const backup = {
+                    format: RSVP_BACKUP_FORMAT,
+                    schemaVersion: RSVP_BACKUP_SCHEMA_VERSION,
+                    scope: 'guest-records-and-event-settings-only',
+                    createdAt: new Date().toISOString(),
+                    projectId: firebaseConfig.projectId,
+                    collections: collections
+                };
+                const content = JSON.stringify(backup, null, 2);
+                if (content.length > 7000000) {
+                    throw new Error('This backup is too large to download safely from the portal. Use a managed Firestore export instead.');
+                }
+                const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'the-dean-rsvp-backup-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                setAdminStatus('databaseBackupStatus', 'Backup downloaded. Guests: ' +
+                    collections.halloween_guests.length + ' · Event settings: ' + collections.event_settings.length +
+                    '. Staff accounts and roles are intentionally excluded.', false);
+            } catch (error) {
+                console.error('Browser backup failed:', error);
+                setAdminStatus('databaseBackupStatus', error.message || 'Could not create the backup. Confirm you are signed in as Admin and retry.', true);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        /** Validate document IDs and data before the restore performs any deletion. */
+        function validateBackupCollection(entries, collectionName) {
+            if (!Array.isArray(entries)) throw new Error('The backup is missing the ' + collectionName + ' collection.');
+            const seen = new Set();
+            return entries.map(entry => {
+                if (!entry || typeof entry.id !== 'string' || !entry.id.length ||
+                    entry.id.length > 1500 || entry.id.includes('/') ||
+                    !entry.data || typeof entry.data !== 'object' || Array.isArray(entry.data)) {
+                    throw new Error('The backup contains an invalid document in ' + collectionName + '.');
+                }
+                if (seen.has(entry.id)) throw new Error('The backup contains duplicate document IDs in ' + collectionName + '.');
+                seen.add(entry.id);
+                return { id: entry.id, data: decodeBackupValue(entry.data) };
+            });
+        }
+
+        /** Read and validate a compatible backup. Old server backups are accepted, but staff data is ignored. */
+        async function readSelectedDatabaseBackup(event) {
+            const input = event.target;
+            const file = input.files && input.files[0];
+            const button = document.getElementById('restoreDatabaseBackupBtn');
+            pendingDatabaseBackup = null;
+            button.disabled = true;
+            button.classList.add('opacity-40', 'cursor-not-allowed');
+            if (!file) return;
+            if (file.size > RSVP_BACKUP_MAX_FILE_BYTES) {
+                setAdminStatus('databaseBackupStatus', 'The selected backup exceeds 8 MB and cannot be restored through this page.', true);
+                input.value = '';
+                return;
+            }
+            try {
+                const parsed = JSON.parse(await file.text());
+                if (!parsed || parsed.format !== RSVP_BACKUP_FORMAT ||
+                    ![1, RSVP_BACKUP_SCHEMA_VERSION].includes(parsed.schemaVersion) || !parsed.collections) {
+                    throw new Error('This is not a supported RSVP backup file.');
+                }
+                if (parsed.projectId && parsed.projectId !== firebaseConfig.projectId) {
+                    throw new Error('This backup belongs to a different Firebase project.');
+                }
+                const collections = {};
+                let totalDocs = 0;
+                RSVP_BACKUP_COLLECTIONS.forEach(name => {
+                    collections[name] = validateBackupCollection(parsed.collections[name], name);
+                    totalDocs += collections[name].length;
+                });
+                if (totalDocs > RSVP_BACKUP_MAX_DOCUMENTS) {
+                    throw new Error('The backup contains more than 8,000 documents, which exceeds this portal restore limit.');
+                }
+                pendingDatabaseBackup = {
+                    format: RSVP_BACKUP_FORMAT,
+                    schemaVersion: parsed.schemaVersion,
+                    createdAt: parsed.createdAt || 'unknown date',
+                    projectId: parsed.projectId || firebaseConfig.projectId,
+                    collections: collections
+                };
+                button.disabled = false;
+                button.classList.remove('opacity-40', 'cursor-not-allowed');
+                setAdminStatus('databaseBackupStatus', 'Backup validated (' + pendingDatabaseBackup.createdAt + '). Guests: ' +
+                    collections.halloween_guests.length + ' · Event settings: ' + collections.event_settings.length +
+                    '. Staff records in any older backup will not be restored.', false);
+            } catch (error) {
+                pendingDatabaseBackup = null;
+                input.value = '';
+                setAdminStatus('databaseBackupStatus', error.message || 'Could not read this backup file.', true);
+            }
+        }
+
+        /** Replace one permitted collection in bounded batches, using only ordinary Firestore client writes. */
+        async function replaceBackupCollection(collectionName, entries) {
+            const collection = db.collection(collectionName);
+            const current = await collection.get();
+            for (let start = 0; start < current.docs.length; start += 400) {
+                const batch = db.batch();
+                current.docs.slice(start, start + 400).forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+            }
+            for (let start = 0; start < entries.length; start += 400) {
+                const batch = db.batch();
+                entries.slice(start, start + 400).forEach(entry => {
+                    batch.set(collection.doc(entry.id), entry.data);
+                });
+                await batch.commit();
+            }
+        }
+
+        /** Restore guest records and event settings only; Firestore rules still enforce the signed-in Admin role. */
+        async function restoreSelectedDatabaseBackup() {
+            if (currentStaffRole !== 'admin' || !db) {
+                setAdminStatus('databaseBackupStatus', 'Sign in with an active Admin account to restore a backup.', true);
+                return;
+            }
+            if (!pendingDatabaseBackup) {
+                setAdminStatus('databaseBackupStatus', 'Choose and validate a backup JSON file first.', true);
+                return;
+            }
+            const guestCount = pendingDatabaseBackup.collections.halloween_guests.length;
+            const settingCount = pendingDatabaseBackup.collections.event_settings.length;
+            const confirmed = window.confirm(
+                'RESTORE WARNING\n\nThis permanently replaces all current guest records (' + guestCount +
+                ' in the backup) and event settings (' + settingCount + ' in the backup). Any newer guest or settings changes will be lost. ' +
+                'Staff accounts, roles and passwords are not included and will not be changed.\n\nDownload a fresh backup first if you have not already. Continue?'
+            );
+            if (!confirmed) return;
+
+            const button = document.getElementById('restoreDatabaseBackupBtn');
+            button.disabled = true;
+            setAdminStatus('databaseBackupStatus', 'Restoring guest records and event settings… do not close this page.', false);
+            try {
+                // Preflight reads surface a permissions/network problem before any destructive write begins.
+                await Promise.all(RSVP_BACKUP_COLLECTIONS.map(name => db.collection(name).get()));
+                await replaceBackupCollection('halloween_guests', pendingDatabaseBackup.collections.halloween_guests);
+                await replaceBackupCollection('event_settings', pendingDatabaseBackup.collections.event_settings);
+                const resultCounts = {
+                    guests: pendingDatabaseBackup.collections.halloween_guests.length,
+                    settings: pendingDatabaseBackup.collections.event_settings.length
+                };
+                pendingDatabaseBackup = null;
+                document.getElementById('restoreDatabaseFileInput').value = '';
+                button.classList.add('opacity-40', 'cursor-not-allowed');
+                setAdminStatus('databaseBackupStatus', 'Restore completed. Guests: ' + resultCounts.guests +
+                    ' · Event settings: ' + resultCounts.settings +
+                    '. Staff accounts and roles were not changed. The live list is refreshing.', false);
+                loadLiveGuestlist();
+            } catch (error) {
+                console.error('Browser restore failed:', error);
+                setAdminStatus('databaseBackupStatus', (error && error.message ? error.message : 'Restore failed.') +
+                    ' The restore may be incomplete if writes had already started. Reapply the backup or restore a fresh backup before continuing.', true);
+            } finally {
+                button.disabled = !pendingDatabaseBackup;
+                if (pendingDatabaseBackup) button.classList.remove('opacity-40', 'cursor-not-allowed');
+            }
+        }
+
+        /** Create a de-duplicated, surname-sorted print roster without exposing internal payment or referral data. */
+        /** Open one print document containing both the compact and large-text roster editions. */
+        function printGuestList() {
+            // Prefer imported membership records when a normalized name also exists as a public RSVP.
+            const unique = new Map();
+            cachedGuestDocs.forEach(doc => {
+                const data = doc.data() || {};
+                const key = normalizeGuestName(data.name);
+                if (!key) return;
+                const previous = unique.get(key);
+                if (!previous || isImportedMemberRecord(data)) unique.set(key, data);
+            });
+
+            const splitName = data => {
+                const parts = String(data.name || '').trim().split(/\s+/).filter(Boolean);
+                return {
+                    firstName: String(data.firstName || parts[0] || ''),
+                    lastName: String(data.lastName || parts.slice(1).join(' ') || ''),
+                    name: String(data.name || '')
+                };
+            };
+            const timestampMillis = value => {
+                if (!value) return null;
+                if (typeof value.toMillis === 'function') return value.toMillis();
+                if (value instanceof Date) return value.getTime();
+                const parsed = Date.parse(value);
+                return Number.isFinite(parsed) ? parsed : null;
+            };
+            const compareText = (a, b) => String(a || '').localeCompare(String(b || ''), undefined, {
+                numeric: true, sensitivity: 'base'
+            });
+
+            const guests = Array.from(unique.values());
+            guests.sort((a, b) => {
+                const aa = splitName(a), bb = splitName(b);
+                if (guestSortBy === 'lastName') {
+                    return compareText(aa.lastName, bb.lastName) || compareText(aa.firstName, bb.firstName);
+                }
+                if (guestSortBy === 'signupNewest') {
+                    const timeA = timestampMillis(a.createdAt), timeB = timestampMillis(b.createdAt);
+                    if (timeA == null && timeB != null) return 1;
+                    if (timeA != null && timeB == null) return -1;
+                    if (timeA != null && timeB != null && timeA !== timeB) return timeB - timeA;
+                }
+                return compareText(aa.firstName, bb.firstName) || compareText(aa.lastName, bb.lastName);
+            });
+
+            const escapeHtml = value => String(value || '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[char]));
+            const splitEvenly = (items, count) => {
+                const result = [];
+                const baseSize = Math.floor(items.length / count);
+                const extra = items.length % count;
+                let offset = 0;
+                for (let i = 0; i < count; i++) {
+                    const size = baseSize + (i < extra ? 1 : 0);
+                    result.push(items.slice(offset, offset + size));
+                    offset += size;
+                }
+                return result;
+            };
+            const indexedGuests = guests.map((data, index) => ({
+                index: index + 1,
+                name: splitName(data).name
+            }));
+            const allNames = indexedGuests.map(guest => guest.name);
+            const pageMarginTopMm = 8;
+            const pageMarginRightMm = 12;
+            const pageMarginBottomMm = 12;
+            const pageMarginLeftMm = 12;
+            const pageContentHeightMinusHeaderMm = 8; // 7 mm heading plus 1 mm separation
+            const columnGapMm = 1.8;
+            const nameGapMm = 0.8;
+            const mmToPt = 2.83464567;
+            const measurementCanvas = document.createElement('canvas');
+            const measurementContext = measurementCanvas.getContext ? measurementCanvas.getContext('2d') : null;
+            if (measurementContext) measurementContext.font = '100px Arial';
+            const textWidthPtAtOnePt = name => {
+                if (!name) return 0;
+                const pxWidth = measurementContext
+                    ? measurementContext.measureText(name).width
+                    : name.length * 52;
+                // Canvas measures at 100 CSS px. A 1 pt CSS font is 1.333 px.
+                return Math.max(0.01, pxWidth / 75);
+            };
+            const measuredNameWidths = allNames.map(name => textWidthPtAtOnePt(name));
+            const maxName = indexedGuests.reduce((best, guest) =>
+                guest.name.length > best.length ? guest.name : best, '');
+            const digitCount = String(Math.max(1, indexedGuests.length)).length;
+            const numberWidthMm = Math.max(5.2, digitCount * 1.65 + 1.2);
+            const checkColumnWidthMm = 4.6;
+
+            const pageDimensions = orientation => orientation === 'portrait'
+                ? { widthMm: 210, heightMm: 297 }
+                : { widthMm: 297, heightMm: 210 };
+
+            const chooseModeLayout = (orientation, mode) => {
+                const dimensions = pageDimensions(orientation);
+                const usableWidthMm = dimensions.widthMm - pageMarginLeftMm - pageMarginRightMm;
+                const usableHeightMm = dimensions.heightMm - pageMarginTopMm - pageMarginBottomMm;
+                const rowAreaMm = usableHeightMm - pageContentHeightMinusHeaderMm;
+                const maxItemsOnPage = mode === 'compact'
+                    ? indexedGuests.length
+                    : Math.ceil(indexedGuests.length / 2);
+                const maxColumns = orientation === 'landscape' ? 5 : 4;
+                let best = null;
+
+                for (let columns = 1; columns <= maxColumns; columns++) {
+                    const columnWidthMm = (usableWidthMm - columnGapMm * (columns - 1)) / columns;
+                    const nameWidthMm = Math.max(1, columnWidthMm - numberWidthMm - checkColumnWidthMm - nameGapMm * 2);
+                    const nameWidthPt = nameWidthMm * mmToPt;
+                    const fittingFonts = measuredNameWidths.map(width => width > 0 ? nameWidthPt / width : 99);
+                    const sortedFits = fittingFonts.slice().sort((a, b) => a - b);
+                    const percentileIndex = sortedFits.length
+                        ? Math.min(sortedFits.length - 1, Math.floor((sortedFits.length - 1) * 0.85))
+                        : 0;
+                    const widthBasedFont = sortedFits.length ? sortedFits[percentileIndex] : 99;
+                    const maxRows = Math.max(1, Math.ceil(maxItemsOnPage / columns));
+                    const rowHeightMm = rowAreaMm / maxRows;
+                    const heightBasedFont = rowHeightMm * mmToPt * 0.88;
+                    const fontCeiling = mode === 'compact' ? 14 : 19;
+                    const baseFontPt = Math.max(3, Math.min(fontCeiling, heightBasedFont, widthBasedFont));
+                    const fittedSizes = fittingFonts.map(size => Math.min(baseFontPt, size * 0.985));
+                    const averageFont = fittedSizes.length
+                        ? fittedSizes.reduce((sum, size) => sum + size, 0) / fittedSizes.length
+                        : baseFontPt;
+                    const smallestFont = fittedSizes.length ? Math.min(...fittedSizes) : baseFontPt;
+                    const verySmallFraction = fittedSizes.length
+                        ? fittedSizes.filter(size => size < 6).length / fittedSizes.length
+                        : 0;
+                    // Average legibility matters most, but the worst-fitting name is deliberately weighted
+                    // so one exceptionally long name can change the chosen orientation or column count.
+                    const score = averageFont * 0.55 + smallestFont * 0.45
+                        - verySmallFraction * 1.25 - columns * 0.055;
+                    const candidate = {
+                        orientation, mode, columns, usableWidthMm, usableHeightMm,
+                        rowAreaMm, rowHeightMm, maxRows, columnWidthMm, nameWidthMm,
+                        numberWidthMm, checkColumnWidthMm, baseFontPt, score
+                    };
+                    if (!best || candidate.score > best.score) best = candidate;
+                }
+                return best;
+            };
+
+            const evaluateOrientation = orientation => {
+                const compact = chooseModeLayout(orientation, 'compact');
+                const readable = chooseModeLayout(orientation, 'readable');
+                return {
+                    orientation, compact, readable,
+                    score: compact.score * 0.62 + readable.score * 0.38
+                };
+            };
+            const portraitLayout = evaluateOrientation('portrait');
+            const landscapeLayout = evaluateOrientation('landscape');
+            // Prefer portrait when the measured font-fit scores are effectively tied.
+            const selected = landscapeLayout.score > portraitLayout.score + 0.08
+                ? landscapeLayout
+                : portraitLayout;
+            const pageDimensionsSelected = pageDimensions(selected.orientation);
+            const physicalPageWidthMm = pageDimensionsSelected.widthMm;
+            const physicalPageHeightMm = pageDimensionsSelected.heightMm;
+            const printableWidthMm = physicalPageWidthMm - pageMarginLeftMm - pageMarginRightMm;
+            const printableHeightMm = physicalPageHeightMm - pageMarginTopMm - pageMarginBottomMm;
+
+            const rowsToColumnHtml = (items, config, mode) => {
+                const columns = splitEvenly(items, config.columns);
+                const checkSizeMm = Math.max(1.7, Math.min(mode === 'compact' ? 3.4 : 4.2, config.rowHeightMm * 0.58));
+                const columnHtml = columns.map(column =>
+                    '<div class="roster-column">' + column.map(guest => {
+                        const measuredWidth = textWidthPtAtOnePt(guest.name);
+                        const fitFontPt = measuredWidth > 0
+                            ? (config.nameWidthMm * mmToPt / measuredWidth) * 0.985
+                            : config.baseFontPt;
+                        const fontSizePt = Math.max(2.5, Math.min(config.baseFontPt, fitFontPt));
+                        return '<div class="guest-row" style="height:' + config.rowHeightMm.toFixed(3) + 'mm;grid-template-columns:' +
+                            config.numberWidthMm.toFixed(2) + 'mm minmax(0,1fr) ' + config.checkColumnWidthMm.toFixed(2) +
+                            'mm;column-gap:' + nameGapMm + 'mm;font-size:' + fontSizePt.toFixed(2) + 'pt">' +
+                            '<span class="number">' + guest.index + '</span>' +
+                            '<span class="name" title="' + escapeHtml(guest.name) + '">' + escapeHtml(guest.name) + '</span>' +
+                            '<span class="check"><span class="check-box" style="width:' + checkSizeMm.toFixed(2) +
+                            'mm;height:' + checkSizeMm.toFixed(2) + 'mm" aria-label="Not checked in"></span></span>' +
+                        '</div>';
+                    }).join('') + '</div>'
+                ).join('');
+                return '<div class="roster-grid" style="height:' + config.rowAreaMm.toFixed(3) +
+                    'mm;grid-template-columns:repeat(' + config.columns + ',minmax(0,1fr));column-gap:' +
+                    columnGapMm + 'mm">' + columnHtml + '</div>';
+            };
+
+            const makePage = (items, mode, config) =>
+                '<section class="print-page ' + mode + '">' +
+                    '<header class="page-header">' +
+                        '<h1>The Dean After Dark - Guest List</h1>' +
+                    '</header>' +
+                    rowsToColumnHtml(items, config, mode) +
+                '</section>';
+
+            const compactPage = makePage(indexedGuests, 'compact', selected.compact);
+            const readablePageItems = splitEvenly(indexedGuests, 2);
+            const readablePages = readablePageItems.map(items =>
+                makePage(items, 'readable', selected.readable)
+            );
+
+            const printWindow = window.open('', '_blank', 'width=1200,height=850');
+            if (!printWindow) {
+                const status = document.getElementById('printGuestListStatus');
+                if (status) {
+                    status.textContent = 'Pop-up blocked; allow pop-ups for this site and try again.';
+                    status.classList.add('text-red-300');
+                }
+                return;
+            }
+
+            const printDocument = '<!doctype html><html><head><meta charset="utf-8">' +
+                '<title>The Dean After Dark - Guest List</title>' +
+                '<style>' +
+                '@page{size:A4 ' + selected.orientation + ';margin:' + pageMarginTopMm + 'mm ' + pageMarginRightMm + 'mm ' + pageMarginBottomMm + 'mm ' + pageMarginLeftMm + 'mm}' +
+                '*{box-sizing:border-box}' +
+                'html,body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#111}' +
+                '.print-page{display:flex;flex-direction:column;width:100%;height:' + printableHeightMm + 'mm;overflow:hidden;break-after:page;page-break-after:always;margin:0;padding:0}' +
+                '.print-page:last-child{break-after:auto;page-break-after:auto}' +
+                '.page-header{flex:0 0 7mm;height:7mm;display:flex;align-items:center;justify-content:center;gap:0;margin:0 0 1mm;padding:0;width:100%;white-space:nowrap;overflow:hidden;text-align:center}' +
+                'h1{margin:0;font-size:12.5pt;line-height:1;font-weight:700;white-space:nowrap;text-align:center}' +
+                '.readable h1{font-size:14pt}' +
+                '.roster-grid{flex:0 0 auto;display:grid;align-items:stretch;width:100%;min-width:0}' +
+                '.roster-column{min-width:0;height:100%;display:flex;flex-direction:column}' +
+                '.guest-row{flex:0 0 auto;display:grid;align-items:center;min-width:0;padding:0;border-bottom:.25pt solid #ddd;line-height:1;overflow:hidden}' +
+                '.number{display:block;color:#555;text-align:right;font-size:7.5pt;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}' +
+                '.name{display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:clip;line-height:1;letter-spacing:0}' +
+                '.check{display:flex;align-items:center;justify-content:flex-end;width:100%;height:100%;margin:0;padding:0}' +
+                '.check-box{display:block;flex:0 0 auto;border:.65pt solid #222;margin:0;padding:0}' +
+                '.compact .number{font-size:7pt}' +
+                '.readable .number{font-size:8.5pt}' +
+                '@media print{html,body{margin:0;padding:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.print-page{width:100%;height:' + printableHeightMm + 'mm;padding:0}}' +
+                '@media screen{body{background:#eee;padding:10px}.print-page{background:#fff;box-shadow:0 1px 8px #bbb;margin:0 auto 14px;padding:' +
+                    pageMarginTopMm + 'mm ' + pageMarginRightMm + 'mm ' + pageMarginBottomMm + 'mm ' + pageMarginLeftMm + 'mm;width:' + physicalPageWidthMm + 'mm;height:' + physicalPageHeightMm + 'mm}}' +
+                '</style></head><body>' + compactPage + readablePages.join('') + '</body></html>';
+
+            printWindow.document.open();
+            printWindow.document.write(printDocument);
+            printWindow.document.close();
+            window.setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 450);
+
+            const status = document.getElementById('printGuestListStatus');
+            if (status) {
+                status.textContent = indexedGuests.length + ' guests prepared in ' + selected.orientation +
+                    ' orientation with ' + selected.compact.columns + ' compact columns and ' +
+                    selected.readable.columns + ' large-text columns; margins 8 mm top and 12 mm left/right/bottom. Longest name: ' + maxName.length + ' characters.';
+                status.classList.remove('text-red-300');
+            }
+        }
+
+        // Event workflow setting is stored separately from admission pricing.
+        const eventCheckInActiveCheckbox = document.getElementById('eventCheckInActive');
+        if (eventCheckInActiveCheckbox) eventCheckInActiveCheckbox.addEventListener('change', async () => {
+            const status = document.getElementById('eventCheckInActiveStatus');
+            if (currentStaffRole !== 'admin' || !db) {
+                eventCheckInActiveCheckbox.checked = eventCheckInActive;
+                if (status) status.textContent = 'Only an authenticated Admin can change this setting.';
+                return;
+            }
+            const requested = eventCheckInActiveCheckbox.checked;
+            eventCheckInActiveCheckbox.disabled = true;
+            if (status) status.textContent = 'Saving event check-in mode…';
+            try {
+                await db.collection('event_settings').doc('workflow').set({
+                    eventCheckInActive: requested,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedBy: activeStaffUid || null
+                }, { merge: true });
+                if (status) status.textContent = requested
+                    ? 'Activating live mode. Future check-ins, payments, upgrades and chip actions will be saved permanently.'
+                    : 'Activating test mode. Actions will stay in this browser tab and will not change real guest records.';
+            } catch (error) {
+                console.error('Event check-in mode save failed:', error);
+                eventCheckInActiveCheckbox.checked = eventCheckInActive;
+                if (status) status.textContent = 'Could not save the event mode. Check Firestore permissions and try again.';
+            } finally {
+                eventCheckInActiveCheckbox.disabled = false;
+            }
+        });
+
+        const workflowCheckbox = document.getElementById('twoStepCheckInEnabled');
+        if (workflowCheckbox) workflowCheckbox.addEventListener('change', async () => {
+            const status = document.getElementById('workflowSaveStatus');
+            if (currentStaffRole !== 'admin' || !db) {
+                workflowCheckbox.checked = twoStepCheckInEnabled;
+                if (status) status.textContent = 'Only an authenticated Admin can change this setting.';
+                return;
+            }
+            const requested = workflowCheckbox.checked;
+            workflowCheckbox.disabled = true;
+            if (status) status.textContent = 'Saving workflow setting…';
+            try {
+                await db.collection('event_settings').doc('workflow').set({
+                    twoStepCheckInEnabled: requested,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedBy: activeStaffUid || null
+                }, { merge: true });
+                twoStepCheckInEnabled = requested;
+                applyWorkflowRoleVisibility();
+                if (status) status.textContent = requested
+                    ? 'Two-step check-in enabled: Hotel verifies; InterNations handles payment and final admission.'
+                    : 'Single-team check-in enabled: InterNations can do both steps.';
+            } catch (error) {
+                console.error('Workflow setting save failed:', error);
+                workflowCheckbox.checked = twoStepCheckInEnabled;
+                if (status) status.textContent = 'Could not save this setting. Check Firestore permissions and try again.';
+            } finally {
+                workflowCheckbox.disabled = false;
+            }
+        });
+
+        document.getElementById('createDatabaseBackupBtn').addEventListener('click', downloadDatabaseBackup);
+        document.getElementById('restoreDatabaseBackupBtn').addEventListener('click', restoreSelectedDatabaseBackup);
+        document.getElementById('restoreDatabaseFileInput').addEventListener('change', readSelectedDatabaseBackup);
+        document.getElementById('printGuestListBtn').addEventListener('click', printGuestList);
 
     </script>
 </body>
