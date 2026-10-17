@@ -558,6 +558,10 @@
                         <p id="staffIdentity" class="text-[10px] text-gray-300 break-all">Signed in</p>
                         <span class="text-[9px] text-emerald-200 uppercase tracking-wider">SIGNED IN</span>
                     </div>
+                    <div id="eventCheckInModeBanner" class="rounded-lg border border-amber-400/40 bg-amber-950/30 px-3 py-2 mb-4" role="status" aria-live="polite">
+                        <p id="eventCheckInModeTitle" class="text-xs font-semibold uppercase tracking-wider text-amber-100">EVENT CHECK-IN INACTIVE · TEST MODE</p>
+                        <p id="eventCheckInModeMessage" class="text-xs text-gray-200 mt-1">Check-ins, payments, drink upgrades and chip actions are temporary in this browser tab. Real guest registrations remain saved.</p>
+                    </div>
                     <h4 class="staff-subheading mb-2">Live event overview</h4>
                     <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                         <div class="staff-metric-card">
@@ -737,6 +741,10 @@
                         </div>
                         <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules, referral eligibility and the admission workflow. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid.</p>
                         <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
+                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="eventCheckInActive" type="checkbox" class="mt-1 accent-amber-300"><span><strong>Event check-in active (live mode)</strong><span class="block text-xs text-gray-400 mt-1">Inactive: check-ins, payments, drink upgrades and chip actions are simulated only in each browser tab session. Active: those actions are saved to the real guest records. Public guest registrations are always saved normally.</span></span></label>
+                            <p id="eventCheckInActiveStatus" role="status" aria-live="polite" class="text-xs text-amber-100 mt-2">Event check-in is inactive. Testing changes are session-only.</p>
+                        </div>
+                        <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
                             <label class="flex items-start gap-3 text-sm text-gray-100"><input id="twoStepCheckInEnabled" type="checkbox" class="mt-1 accent-amber-300" checked><span><strong>Two-step check-in</strong><span class="block text-xs text-gray-400 mt-1">Enabled: Hotel staff verify arrivals; InterNations staff handle payment and final admission. Disabled: InterNations sees one guest list with check-in and admission actions.</span></span></label>
                             <p id="workflowSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-300 mt-2">Two-step check-in is enabled by default.</p>
                         </div>
@@ -844,7 +852,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.17.11</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.17.12</p>
         </div>
     </footer>
 
@@ -913,8 +921,84 @@
         let pricingUnsubscribe = null;
         let workflowSettingsUnsubscribe = null;
         let twoStepCheckInEnabled = true;
+        // Fail safe: the real event workflow is inactive until an Admin explicitly activates it.
+        let eventCheckInActive = false;
+        const SESSION_GUEST_OVERRIDE_KEY = 'the-dean-after-dark-checkin-test-state-v1';
+        let sessionGuestOverrides = readSessionGuestOverrides();
         let singleTeamCombinedMode = false;
         let cachedUnaccountedReferrals = [];
+        /** Load per-tab test changes. sessionStorage is never sent to Firestore and is cleared when the tab closes or mode changes. */
+        function readSessionGuestOverrides() {
+            try {
+                const value = JSON.parse(sessionStorage.getItem(SESSION_GUEST_OVERRIDE_KEY) || '{}');
+                return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+            } catch (_) {
+                return {};
+            }
+        }
+        function clearSessionGuestOverrides() {
+            sessionGuestOverrides = {};
+            try { sessionStorage.removeItem(SESSION_GUEST_OVERRIDE_KEY); } catch (_) {}
+        }
+        /** Return a guest's persisted data overlaid with test-only state while the real event is inactive. */
+        function getEffectiveGuestData(guestDoc) {
+            const data = guestDoc.data() || {};
+            if (eventCheckInActive) return data;
+            const override = sessionGuestOverrides[guestDoc.id];
+            return override ? { ...data, ...override } : data;
+        }
+        /** Retain the Firestore document ID and reference while exposing session-overlaid data to the renderer. */
+        function makeEffectiveGuestDoc(guestDoc) {
+            return { id: guestDoc.id, ref: guestDoc.ref, data: () => getEffectiveGuestData(guestDoc) };
+        }
+        /** Refresh the visible list after an in-tab test action without changing any guest record in Firestore. */
+        function refreshGuestlistView() {
+            const section = document.getElementById('guestlistSection');
+            if (section && !section.classList.contains('hidden')) loadLiveGuestlist();
+        }
+        /** Use Firestore timestamps in live mode and serializable local timestamps in test mode. */
+        function guestActionTimestamp() {
+            return eventCheckInActive ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString();
+        }
+        /** Record an operational action either as a real update or as tab-local simulation data. */
+        async function applyGuestStateUpdate(id, update) {
+            if (!db || !id) throw new Error('The guest database is not connected.');
+            if (!eventCheckInActive) {
+                sessionGuestOverrides[id] = { ...(sessionGuestOverrides[id] || {}), ...update };
+                try { sessionStorage.setItem(SESSION_GUEST_OVERRIDE_KEY, JSON.stringify(sessionGuestOverrides)); } catch (_) {}
+                refreshGuestlistView();
+                return;
+            }
+            await db.collection('halloween_guests').doc(id).update(update);
+        }
+        /** Update the persistent mode banner and status shown to every staff role. */
+        function updateEventCheckInModeUI() {
+            const active = eventCheckInActive;
+            const checkbox = document.getElementById('eventCheckInActive');
+            if (checkbox) checkbox.checked = active;
+            const status = document.getElementById('eventCheckInActiveStatus');
+            if (status) status.textContent = active
+                ? 'ACTIVE: check-ins, payments, upgrades and chip actions are saved permanently to the real guest records.'
+                : 'INACTIVE: staff actions are simulated in this browser tab only. Public registrations remain permanent.';
+            const banner = document.getElementById('eventCheckInModeBanner');
+            const title = document.getElementById('eventCheckInModeTitle');
+            const message = document.getElementById('eventCheckInModeMessage');
+            if (banner) {
+                banner.classList.toggle('border-amber-400/40', !active);
+                banner.classList.toggle('bg-amber-950/30', !active);
+                banner.classList.toggle('border-emerald-400/40', active);
+                banner.classList.toggle('bg-emerald-950/20', active);
+            }
+            if (title) {
+                title.classList.toggle('text-amber-100', !active);
+                title.classList.toggle('text-emerald-100', active);
+                title.textContent = active ? 'EVENT CHECK-IN ACTIVE · LIVE MODE' : 'EVENT CHECK-IN INACTIVE · TEST MODE';
+            }
+            if (message) message.textContent = active
+                ? 'Check-ins, payments, drink upgrades and chip actions are saved to the real guest records.'
+                : 'Check-ins, payments, drink upgrades and chip actions are temporary in this browser tab. Real guest registrations remain saved.';
+        }
+
         // Defaults for admission tiers, drink treatment and referral rewards; event_settings/pricing can override them.
         const DEFAULT_PRICING = {
             basePrices: { basics: 15, paidMembers: 5, friends: 20 },
@@ -2006,15 +2090,15 @@
                 const update = {
                     welcomeDrinkUpgradeSelected: nextSelected,
                     welcomeDrinkUpgradePrice: nextSelected ? Number(rule.price || 0) : null,
-                    welcomeDrinkUpgradeUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    welcomeDrinkUpgradeUpdatedAt: guestActionTimestamp()
                 };
                 if (data.paid) {
                     update.paid = false;
                     update.paidAt = null;
                     update.amountPaid = null;
-                    update.paymentStatusUpdatedAt = firebase.firestore.FieldValue.serverTimestamp();
+                    update.paymentStatusUpdatedAt = guestActionTimestamp();
                 }
-                await db.collection('halloween_guests').doc(id).update(update);
+                await applyGuestStateUpdate(id, update);
             } catch (error) {
                 console.error('Welcome-drink upgrade update failed:', error);
                 const listError = document.getElementById('guestlistError');
@@ -2036,7 +2120,11 @@
                 workflowSettingsUnsubscribe = db.collection('event_settings').doc('workflow').onSnapshot((doc) => {
                     const value = doc.exists ? doc.data() || {} : {};
                     const previousWorkflowSetting = twoStepCheckInEnabled;
+                    const previousEventCheckInActive = eventCheckInActive;
                     twoStepCheckInEnabled = value.twoStepCheckInEnabled !== false;
+                    eventCheckInActive = value.eventCheckInActive === true;
+                    if (previousEventCheckInActive !== eventCheckInActive) clearSessionGuestOverrides();
+                    updateEventCheckInModeUI();
                     const input = document.getElementById('twoStepCheckInEnabled');
                     if (input) input.checked = twoStepCheckInEnabled;
                     const status = document.getElementById('workflowSaveStatus');
@@ -2044,11 +2132,13 @@
                         ? 'Two-step check-in is enabled.'
                         : 'Single-team check-in is enabled.';
                     applyWorkflowRoleVisibility();
-                    if (previousWorkflowSetting !== twoStepCheckInEnabled && guestlistUnsubscribe) loadLiveGuestlist();
+                    if ((previousWorkflowSetting !== twoStepCheckInEnabled || previousEventCheckInActive !== eventCheckInActive) && guestlistUnsubscribe) loadLiveGuestlist();
                 }, (error) => {
                     console.error('Workflow settings listener failed:', error);
+                    eventCheckInActive = false;
+                    updateEventCheckInModeUI();
                     const status = document.getElementById('workflowSaveStatus');
-                    if (status) status.textContent = 'Workflow setting could not be read. The default two-step workflow remains selected.';
+                    if (status) status.textContent = 'Workflow setting could not be read. The default two-step workflow remains selected; event actions stay in safe test mode.';
                 });
             }
             if (!pricingUnsubscribe) {
@@ -2071,10 +2161,11 @@
             guestlistUnsubscribe = db.collection('halloween_guests').onSnapshot((snapshot) => {
                 try {
                 cachedGuestSnapshot = snapshot;
-                cachedGuestDocs = snapshot.docs;
+                const effectiveGuestDocs = snapshot.docs.map(makeEffectiveGuestDoc);
+                cachedGuestDocs = effectiveGuestDocs;
                 listError.classList.add('hidden');
                 const categoryPeople = new Map();
-                snapshot.docs.forEach(guestDoc => {
+                effectiveGuestDocs.forEach(guestDoc => {
                     const data=guestDoc.data()||{}, key=normalizeGuestName(data.name)||guestDoc.id;
                     let person=categoryPeople.get(key);
                     if(!person){person={data,paid:Boolean(data.paid),amountPaid:data.paid&&data.amountPaid!=null?Number(data.amountPaid):null,isImportedMember:isImportedMemberRecord(data)};categoryPeople.set(key,person);}
@@ -2106,10 +2197,10 @@
                 document.getElementById('guestPaidMixRatio').textContent = formatRate(categoryTotals.Albatross.paid, nonAlbatrossPaid);
                 document.getElementById('guestStandardMixRatio').textContent = formatRate(categoryTotals.Albatross.total, categoryTotals.Basics.total);
                 document.getElementById('guestPaidStandardMixRatio').textContent = formatRate(categoryTotals.Albatross.paid, categoryTotals.Basics.paid);
-                const issuedNameKeys = new Set(snapshot.docs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
+                const issuedNameKeys = new Set(effectiveGuestDocs.filter((guestDoc) => Boolean(guestDoc.data().welcomeDrinkChipIssued)).map((guestDoc) => normalizeGuestName(guestDoc.data().name)).filter(Boolean));
 
                 const referralPeople = new Map();
-                snapshot.forEach(guestDoc => {
+                effectiveGuestDocs.forEach(guestDoc => {
                     const data = guestDoc.data() || {};
                     const personKey = normalizeGuestName(data.name) || guestDoc.id;
                     let person = referralPeople.get(personKey);
@@ -2159,7 +2250,7 @@
                 unpaidContainer.replaceChildren();
                 paidContainer.replaceChildren();
 
-                const guestDocs = snapshot.docs.map((doc) => ({ doc, data: doc.data() }));
+                const guestDocs = effectiveGuestDocs.map((doc) => ({ doc, data: doc.data() }));
                 const guestByNameKey = new Map();
                 guestDocs.forEach((item) => {
                     const key = normalizeGuestName(item.data.name);
@@ -2539,9 +2630,9 @@
             }
             const nextIssued = !currentlyIssued;
             try {
-                await db.collection('halloween_guests').doc(id).update({
+                await applyGuestStateUpdate(id, {
                     welcomeDrinkChipIssued: nextIssued,
-                    welcomeDrinkChipIssuedAt: nextIssued ? firebase.firestore.FieldValue.serverTimestamp() : null,
+                    welcomeDrinkChipIssuedAt: nextIssued ? guestActionTimestamp() : null,
                     welcomeDrinkChipIssuedBy: nextIssued ? 'staff' : null
                 });
             } catch (error) {
@@ -2563,9 +2654,16 @@
             try {
                 const guestRef = db.collection('halloween_guests').doc(id);
                 if (currentState) {
-                    const latest = await guestRef.get();
-                    if (!latest.exists) return;
-                    const latestData = latest.data() || {};
+                    let latestData = {};
+                    if (eventCheckInActive) {
+                        const latest = await guestRef.get();
+                        if (!latest.exists) return;
+                        latestData = latest.data() || {};
+                    } else {
+                        const latest = cachedGuestDocs.find((guestDoc) => guestDoc.id === id);
+                        if (!latest) return;
+                        latestData = latest.data() || {};
+                    }
                     const latestNameKey = normalizeGuestName(latestData.name);
                     const hasIssuedChip = Boolean(latestData.welcomeDrinkChipIssued ||
                         cachedGuestDocs.some((guestDoc) => normalizeGuestName(guestDoc.data().name) === latestNameKey && Boolean(guestDoc.data().welcomeDrinkChipIssued)));
@@ -2578,9 +2676,9 @@
                 }
                 const update = {
                     checkedIn: !currentState,
-                    checkedInAt: currentState ? null : firebase.firestore.FieldValue.serverTimestamp()
+                    checkedInAt: currentState ? null : guestActionTimestamp()
                 };
-                await guestRef.update(update);
+                await applyGuestStateUpdate(id, update);
             } catch (error) {
                 console.error('Check-in update failed:', error);
                 const listError = document.getElementById('guestlistError');
@@ -2602,13 +2700,13 @@
                 const charge = calculateGuestCharge(data, welcomeDrinkEarned);
                 const update = {
                     paid: nextPaid,
-                    paidAt: nextPaid ? firebase.firestore.FieldValue.serverTimestamp() : null,
+                    paidAt: nextPaid ? guestActionTimestamp() : null,
                     amountPaid: nextPaid ? charge.total : null,
-                    paymentStatusUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    paymentStatusUpdatedAt: guestActionTimestamp()
                 };
                 // Issue chip is a separate staff action. Payment alone does not complete
                 // the workflow while a required welcome-drink chip remains outstanding.
-                await db.collection('halloween_guests').doc(id).update(update);
+                await applyGuestStateUpdate(id, update);
             } catch (error) {
                 console.error('Guest payment status update failed:', error);
                 const listError = document.getElementById('guestlistError');
@@ -2622,6 +2720,12 @@
             if (!db) {
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'The guest database is not connected, so this guest could not be deleted.';
+                listError.classList.remove('hidden');
+                return;
+            }
+            if (!eventCheckInActive) {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Guest deletion is disabled in test mode so the real sign-up list cannot be changed.';
                 listError.classList.remove('hidden');
                 return;
             }
@@ -3237,6 +3341,35 @@
         }
 
         // Event workflow setting is stored separately from admission pricing.
+        const eventCheckInActiveCheckbox = document.getElementById('eventCheckInActive');
+        if (eventCheckInActiveCheckbox) eventCheckInActiveCheckbox.addEventListener('change', async () => {
+            const status = document.getElementById('eventCheckInActiveStatus');
+            if (currentStaffRole !== 'admin' || !db) {
+                eventCheckInActiveCheckbox.checked = eventCheckInActive;
+                if (status) status.textContent = 'Only an authenticated Admin can change this setting.';
+                return;
+            }
+            const requested = eventCheckInActiveCheckbox.checked;
+            eventCheckInActiveCheckbox.disabled = true;
+            if (status) status.textContent = 'Saving event check-in mode…';
+            try {
+                await db.collection('event_settings').doc('workflow').set({
+                    eventCheckInActive: requested,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedBy: activeStaffUid || null
+                }, { merge: true });
+                if (status) status.textContent = requested
+                    ? 'Activating live mode. Future check-ins, payments, upgrades and chip actions will be saved permanently.'
+                    : 'Activating test mode. Actions will stay in this browser tab and will not change real guest records.';
+            } catch (error) {
+                console.error('Event check-in mode save failed:', error);
+                eventCheckInActiveCheckbox.checked = eventCheckInActive;
+                if (status) status.textContent = 'Could not save the event mode. Check Firestore permissions and try again.';
+            } finally {
+                eventCheckInActiveCheckbox.disabled = false;
+            }
+        });
+
         const workflowCheckbox = document.getElementById('twoStepCheckInEnabled');
         if (workflowCheckbox) workflowCheckbox.addEventListener('change', async () => {
             const status = document.getElementById('workflowSaveStatus');
