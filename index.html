@@ -17,7 +17,7 @@
     <meta property="og:image:width" content="1689" />
     <meta property="og:image:height" content="1399" />
 
-    <title>The Dean After Dark | RSVP &amp; Staff Tools (DEV)</title>
+    <title>The Dean After Dark | RSVP &amp; Staff Tools</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -741,7 +741,7 @@
                         </div>
                         <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules, referral eligibility and the admission workflow. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid.</p>
                         <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
-                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="eventCheckInActive" type="checkbox" class="mt-1 accent-amber-300"><span><strong>Event check-in active (live mode)</strong><span class="block text-xs text-gray-400 mt-1">Inactive: check-ins, payments, drink upgrades and chip actions are simulated only in each browser tab session. Active: those actions are saved to the real guest records. Public guest registrations are always saved normally.</span></span></label>
+                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="eventCheckInActive" type="checkbox" class="mt-1 accent-amber-300"><span><strong>Event check-in active (live mode)</strong><span class="block text-xs text-gray-400 mt-1">Inactive: check-ins, payments, drink upgrades and chip actions are simulated in this tab and cleared on sign-out, tab close or mode change. Active: those actions are saved to real guest records. Public guest registrations are always saved normally.</span></span></label>
                             <p id="eventCheckInActiveStatus" role="status" aria-live="polite" class="text-xs text-amber-100 mt-2">Event check-in is inactive. Testing changes are session-only.</p>
                         </div>
                         <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
@@ -927,7 +927,7 @@
         let sessionGuestOverrides = readSessionGuestOverrides();
         let singleTeamCombinedMode = false;
         let cachedUnaccountedReferrals = [];
-        /** Load per-tab test changes. sessionStorage is never sent to Firestore and is cleared when the tab closes or mode changes. */
+        /** Load per-tab test changes. They are never sent to Firestore and clear on sign-out, tab close or mode change. */
         function readSessionGuestOverrides() {
             try {
                 const value = JSON.parse(sessionStorage.getItem(SESSION_GUEST_OVERRIDE_KEY) || '{}');
@@ -1864,6 +1864,8 @@
         function showStaffLogin() {
             activeStaffUid = null;
             currentStaffRole = null;
+            // Discard all simulated check-in/payment/drink changes when the staff session ends.
+            clearSessionGuestOverrides();
             stopStaffRealtimeListeners();
             document.getElementById('staffLoginSection').classList.remove('hidden');
             document.getElementById('guestlistSection').classList.add('hidden');
@@ -2482,7 +2484,8 @@
                         // Hotel sees only the guest identity and check-in control.
                         details.appendChild(titleLine);
                         if (currentStaffRole === 'admin' && guestMeta.textContent) details.appendChild(guestMeta);
-                        appendCheckInAction();
+                        // The separate Check In control belongs only to the two-step workflow.
+                        if (!singleTeamCombinedMode) appendCheckInAction();
                         if (currentStaffRole === 'admin') appendDeleteAction();
                     }
 
