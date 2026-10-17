@@ -852,7 +852,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.17.12</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.17.13</p>
         </div>
     </footer>
 
@@ -1762,7 +1762,7 @@
             const description = document.getElementById('hotelCheckInDescription');
             if (title) title.textContent = singleTeamCombinedMode ? 'Guest Check-in & Admission' : 'Guest-list Verification';
             if (description) description.textContent = singleTeamCombinedMode
-                ? 'Payment, eligible drink upgrades and welcome-drink chips can be managed for registered guests before check-in. Record arrival when the guest arrives; check-in is not required before starting admission. Referral rewards still require referred guests to check in and pay. Fully processed guests move to Paid.'
+                ? 'Manage payment, eligible drink upgrades and welcome-drink chips directly from the guest list. A separate Check In button is available only in the two-step workflow. Referral rewards still require referred guests to check in and pay.'
                 : 'Verify that the guest is on the list and record their arrival.';
             const paymentDescription = document.getElementById('paymentDescription');
             if (paymentDescription) paymentDescription.textContent =
@@ -2476,7 +2476,6 @@
                             }
                         }
                         if (mode === 'combined') {
-                            appendCheckInAction();
                             if (currentStaffRole === 'admin') appendDeleteAction();
                         }
                     } else {
