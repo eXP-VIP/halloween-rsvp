@@ -562,6 +562,9 @@
                         <p id="eventCheckInModeTitle" class="text-xs font-semibold uppercase tracking-wider text-amber-100">EVENT CHECK-IN INACTIVE · TEST MODE</p>
                         <p id="eventCheckInModeMessage" class="text-xs text-gray-200 mt-1">Check-ins, payments, drink upgrades and chip actions are temporary in this browser tab. Real guest registrations remain saved.</p>
                     </div>
+                    <div id="hotelSingleStepNotice" class="hidden rounded-lg border border-gold/20 bg-black/20 px-3 py-3 mb-4 text-xs text-gray-300" role="status">
+                        Hotel check-in is available only when two-step check-in is enabled. Ask the event Admin to enable two-step mode for this role.
+                    </div>
                     <h4 class="staff-subheading mb-2">Live event overview</h4>
                     <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                         <div class="staff-metric-card">
@@ -852,7 +855,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.17.14</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.17.15</p>
         </div>
     </footer>
 
@@ -1751,7 +1754,7 @@
         function applyWorkflowRoleVisibility() {
             const role = currentStaffRole;
             singleTeamCombinedMode = !twoStepCheckInEnabled && (role === 'admin' || role === 'internations');
-            const checkInVisible = role === 'admin' || role === 'hotel' || (role === 'internations' && !twoStepCheckInEnabled);
+            const checkInVisible = role === 'admin' || (role === 'hotel' && twoStepCheckInEnabled) || (role === 'internations' && !twoStepCheckInEnabled);
             const paymentVisible = (role === 'admin' || role === 'internations') && twoStepCheckInEnabled;
             const checkInPanel = document.getElementById('hotelCheckInPanel');
             const paymentPanel = document.getElementById('internationsPaymentPanel');
@@ -1772,6 +1775,8 @@
                 const element = document.getElementById(id);
                 if (element) element.classList.toggle('hidden', !visible);
             };
+            const hotelSingleStepNotice = document.getElementById('hotelSingleStepNotice');
+            if (hotelSingleStepNotice) hotelSingleStepNotice.classList.toggle('hidden', !(role === 'hotel' && !twoStepCheckInEnabled));
             show('notCheckedInListSection', !singleTeamCombinedMode);
             show('checkedInListSection', !singleTeamCombinedMode);
             show('combinedGuestListSection', singleTeamCombinedMode);
@@ -2485,7 +2490,7 @@
                         details.appendChild(titleLine);
                         if (currentStaffRole === 'admin' && guestMeta.textContent) details.appendChild(guestMeta);
                         // The separate Check In control belongs only to the two-step workflow.
-                        if (!singleTeamCombinedMode) appendCheckInAction();
+                        if (twoStepCheckInEnabled && !singleTeamCombinedMode) appendCheckInAction();
                         if (currentStaffRole === 'admin') appendDeleteAction();
                     }
 
