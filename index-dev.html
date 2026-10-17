@@ -733,13 +733,9 @@
                     <section id="adminPricingPanel" class="staff-panel">
                         <div class="staff-panel__header">
                             <h4 class="staff-panel__title">Event Settings</h4>
-                            <span class="staff-panel__meta">Pricing, welcome drinks and admission workflow</span>
+                            <span class="staff-panel__meta">Pricing and welcome drinks</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules, referral eligibility and the admission workflow. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid.</p>
-                        <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
-                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="twoStepCheckInEnabled" type="checkbox" class="mt-1 accent-amber-300" checked><span><strong>Two-step check-in</strong><span class="block text-xs text-gray-400 mt-1">Enabled: Hotel staff verify arrivals; InterNations staff handle payment and final admission. Disabled: InterNations sees one guest list with check-in and admission actions.</span></span></label>
-                            <p id="workflowSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-300 mt-2">Two-step check-in is enabled by default.</p>
-                        </div>
+                        <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules and referral eligibility. Payment and eligible drink actions are available for registered guests without requiring check-in first. Included drinks are already covered; a referral reward does not add a second drink. Referral rewards still require the referred guest to check in and pay.</p>
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
@@ -844,7 +840,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.17.8</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.17.9</p>
         </div>
     </footer>
 
@@ -911,8 +907,6 @@
         let pendingInternationsNameColumn = '';
         let cachedGuestDocs = [];
         let pricingUnsubscribe = null;
-        let workflowSettingsUnsubscribe = null;
-        let twoStepCheckInEnabled = true;
         let singleTeamCombinedMode = false;
         let cachedUnaccountedReferrals = [];
         // Defaults for admission tiers, drink treatment and referral rewards; event_settings/pricing can override them.
@@ -1662,13 +1656,13 @@
             document.getElementById('guestName').focus({ preventScroll: true });
         });
 
-        /** Apply the configured one-step or two-step check-in workflow to visible staff panels. */
-        // AUTHENTICATION AND ROLE VISIBILITY: this controls presentation only; server/rules authorization remains authoritative.
+        /** Show a single guest admission list; check-in records arrival but does not gate payment or eligible drink actions. */
+        // AUTHENTICATION AND ROLE VISIBILITY: this controls presentation only; Firestore rules remain authoritative.
         function applyWorkflowRoleVisibility() {
             const role = currentStaffRole;
-            singleTeamCombinedMode = !twoStepCheckInEnabled && (role === 'admin' || role === 'internations');
-            const checkInVisible = role === 'admin' || role === 'hotel' || (role === 'internations' && !twoStepCheckInEnabled);
-            const paymentVisible = (role === 'admin' || role === 'internations') && twoStepCheckInEnabled;
+            singleTeamCombinedMode = role === 'admin' || role === 'internations';
+            const checkInVisible = role === 'admin' || role === 'hotel' || role === 'internations';
+            const paymentVisible = false; // Payment and drink actions are managed in the combined guest list.
             const checkInPanel = document.getElementById('hotelCheckInPanel');
             const paymentPanel = document.getElementById('internationsPaymentPanel');
             if (checkInPanel) checkInPanel.classList.toggle('hidden', !checkInVisible);
@@ -1676,13 +1670,13 @@
 
             const title = document.getElementById('hotelCheckInTitle');
             const description = document.getElementById('hotelCheckInDescription');
-            if (title) title.textContent = singleTeamCombinedMode ? 'Guest Check-in & Admission' : 'Guest-list Verification';
+            if (title) title.textContent = singleTeamCombinedMode ? 'Guest List & Admission' : 'Guest-list Verification';
             if (description) description.textContent = singleTeamCombinedMode
-                ? 'Check in guests, record admission payment and manage welcome-drink entitlements from one list. Fully processed guests move to Paid.'
+                ? 'Payment, eligible drink upgrades and welcome-drink chips can be managed for every registered guest before check-in. Record arrival when the guest arrives; check-in is not a prerequisite. Referral rewards still require referred guests to check in and pay. Fully processed guests move to Paid.'
                 : 'Verify that the guest is on the list and record their arrival.';
             const paymentDescription = document.getElementById('paymentDescription');
             if (paymentDescription) paymentDescription.textContent =
-                'Collect admission payment, manage eligible drink upgrades, issue welcome-drink chips when entitled and hand over the admission wristband.';
+                'Payment and eligible drink actions are available before check-in. Referral rewards still require referred guests to check in and pay.';
 
             const show = (id, visible) => {
                 const element = document.getElementById(id);
@@ -1696,12 +1690,6 @@
                 search.placeholder = singleTeamCombinedMode ? 'Search all guests...' : 'Search guests...';
                 search.setAttribute('aria-label', singleTeamCombinedMode ? 'Search all guests' : 'Search check-in list');
             }
-            const hint = document.getElementById('workflowSaveStatus');
-            if (hint && role !== 'admin') hint.textContent = role === 'hotel'
-                ? 'Hotel staff can verify arrivals. Payment and final admission are handled by InterNations.'
-                : (twoStepCheckInEnabled
-                    ? 'Hotel staff verify arrivals; InterNations staff handle payment and final admission.'
-                    : 'Check-in, payment and welcome-drink actions are available together in one list.');
         }
 
         /** Set the staff interface and available actions for the authenticated role returned by Firestore. */
@@ -2032,25 +2020,6 @@
                 listError.classList.remove('hidden');
                 return;
             }
-            if (!workflowSettingsUnsubscribe) {
-                workflowSettingsUnsubscribe = db.collection('event_settings').doc('workflow').onSnapshot((doc) => {
-                    const value = doc.exists ? doc.data() || {} : {};
-                    const previousWorkflowSetting = twoStepCheckInEnabled;
-                    twoStepCheckInEnabled = value.twoStepCheckInEnabled !== false;
-                    const input = document.getElementById('twoStepCheckInEnabled');
-                    if (input) input.checked = twoStepCheckInEnabled;
-                    const status = document.getElementById('workflowSaveStatus');
-                    if (status && currentStaffRole === 'admin') status.textContent = twoStepCheckInEnabled
-                        ? 'Two-step check-in is enabled.'
-                        : 'Single-team check-in is enabled.';
-                    applyWorkflowRoleVisibility();
-                    if (previousWorkflowSetting !== twoStepCheckInEnabled && guestlistUnsubscribe) loadLiveGuestlist();
-                }, (error) => {
-                    console.error('Workflow settings listener failed:', error);
-                    const status = document.getElementById('workflowSaveStatus');
-                    if (status) status.textContent = 'Workflow setting could not be read. The default two-step workflow remains selected.';
-                });
-            }
             if (!pricingUnsubscribe) {
                 pricingUnsubscribe = db.collection('event_settings').doc('pricing').onSnapshot((doc) => {
                     if (doc.exists) {
@@ -2185,10 +2154,9 @@
                     return !chipRequired || issued;
                 }
 
-                /** In the combined workflow, completion also requires arrival to be recorded. */
+                /** Payment/drink processing can be completed before arrival; check-in remains optional tracking. */
                 function isCombinedWorkflowComplete(item) {
-                    const data = item.data || {};
-                    return Boolean(data.checkedIn) && isPaymentWorkflowComplete(item);
+                    return isPaymentWorkflowComplete(item);
                 }
 
                 const checkedInGuests = guestDocs.filter((item) => Boolean(item.data.checkedIn));
@@ -2340,7 +2308,7 @@
                             titleLine.appendChild(badge);
                         }
 
-                        if ((mode !== 'combined' || checkedIn) && charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued &&
+                        if (charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued &&
                             (upgradeCanBeSelected || charge.upgradeSelected)) {
                             const upgradeButton = document.createElement('button');
                             upgradeButton.type = 'button';
@@ -2357,8 +2325,7 @@
                         details.appendChild(titleLine);
                         if (currentStaffRole === 'admin' && guestMeta.textContent) details.appendChild(guestMeta);
 
-                        const canManageAdmission = mode !== 'combined' || checkedIn ||
-                            (currentStaffRole === 'admin' && (isPaid || chipAlreadyIssued || Boolean(data.welcomeDrinkUpgradeSelected)));
+                        const canManageAdmission = mode === 'combined' || checkedIn;
                         if (canManageAdmission) {
                             const amount = document.createElement('span');
                             amount.className = 'text-sm font-semibold text-white tabular-nums whitespace-nowrap';
@@ -3237,38 +3204,6 @@
                 status.classList.remove('text-red-300');
             }
         }
-
-        // Event workflow setting is stored separately from admission pricing.
-        const workflowCheckbox = document.getElementById('twoStepCheckInEnabled');
-        if (workflowCheckbox) workflowCheckbox.addEventListener('change', async () => {
-            const status = document.getElementById('workflowSaveStatus');
-            if (currentStaffRole !== 'admin' || !db) {
-                workflowCheckbox.checked = twoStepCheckInEnabled;
-                if (status) status.textContent = 'Only an authenticated Admin can change this setting.';
-                return;
-            }
-            const requested = workflowCheckbox.checked;
-            workflowCheckbox.disabled = true;
-            if (status) status.textContent = 'Saving workflow setting…';
-            try {
-                await db.collection('event_settings').doc('workflow').set({
-                    twoStepCheckInEnabled: requested,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    updatedBy: activeStaffUid || null
-                }, { merge: true });
-                twoStepCheckInEnabled = requested;
-                applyWorkflowRoleVisibility();
-                if (status) status.textContent = requested
-                    ? 'Two-step check-in enabled: Hotel verifies; InterNations handles payment and final admission.'
-                    : 'Single-team check-in enabled: InterNations can do both steps.';
-            } catch (error) {
-                console.error('Workflow setting save failed:', error);
-                workflowCheckbox.checked = twoStepCheckInEnabled;
-                if (status) status.textContent = 'Could not save this setting. Check Firestore permissions and try again.';
-            } finally {
-                workflowCheckbox.disabled = false;
-            }
-        });
 
         document.getElementById('createDatabaseBackupBtn').addEventListener('click', downloadDatabaseBackup);
         document.getElementById('restoreDatabaseBackupBtn').addEventListener('click', restoreSelectedDatabaseBackup);
