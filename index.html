@@ -744,7 +744,7 @@
                         </div>
                         <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules, referral eligibility and the admission workflow. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid.</p>
                         <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
-                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="eventCheckInActive" type="checkbox" class="mt-1 accent-amber-300"><span><strong>Event check-in active (live mode)</strong><span class="block text-xs text-gray-400 mt-1">Inactive: check-ins, payments, drink upgrades and chip actions are simulated in this tab and cleared on sign-out, tab close or mode change. Active: those actions are saved to real guest records. Public guest registrations are always saved normally.</span></span></label>
+                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="eventCheckInActive" type="checkbox" class="mt-1 accent-amber-300"><span><strong>Event check-in active (live mode)</strong><span class="block text-xs text-gray-400 mt-1">Inactive: saved operational states are hidden for a clean test slate; new check-ins, payments, drink upgrades and chip actions stay in this browser tab and are cleared on sign-out, tab close or mode change. Active: actions are saved to real guest records. Public guest registrations are always saved normally.</span></span></label>
                             <p id="eventCheckInActiveStatus" role="status" aria-live="polite" class="text-xs text-amber-100 mt-2">Event check-in is inactive. Testing changes are session-only.</p>
                         </div>
                         <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
@@ -943,12 +943,29 @@
             sessionGuestOverrides = {};
             try { sessionStorage.removeItem(SESSION_GUEST_OVERRIDE_KEY); } catch (_) {}
         }
-        /** Return a guest's persisted data overlaid with test-only state while the real event is inactive. */
+        /** Return operational status for live mode, or a clean, non-persistent test baseline while inactive. */
         function getEffectiveGuestData(guestDoc) {
             const data = guestDoc.data() || {};
             if (eventCheckInActive) return data;
+            // Old saved test values are hidden in inactive mode too. This is display-only:
+            // the real Firestore guest registration and all stored fields remain untouched.
+            const testBaseline = {
+                ...data,
+                checkedIn: false,
+                checkedInAt: null,
+                paid: false,
+                paidAt: null,
+                amountPaid: null,
+                paymentStatusUpdatedAt: null,
+                welcomeDrinkUpgradeSelected: false,
+                welcomeDrinkUpgradePrice: null,
+                welcomeDrinkUpgradeUpdatedAt: null,
+                welcomeDrinkChipIssued: false,
+                welcomeDrinkChipIssuedAt: null,
+                welcomeDrinkChipIssuedBy: null
+            };
             const override = sessionGuestOverrides[guestDoc.id];
-            return override ? { ...data, ...override } : data;
+            return override ? { ...testBaseline, ...override } : testBaseline;
         }
         /** Retain the Firestore document ID and reference while exposing session-overlaid data to the renderer. */
         function makeEffectiveGuestDoc(guestDoc) {
@@ -1922,6 +1939,7 @@
             const opening = portal.classList.contains('hidden');
             const loginSection = document.getElementById('staffLoginSection');
             if (!opening) {
+                clearSessionGuestOverrides();
                 stopStaffRealtimeListeners();
                 activeStaffUid = null;
                 currentStaffRole = null;
@@ -2490,7 +2508,7 @@
                         details.appendChild(titleLine);
                         if (currentStaffRole === 'admin' && guestMeta.textContent) details.appendChild(guestMeta);
                         // The separate Check In control belongs only to the two-step workflow.
-                        if (twoStepCheckInEnabled && !singleTeamCombinedMode) appendCheckInAction();
+                        if (twoStepCheckInEnabled && mode === 'hotel') appendCheckInAction();
                         if (currentStaffRole === 'admin') appendDeleteAction();
                     }
 
