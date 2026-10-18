@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="app-build-target" content="dev">
     <meta name="theme-color" content="#08080a">
     <meta name="description" content="A private, guest-list-only Halloween soirée at The Dean Munich, Autograph Collection by Marriott in Munich Westend. A hidden event space, two rooms, twin DJ setups and two bars. Saturday, 31 October 2026, from 18:00, open end.">
 
@@ -855,7 +856,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.18.12</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.18.13</p>
         </div>
     </footer>
 
@@ -876,7 +877,7 @@
         const WHATSAPP_GROUP_INVITE_URL = "https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58";
         const STAFF_ROLES = ['admin', 'hotel', 'internations'];
         // DEV reads independent workflow settings and is always locked to session-only operational testing.
-        const IS_DEVELOPMENT_BUILD = document.title.includes('(DEV)');
+        const IS_DEVELOPMENT_BUILD = document.querySelector('meta[name="app-build-target"]')?.content === 'dev';
         const WORKFLOW_SETTINGS_DOC_ID = IS_DEVELOPMENT_BUILD ? 'workflow_dev' : 'workflow';
         let currentStaffRole = null;
         let currentAuthUser = null;
@@ -2719,7 +2720,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     if (isMemberRecord && /consul/.test(memberStatusKey)) appendMemberBadge('CONSUL', 'InterNations Consul', 'member');
                     if (isMemberRecord && /ambassador/.test(memberStatusKey)) appendMemberBadge('AMBASSADOR', 'InterNations Ambassador', 'member');
                     if (isMemberRecord && /buddy/.test(memberStatusKey)) appendMemberBadge('BUDDY', 'Newcomers’ Buddy', 'member');
-                    if (isMemberRecord && /(?:\b1st\b|\bfirst\b)\s*[-–—]?\s*event\b/.test(memberStatusKey)) appendMemberBadge('Newcommer', 'Newcommer · First InterNations event', 'new');
+                    if (isMemberRecord && /(?:\b1st\b|\bfirst\b)\s*[-–—]?\s*event\b/.test(memberStatusKey)) appendMemberBadge('NEW', 'First InterNations event', 'new');
                     if (mode === 'combined' || mode === 'payment') {
                         // Show completed status badges on combined and payment lists; pending states are clear from available actions.
                         if (checkedIn) {
