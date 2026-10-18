@@ -855,7 +855,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.18.8</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.18.9</p>
         </div>
     </footer>
 
@@ -928,7 +928,7 @@
         let workflowSettingsUnsubscribe = null;
         let twoStepCheckInEnabled = true;
         // Fail safe: the real event workflow is inactive until an Admin explicitly activates it.
-        const EVENT_CHECKIN_MODE_VERSION = '2026.10.18.7';
+        const EVENT_CHECKIN_MODE_VERSION = '2026.10.18.9';
         let eventCheckInActive = false;
         let eventModeChangeInProgress = false;
         // Test operational states live only in this page session's memory; reload/sign-out clears them.
@@ -1321,14 +1321,23 @@
 
         renderPricingForm();
 
+        /** Normalize mathematical/full-width Unicode before evaluating names. */
+        function compatibilityNormalizeGuestText(value) {
+            return String(value || '')
+                .replace(/[\u{1D400}-\u{1D7FF}]/gu, (character) => character.normalize('NFKC'))
+                .normalize('NFKC');
+        }
+        /** Correct the known legacy-font corruption of the imported Deoraj S record. */
+        function isKnownDeorajNameGlitch(value) {
+            return /^Deo\s*\uF7D8\u01DD\u0100S$/iu.test(compatibilityNormalizeGuestText(value).trim());
+        }
         /** Normalize compatibility-styled Unicode and remove invisible/control formatting while preserving legitimate accents and non-Latin names. */
         function sanitizeGuestDisplayName(value) {
-            return String(value || '')
-                // Explicitly downgrade mathematical alphanumeric styling (bold/italic/script/sans-serif) to ordinary characters.
-                .replace(/[\u{1D400}-\u{1D7FF}]/gu, (character) => character.normalize('NFKC'))
-                .normalize('NFKC')
+            const compatibilityText = compatibilityNormalizeGuestText(value);
+            if (isKnownDeorajNameGlitch(compatibilityText)) return 'Deoraj S';
+            return compatibilityText
                 .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
-                .replace(/[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFE00-\uFE0F\uFEFF\uFFF0-\uFFF8\u{E0000}-\u{E007F}]/gu, '')
+                .replace(/[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFE00-\uFE0F\uFEFF\uFFF0-\uFFF8\u{E0000}-\u{E007F}\uE000-\uF8FF\u{F0000}-\u{FFFFD}\u{100000}-\u{10FFFD}]/gu, '')
                 // Remove common overlay/strike marks used to disguise otherwise ordinary names.
                 .replace(/[\u0334-\u0338\u20D2\u20E5]/g, '')
                 .replace(/\s+/g, ' ').trim();
@@ -1336,6 +1345,19 @@
         /** Shared normalized key for matching and duplicate prevention. */
         function normalizeGuestName(value) {
             return sanitizeGuestDisplayName(value).toLocaleLowerCase();
+        }
+        /** Return the oldest known signup/import timestamp so date sorting is consistent for members and RSVPs. */
+        function oldestGuestDateMillis(data) {
+            const toMillis = (value) => {
+                if (!value) return null;
+                if (typeof value.toMillis === 'function') return value.toMillis();
+                if (value instanceof Date) return value.getTime();
+                const parsed = Date.parse(value);
+                return Number.isFinite(parsed) ? parsed : null;
+            };
+            const dates = [toMillis(data && data.createdAt), toMillis(data && data.importedAt)]
+                .filter((value) => value !== null);
+            return dates.length ? Math.min(...dates) : null;
         }
 
         /** Map country names and common country codes to Unicode flag emoji. */
@@ -1376,6 +1398,24 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if (!/^[A-Z]{2}$/.test(code || '')) return '';
             return Array.from(code, (letter) => String.fromCodePoint(0x1F1E6 + letter.charCodeAt(0) - 65)).join('');
         }
+        /** Country searches resolve full country names even when source data contains a two-letter code or flag. */
+        function getCountrySearchTerms(country) {
+            const raw = sanitizeGuestDisplayName(country);
+            if (!raw) return '';
+            const flag = getCountryFlag(raw);
+            let code = '';
+            if (flag) {
+                code = Array.from(flag, (letter) => String.fromCharCode(letter.codePointAt(0) - 0x1F1E6 + 65)).join('');
+            } else {
+                const key = normalizeCountryKey(raw);
+                code = COUNTRY_FLAG_CODES[key] || (/^[A-Z]{2}$/i.test(raw) ? raw.toUpperCase() : '');
+            }
+            const aliases = code
+                ? Object.keys(COUNTRY_FLAG_CODES).filter((name) => COUNTRY_FLAG_CODES[name] === code)
+                : [];
+            return Array.from(new Set([raw, normalizeCountryKey(raw), code, ...aliases].filter(Boolean)))
+                .join(' ').toLocaleLowerCase();
+        }
 
         /** Clean existing stored names once per Admin session; only compatibility/invisible formatting is changed. */
         let storedGuestNamesNormalizedThisSession = false;
@@ -1385,11 +1425,19 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             guestDocs.forEach((guestDoc) => {
                 const data = guestDoc.data() || {};
                 const clean = {};
-                ['name', 'firstName', 'lastName', 'invitedBy'].forEach((field) => {
-                    if (typeof data[field] !== 'string') return;
-                    const normalized = sanitizeGuestDisplayName(data[field]);
-                    if (normalized !== data[field]) clean[field] = normalized;
-                });
+                const combinedName = [data.firstName, data.lastName].filter((part) => typeof part === 'string' && part.trim()).join(' ');
+                const deorajCorrection = isKnownDeorajNameGlitch(data.name) || isKnownDeorajNameGlitch(combinedName);
+                if (deorajCorrection) {
+                    if (data.name !== 'Deoraj S') clean.name = 'Deoraj S';
+                    if (data.firstName !== 'Deoraj') clean.firstName = 'Deoraj';
+                    if (data.lastName !== 'S') clean.lastName = 'S';
+                } else {
+                    ['name', 'firstName', 'lastName', 'invitedBy'].forEach((field) => {
+                        if (typeof data[field] !== 'string') return;
+                        const normalized = sanitizeGuestDisplayName(data[field]);
+                        if (normalized !== data[field]) clean[field] = normalized;
+                    });
+                }
                 if (Object.keys(clean).length) updates.push({ ref: guestDoc.ref, data: clean });
             });
             for (let i = 0; i < updates.length; i += 400) {
@@ -1409,10 +1457,13 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 pendingInternationsHeaders.find((header) => /^(membership status|member status|status)$/i.test(cleanHeader(header)));
             const countryHeader = pendingInternationsHeaders.find((header) => /^(country|countries|country name|country of residence|country of origin|country\s*\/\s*region|country code|nationality)$/i.test(cleanHeader(header))) ||
                 pendingInternationsHeaders.find((header) => /\bcountr(?:y|ies)\b|\bnationality\b/i.test(cleanHeader(header).replace(/[_-]+/g, ' ')));
-            const firstName = firstHeader ? sanitizeGuestDisplayName(row[firstHeader]) : '';
-            const lastName = lastHeader ? sanitizeGuestDisplayName(row[lastHeader]) : '';
+            const rawFirstName = firstHeader ? String(row[firstHeader] || '') : '';
+            const rawLastName = lastHeader ? String(row[lastHeader] || '') : '';
+            const deorajCorrection = isKnownDeorajNameGlitch([rawFirstName, rawLastName].filter(Boolean).join(' '));
+            const firstName = deorajCorrection ? 'Deoraj' : sanitizeGuestDisplayName(rawFirstName);
+            const lastName = deorajCorrection ? 'S' : sanitizeGuestDisplayName(rawLastName);
             return {
-                name: [firstName, lastName].filter(Boolean).join(' ').trim(),
+                name: deorajCorrection ? 'Deoraj S' : [firstName, lastName].filter(Boolean).join(' ').trim(),
                 firstName,
                 lastName,
                 membershipStatus: statusHeader ? sanitizeGuestDisplayName(row[statusHeader]) : '',
@@ -2566,7 +2617,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     const nameParts = String(data.name || '').trim().split(/\s+/).filter(Boolean);
                     card.dataset.sortFirstName = String(data.firstName || nameParts[0] || '').toLocaleLowerCase();
                     card.dataset.sortLastName = String(data.lastName || nameParts.slice(1).join(' ') || '').toLocaleLowerCase();
-                    const signupMillis = timestampMillis(data.createdAt);
+                    const signupMillis = oldestGuestDateMillis(data);
                     const checkInMillis = timestampMillis(data.checkedInAt);
                     const paymentMillis = timestampMillis(data.paidAt);
                     card.dataset.sortSignupOrder = signupMillis == null ? '' : String(signupMillis);
@@ -2582,6 +2633,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     name.textContent = sanitizeGuestDisplayName(data.name) || '(No name provided)';
                     titleLine.appendChild(name);
                     const memberCountry = String(memberDetails.country || data.country || '').trim();
+                    card.dataset.searchCountry = getCountrySearchTerms(memberCountry);
                     const countryFlag = getCountryFlag(memberCountry);
                     if (countryFlag) {
                         const countryBadge = document.createElement('span');
@@ -2594,10 +2646,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
                     const typeBadge = document.createElement('span');
                     typeBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
-                        (isMemberRecord ? 'border-sky-400/50 bg-sky-950/50 text-sky-100' : 'border-gray-500/50 bg-gray-800/60 text-gray-200');
+                        (tier === 'friends'
+                            ? 'border-amber-300/90 bg-amber-950/70 text-amber-100 shadow-sm shadow-amber-400/20'
+                            : 'border-sky-300/70 bg-sky-950/70 text-sky-100');
                     const memberStatus = String(memberDetails.interNationsStatus || data.interNationsStatus || '').trim();
-                    typeBadge.textContent = getGuestCategory(data).toLocaleUpperCase();
-                    if (isMemberRecord || currentStaffRole === 'admin' || mode === 'combined') titleLine.appendChild(typeBadge);
+                    typeBadge.textContent = tier === 'friends' ? 'RSVP' : getGuestCategory(data).toLocaleUpperCase();
+                    if (isMemberRecord || currentStaffRole === 'admin' || isPaymentCard) titleLine.appendChild(typeBadge);
                     const memberStatusKey = normalizeGuestName(memberStatus);
                     const appendMemberBadge = (label, title, kind) => {
                         const badge = document.createElement('span');
@@ -3103,7 +3157,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 let matched = 0;
                 Array.from(container.children).forEach((card) => {
                     if (!card.classList.contains('guest-card')) return;
-                    const visible = card.innerText.toLocaleLowerCase().includes(query);
+                    const searchableText = [card.innerText || '', card.dataset.searchCountry || ''].join(' ').toLocaleLowerCase();
+                    const visible = searchableText.includes(query);
                     card.style.display = visible ? 'flex' : 'none';
                     if (visible) matched++;
                 });
@@ -3420,7 +3475,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     return compareText(aa.lastName, bb.lastName) || compareText(aa.firstName, bb.firstName);
                 }
                 if (guestSortBy === 'signupNewest') {
-                    const timeA = timestampMillis(a.createdAt), timeB = timestampMillis(b.createdAt);
+                    const timeA = oldestGuestDateMillis(a), timeB = oldestGuestDateMillis(b);
                     if (timeA == null && timeB != null) return 1;
                     if (timeA != null && timeB == null) return -1;
                     if (timeA != null && timeB != null && timeA !== timeB) return timeB - timeA;
@@ -3653,6 +3708,13 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
             const previousActive = eventCheckInActive;
             const requested = eventCheckInActiveCheckbox.checked;
+            if (requested && !previousActive && !window.confirm(
+                'ACTIVATE LIVE EVENT OPERATIONS?\n\nCheck-ins, payments, drink upgrades and welcome-drink chips will be saved permanently to the real guest records until you deactivate this mode.'
+            )) {
+                eventCheckInActiveCheckbox.checked = false;
+                if (status) status.textContent = 'Live mode was not activated. Operational actions remain session-only.';
+                return;
+            }
             eventModeChangeInProgress = true;
             eventCheckInActiveCheckbox.disabled = true;
             if (status) status.textContent = 'Saving event check-in mode… Operational actions are temporarily paused.';
