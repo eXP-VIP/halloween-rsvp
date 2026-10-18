@@ -855,7 +855,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.18.4</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.18.5</p>
         </div>
     </footer>
 
@@ -974,9 +974,23 @@
         /** Record an operational action either as a real update or as tab-local simulation data. */
         async function applyGuestStateUpdate(id, update) {
             if (!db || !id) throw new Error('The guest database is not connected.');
+            const selected = cachedGuestDocs.find((doc) => doc.id === id);
+            const key = selected ? normalizeGuestName((selected.data() || {}).name) : '';
+            const matchingDocs = key
+                ? cachedGuestDocs.filter((doc) => normalizeGuestName((doc.data() || {}).name) === key)
+                : [];
+            const targetDocs = matchingDocs.length ? matchingDocs : [{ id, ref: db.collection('halloween_guests').doc(id) }];
             if (!eventCheckInActive) {
-                sessionGuestOverrides[id] = { ...(sessionGuestOverrides[id] || {}), ...update };
+                targetDocs.forEach((doc) => {
+                    sessionGuestOverrides[doc.id] = { ...(sessionGuestOverrides[doc.id] || {}), ...update };
+                });
                 refreshGuestlistView();
+                return;
+            }
+            if (targetDocs.length > 1) {
+                const batch = db.batch();
+                targetDocs.forEach((doc) => batch.update(doc.ref, update));
+                await batch.commit();
                 return;
             }
             await db.collection('halloween_guests').doc(id).update(update);
@@ -1322,9 +1336,21 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         function getCountryFlag(country) {
             const raw = sanitizeGuestDisplayName(country);
             if (!raw) return '';
+            const existingFlag = raw.match(/[\u{1F1E6}-\u{1F1FF}]{2}/u);
+            if (existingFlag) return existingFlag[0];
             const key = normalizeCountryKey(raw);
-            const code = COUNTRY_FLAG_CODES[key] || (/^[A-Z]{2}$/i.test(raw) ? raw.toUpperCase() : '');
-            if (!/^[A-Z]{2}$/.test(code)) return '';
+            const trailingCode = raw.match(/(?:^|[^A-Za-z])([A-Z]{2,3})\s*[).,]?$/i);
+            let code = COUNTRY_FLAG_CODES[key] ||
+                (/^[A-Z]{2}$/i.test(raw) ? raw.toUpperCase() : '') ||
+                (trailingCode ? COUNTRY_FLAG_CODES[normalizeCountryKey(trailingCode[1])] : '');
+            if (!code && trailingCode && /^[A-Z]{2}$/i.test(trailingCode[1])) code = trailingCode[1].toUpperCase();
+            if (!code) {
+                const candidates = Object.keys(COUNTRY_FLAG_CODES)
+                    .filter((name) => name.length > 3 && (key.endsWith(' ' + name) || key.startsWith(name + ' ')))
+                    .sort((a, b) => b.length - a.length);
+                if (candidates.length) code = COUNTRY_FLAG_CODES[candidates[0]];
+            }
+            if (!/^[A-Z]{2}$/.test(code || '')) return '';
             return Array.from(code, (letter) => String.fromCodePoint(0x1F1E6 + letter.charCodeAt(0) - 65)).join('');
         }
 
@@ -1358,7 +1384,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             // Prefer the explicit membership type over a generic Status column if both are present.
             const statusHeader = pendingInternationsHeaders.find((header) => /^(membership type|member type|membership|type)$/i.test(cleanHeader(header))) ||
                 pendingInternationsHeaders.find((header) => /^(membership status|member status|status)$/i.test(cleanHeader(header)));
-            const countryHeader = pendingInternationsHeaders.find((header) => /^(country|country name|country of residence|country of origin|country\s*\/\s*region)$/i.test(cleanHeader(header)));
+            const countryHeader = pendingInternationsHeaders.find((header) => /^(country|countries|country name|country of residence|country of origin|country\s*\/\s*region|country code|nationality)$/i.test(cleanHeader(header))) ||
+                pendingInternationsHeaders.find((header) => /\bcountr(?:y|ies)\b|\bnationality\b/i.test(cleanHeader(header).replace(/[_-]+/g, ' ')));
             const firstName = firstHeader ? sanitizeGuestDisplayName(row[firstHeader]) : '';
             const lastName = lastHeader ? sanitizeGuestDisplayName(row[lastHeader]) : '';
             return {
@@ -1534,9 +1561,17 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             try {
                 const current = await db.collection('halloween_guests').get();
                 const byName = new Map();
+                const docsByName = new Map();
                 current.forEach(doc => {
-                    const key = normalizeGuestName((doc.data() || {}).name);
-                    if (key && !byName.has(key)) byName.set(key, doc);
+                    const data = doc.data() || {};
+                    const key = normalizeGuestName(data.name);
+                    if (!key) return;
+                    if (!docsByName.has(key)) docsByName.set(key, []);
+                    docsByName.get(key).push(doc);
+                    const existing = byName.get(key);
+                    if (!existing || (isImportedMemberRecord(data) && !isImportedMemberRecord(existing.data() || {}))) {
+                        byName.set(key, doc);
+                    }
                 });
                 let added = 0, matched = 0, removed = 0, retainedAsRsvp = 0;
                 const operations = [];
@@ -1548,21 +1583,40 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     if (existing) {
                         matched++;
                         const prior = existing.data() || {};
-                        // Preserve a marker for a guest who had also submitted the public RSVP
-                        // before the membership-list import upgraded their classification.
-                        const wasRsvp = prior.rsvpSubmitted === true ||
-                            prior.rsvpSource === 'website' ||
-                            prior.source === 'website' ||
-                            Boolean(String(prior.invitedBy || '').trim());
+                        const sameNameDocs = docsByName.get(entry.key) || [existing];
+                        const rsvpSourceDoc = sameNameDocs.find((candidateDoc) => {
+                            const candidate = candidateDoc.data() || {};
+                            return !isImportedMemberRecord(candidate) &&
+                                (candidate.rsvpSubmitted === true || candidate.rsvpSource === 'website' ||
+                                 candidate.source === 'website' || Boolean(String(candidate.invitedBy || '').trim()));
+                        });
+                        const rsvpSourceData = rsvpSourceDoc ? (rsvpSourceDoc.data() || {}) : null;
+                        // Preserve an RSVP that was submitted before membership import, even if it is in a separate duplicate record.
+                        const wasRsvp = sameNameDocs.some((candidateDoc) => {
+                            const candidate = candidateDoc.data() || {};
+                            return candidate.rsvpSubmitted === true || candidate.rsvpSource === 'website' ||
+                                candidate.source === 'website' || Boolean(String(candidate.invitedBy || '').trim());
+                        });
                         const updateData = {
+                            name: sanitizeGuestDisplayName(entry.name),
                             guestType: 'internations_member',
                             source: 'internations_import',
                             rsvpSubmitted: wasRsvp,
                             importNameKey: entry.key,
-                            importedAt: firebase.firestore.FieldValue.serverTimestamp(),
                             firstName: entry.firstName,
-                            lastName: entry.lastName
+                            lastName: entry.lastName,
+                            membershipRemovedAt: firebase.firestore.FieldValue.delete()
                         };
+                        // Keep the first import date for a continuously listed member. Set it for a new import cycle only.
+                        if (!isImportedMemberRecord(prior) || !prior.importedAt) {
+                            updateData.importedAt = firebase.firestore.FieldValue.serverTimestamp();
+                        }
+                        if (rsvpSourceData) {
+                            if (!String(prior.invitedBy || '').trim() && String(rsvpSourceData.invitedBy || '').trim()) {
+                                updateData.invitedBy = sanitizeGuestDisplayName(rsvpSourceData.invitedBy);
+                            }
+                            if (rsvpSourceData.createdAt) updateData.createdAt = rsvpSourceData.createdAt;
+                        }
                         if (entry.membershipStatus) updateData.interNationsStatus = entry.membershipStatus;
                         if (entry.country) updateData.country = entry.country;
                         operations.push({ type: 'update', ref: existing.ref, data: updateData });
@@ -1763,7 +1817,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             statusMessage.classList.add('hidden');
             errorMessage.classList.add('hidden');
 
-            const fullName = sanitizeGuestDisplayName(document.getElementById('guestName').value);
+            const fullName = sanitizeGuestDisplayName(document.getElementById('guestName').value).normalize('NFKC');
             const nameParts = fullName.split(/\s+/).filter(Boolean);
             const guest = {
                 name: fullName,
@@ -2248,6 +2302,13 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 }
                 const effectiveGuestDocs = snapshot.docs.map(makeEffectiveGuestDoc);
                 cachedGuestDocs = effectiveGuestDocs;
+                if (currentStaffRole === 'admin' && !storedGuestNamesNormalizedThisSession) {
+                    storedGuestNamesNormalizedThisSession = true;
+                    normalizeStoredGuestNames(snapshot.docs).catch((error) => {
+                        storedGuestNamesNormalizedThisSession = false;
+                        console.warn('Could not normalize stored guest names:', error);
+                    });
+                }
                 listError.classList.add('hidden');
                 const categoryPeople = new Map();
                 effectiveGuestDocs.forEach(guestDoc => {
@@ -2335,7 +2396,76 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 unpaidContainer.replaceChildren();
                 paidContainer.replaceChildren();
 
-                const guestDocs = effectiveGuestDocs.map((doc) => ({ doc, data: doc.data() }));
+                const rawGuestItems = effectiveGuestDocs.map((doc) => ({ doc, data: doc.data() || {} }));
+                const guestGroups = new Map();
+                rawGuestItems.forEach((item) => {
+                    const key = normalizeGuestName(item.data.name) || ('__record__:' + item.doc.id);
+                    if (!guestGroups.has(key)) guestGroups.set(key, []);
+                    guestGroups.get(key).push(item);
+                });
+                const dateMillisForMerge = (value) => {
+                    if (!value) return null;
+                    if (typeof value.toMillis === 'function') return value.toMillis();
+                    if (value instanceof Date) return value.getTime();
+                    const parsed = Date.parse(value);
+                    return Number.isFinite(parsed) ? parsed : null;
+                };
+                const guestDocs = Array.from(guestGroups.values()).map((group) => {
+                    const memberItem = group.find((item) => isImportedMemberRecord(item.data)) || null;
+                    const isRsvpRecord = (item) => {
+                        const data = item.data || {};
+                        return !isImportedMemberRecord(data) &&
+                            (data.rsvpSubmitted === true || data.rsvpSource === 'website' ||
+                             data.source === 'website' || Boolean(String(data.invitedBy || '').trim()) ||
+                             Boolean(data.createdAt));
+                    };
+                    const rsvpItems = group.filter(isRsvpRecord).sort((a, b) => {
+                        const dateA = dateMillisForMerge(a.data.createdAt);
+                        const dateB = dateMillisForMerge(b.data.createdAt);
+                        if (dateA == null && dateB != null) return 1;
+                        if (dateA != null && dateB == null) return -1;
+                        return (dateA || 0) - (dateB || 0);
+                    });
+                    const rsvpItem = rsvpItems[0] || null;
+                    const primary = memberItem || rsvpItem || group[0];
+                    const data = { ...(rsvpItem ? rsvpItem.data : {}), ...(primary.data || {}) };
+                    data.name = sanitizeGuestDisplayName((memberItem && memberItem.data.name) || (rsvpItem && rsvpItem.data.name) || data.name);
+                    data.firstName = sanitizeGuestDisplayName((memberItem && memberItem.data.firstName) || (rsvpItem && rsvpItem.data.firstName) || data.firstName || '');
+                    data.lastName = sanitizeGuestDisplayName((memberItem && memberItem.data.lastName) || (rsvpItem && rsvpItem.data.lastName) || data.lastName || '');
+                    data.interNationsStatus = (memberItem && memberItem.data.interNationsStatus) || data.interNationsStatus || '';
+                    data.country = sanitizeGuestDisplayName((memberItem && memberItem.data.country) || (rsvpItem && rsvpItem.data.country) || data.country || '');
+                    data.importedAt = (memberItem && memberItem.data.importedAt) || data.importedAt || null;
+                    data.rsvpSubmitted = group.some((item) => {
+                        const itemData = item.data || {};
+                        return itemData.rsvpSubmitted === true || itemData.rsvpSource === 'website' ||
+                            (!isImportedMemberRecord(itemData) && (itemData.source === 'website' ||
+                             Boolean(String(itemData.invitedBy || '').trim()) || Boolean(itemData.createdAt)));
+                    });
+                    data.createdAt = rsvpItem ? rsvpItem.data.createdAt :
+                        (memberItem && memberItem.data.rsvpSubmitted === true ? memberItem.data.createdAt : null);
+                    const inviter = group.find((item) => String((item.data || {}).invitedBy || '').trim());
+                    data.invitedBy = sanitizeGuestDisplayName(
+                        (rsvpItem && rsvpItem.data.invitedBy) ||
+                        (inviter && inviter.data.invitedBy) || data.invitedBy || ''
+                    );
+                    ['checkedIn', 'paid', 'welcomeDrinkUpgradeSelected', 'welcomeDrinkChipIssued'].forEach((field) => {
+                        data[field] = group.some((item) => Boolean((item.data || {})[field]));
+                    });
+                    const checkedInItem = group.find((item) => item.data.checkedIn && item.data.checkedInAt);
+                    const paidItem = group.find((item) => item.data.paid);
+                    const paidAmountItem = group.find((item) => item.data.paid && item.data.amountPaid != null);
+                    const upgradeItem = group.find((item) => item.data.welcomeDrinkUpgradeSelected);
+                    const chipItem = group.find((item) => item.data.welcomeDrinkChipIssued);
+                    data.checkedInAt = checkedInItem ? checkedInItem.data.checkedInAt : null;
+                    data.paidAt = paidItem ? (paidItem.data.paidAt || null) : null;
+                    data.amountPaid = paidAmountItem ? paidAmountItem.data.amountPaid : null;
+                    data.paymentStatusUpdatedAt = paidItem ? (paidItem.data.paymentStatusUpdatedAt || null) : null;
+                    data.welcomeDrinkUpgradePrice = upgradeItem ? upgradeItem.data.welcomeDrinkUpgradePrice : null;
+                    data.welcomeDrinkUpgradeUpdatedAt = upgradeItem ? upgradeItem.data.welcomeDrinkUpgradeUpdatedAt : null;
+                    data.welcomeDrinkChipIssuedAt = chipItem ? chipItem.data.welcomeDrinkChipIssuedAt : null;
+                    data.welcomeDrinkChipIssuedBy = chipItem ? chipItem.data.welcomeDrinkChipIssuedBy : null;
+                    return { doc: primary.doc, data };
+                });
                 const guestByNameKey = new Map();
                 guestDocs.forEach((item) => {
                     const key = normalizeGuestName(item.data.name);
@@ -2484,16 +2614,18 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
                     const guestMeta = document.createElement('p');
                     guestMeta.className = 'text-xs text-gray-300 break-words mt-1';
-                    const displayDateMillis = isInterNationsMember(data)
-                        ? timestampMillis(data.importedAt)
-                        : timestampMillis(data.createdAt);
-                    const displayDate = displayDateMillis == null
-                        ? ''
-                        : new Date(displayDateMillis).toLocaleDateString([], { day: '2-digit', month: 'short' });
-                    guestMeta.textContent = isInterNationsMember(data)
-                        ? (displayDate ? 'Imported: ' + displayDate : '')
-                        : 'Invited by: ' + (String(data.invitedBy || '').trim() || 'Not specified') +
-                          (displayDate ? ' · Signed up: ' + displayDate : '');
+                    const formatMetaDate = (value) => {
+                        const millis = timestampMillis(value);
+                        return millis == null ? '' : new Date(millis).toLocaleDateString([], { day: '2-digit', month: 'short' });
+                    };
+                    const metaParts = [];
+                    const importedDate = isInterNationsMember(data) ? formatMetaDate(data.importedAt) : '';
+                    const signupDate = (data.rsvpSubmitted || !isInterNationsMember(data)) ? formatMetaDate(data.createdAt) : '';
+                    const invitedBy = sanitizeGuestDisplayName(data.invitedBy || '');
+                    if (importedDate) metaParts.push('Imported: ' + importedDate);
+                    if (signupDate) metaParts.push('Signed up: ' + signupDate);
+                    if (invitedBy) metaParts.push('Invited by: ' + invitedBy);
+                    guestMeta.textContent = metaParts.join(' · ');
 
                     const actions = document.createElement('div');
                     actions.className = mode === 'combined'
@@ -2773,20 +2905,24 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             try {
                 const guestRef = db.collection('halloween_guests').doc(id);
                 if (currentState) {
-                    let latestData = {};
+                    const cachedSelected = cachedGuestDocs.find((doc) => doc.id === id);
+                    const latestNameKey = normalizeGuestName((cachedSelected && cachedSelected.data() || {}).name);
+                    const matchingDocs = latestNameKey
+                        ? cachedGuestDocs.filter((doc) => normalizeGuestName((doc.data() || {}).name) === latestNameKey)
+                        : [];
+                    let latestDataList = [];
                     if (eventCheckInActive) {
-                        const latest = await guestRef.get();
-                        if (!latest.exists) return;
-                        latestData = latest.data() || {};
+                        const refs = matchingDocs.length ? matchingDocs : [{ ref: guestRef }];
+                        const latestDocs = await Promise.all(refs.map((doc) => doc.ref.get()));
+                        latestDataList = latestDocs.filter((doc) => doc.exists).map((doc) => doc.data() || {});
+                        if (!latestDataList.length) return;
                     } else {
-                        const latest = cachedGuestDocs.find((guestDoc) => guestDoc.id === id);
-                        if (!latest) return;
-                        latestData = latest.data() || {};
+                        latestDataList = (matchingDocs.length ? matchingDocs : [cachedSelected])
+                            .filter(Boolean).map((doc) => doc.data() || {});
                     }
-                    const latestNameKey = normalizeGuestName(latestData.name);
-                    const hasIssuedChip = Boolean(latestData.welcomeDrinkChipIssued ||
-                        cachedGuestDocs.some((guestDoc) => normalizeGuestName(guestDoc.data().name) === latestNameKey && Boolean(guestDoc.data().welcomeDrinkChipIssued)));
-                    if (latestData.paid || hasIssuedChip || Boolean(latestData.welcomeDrinkUpgradeSelected)) {
+                    const blocked = latestDataList.some((data) =>
+                        Boolean(data.paid || data.welcomeDrinkChipIssued || data.welcomeDrinkUpgradeSelected));
+                    if (blocked) {
                         const listError = document.getElementById('guestlistError');
                         listError.textContent = 'Undo check-in blocked. First mark this guest unpaid, undo the issued drink chip and remove any selected upgrade in Payment status.';
                         listError.classList.remove('hidden');
@@ -2848,10 +2984,21 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 listError.classList.remove('hidden');
                 return;
             }
-            const confirmed = window.confirm(`Delete ${guestName || 'this guest'} from the guest list? This cannot be undone.`);
+            const selected = cachedGuestDocs.find((doc) => doc.id === id);
+            const selectedName = selected ? (selected.data() || {}).name : guestName;
+            const key = normalizeGuestName(selectedName);
+            const matchingDocs = key
+                ? cachedGuestDocs.filter((doc) => normalizeGuestName((doc.data() || {}).name) === key)
+                : [];
+            const targetDocs = matchingDocs.length ? matchingDocs : [{ id, ref: db.collection('halloween_guests').doc(id) }];
+            const confirmed = window.confirm(`Delete ${guestName || 'this guest'} and all duplicate records with the same name from the guest list? This cannot be undone.`);
             if (!confirmed) return;
             try {
-                await db.collection('halloween_guests').doc(id).delete();
+                for (let start = 0; start < targetDocs.length; start += 400) {
+                    const batch = db.batch();
+                    targetDocs.slice(start, start + 400).forEach((doc) => batch.delete(doc.ref));
+                    await batch.commit();
+                }
             } catch (error) {
                 console.error('Guest deletion failed:', error);
                 const listError = document.getElementById('guestlistError');
