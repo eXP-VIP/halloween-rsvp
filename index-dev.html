@@ -1596,6 +1596,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             const appendNameList = (label, items, getName, toneClass) => {
                 const details = document.createElement('details');
                 details.className = 'rounded border border-gray-700/70 bg-black/20 p-2 mb-2';
+                details.open = items.length > 0 &&
+                    (label === 'New members to add' || label === 'Members to remove');
                 const heading = document.createElement('summary');
                 heading.className = 'cursor-pointer font-semibold ' + toneClass;
                 heading.textContent = label + ' (' + items.length + ')';
