@@ -1396,9 +1396,9 @@
         /** Stable aliases let imports match a corrected display name to its original imported identity. */
         function getStoredGuestNameKeys(data) {
             if (!data || typeof data !== 'object') return [];
-            const combinedName = [data.firstName, data.lastName]
-                .filter((part) => typeof part === 'string' && part.trim())
-                .join(' ');
+            const firstName = typeof data.firstName === 'string' ? data.firstName.trim() : '';
+            const lastName = typeof data.lastName === 'string' ? data.lastName.trim() : '';
+            const combinedName = firstName && lastName ? firstName + ' ' + lastName : '';
             return Array.from(new Set([data.name, combinedName, data.importNameKey]
                 .map((value) => normalizeGuestName(value))
                 .filter(Boolean)));
