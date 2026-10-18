@@ -855,7 +855,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.18.7</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.18.8</p>
         </div>
     </footer>
 
@@ -875,6 +875,9 @@
         // Staff access uses Firebase Authentication plus a server-enforced event_users/{uid} role record.
         const WHATSAPP_GROUP_INVITE_URL = "https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58";
         const STAFF_ROLES = ['admin', 'hotel', 'internations'];
+        // DEV reads independent workflow settings and is always locked to session-only operational testing.
+        const IS_DEVELOPMENT_BUILD = document.title.includes('(DEV)');
+        const WORKFLOW_SETTINGS_DOC_ID = IS_DEVELOPMENT_BUILD ? 'workflow_dev' : 'workflow';
         let currentStaffRole = null;
         let currentAuthUser = null;
         let activeStaffUid = null;
@@ -927,6 +930,7 @@
         // Fail safe: the real event workflow is inactive until an Admin explicitly activates it.
         const EVENT_CHECKIN_MODE_VERSION = '2026.10.18.7';
         let eventCheckInActive = false;
+        let eventModeChangeInProgress = false;
         // Test operational states live only in this page session's memory; reload/sign-out clears them.
         let sessionGuestOverrides = {};
         let singleTeamCombinedMode = false;
@@ -974,6 +978,7 @@
         }
         /** Record an operational action either as a real update or as tab-local simulation data. */
         async function applyGuestStateUpdate(id, update) {
+            if (eventModeChangeInProgress) throw new Error('The event mode is changing. Retry after the mode indicator settles.');
             if (!db || !id) throw new Error('The guest database is not connected.');
             const selected = cachedGuestDocs.find((doc) => doc.id === id);
             const key = selected ? normalizeGuestName((selected.data() || {}).name) : '';
@@ -1000,11 +1005,16 @@
         function updateEventCheckInModeUI() {
             const active = eventCheckInActive;
             const checkbox = document.getElementById('eventCheckInActive');
-            if (checkbox) checkbox.checked = active;
+            if (checkbox) {
+                checkbox.checked = active;
+                checkbox.disabled = IS_DEVELOPMENT_BUILD || eventModeChangeInProgress;
+            }
             const status = document.getElementById('eventCheckInActiveStatus');
-            if (status) status.textContent = active
-                ? 'ACTIVE: check-ins, payments, upgrades and chip actions are saved permanently to the real guest records.'
-                : 'INACTIVE: staff actions are simulated in this browser tab only. Public registrations remain permanent.';
+            if (status) status.textContent = IS_DEVELOPMENT_BUILD
+                ? 'DEV PREVIEW: operational actions are always session-only. Public registrations remain permanent.'
+                : active
+                    ? 'ACTIVE: check-ins, payments, upgrades and chip actions are saved permanently to the real guest records.'
+                    : 'INACTIVE: staff actions are simulated in this browser tab only. Public registrations remain permanent.';
             const banner = document.getElementById('eventCheckInModeBanner');
             const title = document.getElementById('eventCheckInModeTitle');
             const message = document.getElementById('eventCheckInModeMessage');
@@ -1017,11 +1027,13 @@
             if (title) {
                 title.classList.toggle('text-amber-100', !active);
                 title.classList.toggle('text-emerald-100', active);
-                title.textContent = active ? 'EVENT CHECK-IN ACTIVE · LIVE MODE' : 'EVENT CHECK-IN INACTIVE · TEST MODE';
+                title.textContent = IS_DEVELOPMENT_BUILD ? 'DEV PREVIEW · TEST MODE' : (active ? 'EVENT CHECK-IN ACTIVE · LIVE MODE' : 'EVENT CHECK-IN INACTIVE · TEST MODE');
             }
-            if (message) message.textContent = active
-                ? 'Check-ins, payments, drink upgrades and chip actions are saved to the real guest records.'
-                : 'Check-ins, payments, drink upgrades and chip actions are temporary in this browser tab. Real guest registrations remain saved.';
+            if (message) message.textContent = IS_DEVELOPMENT_BUILD
+                ? 'This DEV preview is always test-only. Check-ins, payments, drink upgrades and chip actions disappear on sign-out or reload; real guest registrations remain saved.'
+                : active
+                    ? 'Check-ins, payments, drink upgrades and chip actions are saved to the real guest records.'
+                    : 'Check-ins, payments, drink upgrades and chip actions are temporary in this browser tab. Real guest registrations remain saved.';
         }
 
         // Defaults for admission tiers, drink treatment and referral rewards; event_settings/pricing can override them.
@@ -1103,7 +1115,12 @@
         /** Map a guest record to the stable pricing tier used by admission calculations. */
         function getGuestTier(data) {
             const member = findImportedMemberData(data);
-            if (member) return String(member.interNationsStatus || (data && data.interNationsStatus) || '').toLocaleLowerCase().includes('basic') ? 'basics' : 'paidMembers';
+            if (member) {
+                const memberStatus = String(member.interNationsStatus || (data && data.interNationsStatus) || '').toLocaleLowerCase();
+                // Ambassadors always use the Albatross paid-member tier, even if a mixed status label also says Basic.
+                if (/ambassador/.test(memberStatus)) return 'paidMembers';
+                return memberStatus.includes('basic') ? 'basics' : 'paidMembers';
+            }
             return 'friends';
         }
 
@@ -1312,6 +1329,8 @@
                 .normalize('NFKC')
                 .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
                 .replace(/[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFE00-\uFE0F\uFEFF\uFFF0-\uFFF8\u{E0000}-\u{E007F}]/gu, '')
+                // Remove common overlay/strike marks used to disguise otherwise ordinary names.
+                .replace(/[\u0334-\u0338\u20D2\u20E5]/g, '')
                 .replace(/\s+/g, ' ').trim();
         }
         /** Shared normalized key for matching and duplicate prevention. */
@@ -1611,10 +1630,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                             lastName: entry.lastName,
                             membershipRemovedAt: firebase.firestore.FieldValue.delete()
                         };
-                        // Keep the first import date for a continuously listed member. Set it for a new import cycle only.
-                        if (!isImportedMemberRecord(prior) || !prior.importedAt) {
-                            updateData.importedAt = firebase.firestore.FieldValue.serverTimestamp();
-                        }
+                        // Never change an existing import date during a refresh. A date is assigned only when a member-only record is first added below.
                         if (rsvpSourceData) {
                             if (!String(prior.invitedBy || '').trim() && String(rsvpSourceData.invitedBy || '').trim()) {
                                 updateData.invitedBy = sanitizeGuestDisplayName(rsvpSourceData.invitedBy);
@@ -2256,12 +2272,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 return;
             }
             if (!workflowSettingsUnsubscribe) {
-                workflowSettingsUnsubscribe = db.collection('event_settings').doc('workflow').onSnapshot((doc) => {
+                workflowSettingsUnsubscribe = db.collection('event_settings').doc(WORKFLOW_SETTINGS_DOC_ID).onSnapshot((doc) => {
                     const value = doc.exists ? doc.data() || {} : {};
                     const previousWorkflowSetting = twoStepCheckInEnabled;
                     const previousEventCheckInActive = eventCheckInActive;
                     twoStepCheckInEnabled = value.twoStepCheckInEnabled !== false;
-                    eventCheckInActive = value.eventCheckInActive === true &&
+                    eventCheckInActive = !IS_DEVELOPMENT_BUILD && value.eventCheckInActive === true &&
                         value.eventCheckInModeVersion === EVENT_CHECKIN_MODE_VERSION;
                     if (previousEventCheckInActive !== eventCheckInActive) clearSessionGuestOverrides();
                     updateEventCheckInModeUI();
@@ -2275,8 +2291,11 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     if ((previousWorkflowSetting !== twoStepCheckInEnabled || previousEventCheckInActive !== eventCheckInActive) && guestlistUnsubscribe) loadLiveGuestlist();
                 }, (error) => {
                     console.error('Workflow settings listener failed:', error);
+                    const wasActive = eventCheckInActive;
                     eventCheckInActive = false;
+                    if (wasActive) clearSessionGuestOverrides();
                     updateEventCheckInModeUI();
+                    if (wasActive && guestlistUnsubscribe) loadLiveGuestlist();
                     const status = document.getElementById('workflowSaveStatus');
                     if (status) status.textContent = 'Workflow setting could not be read. The default two-step workflow remains selected; event actions stay in safe test mode.';
                 });
@@ -2702,7 +2721,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         }
 
                         details.appendChild(titleLine);
-                        if (currentStaffRole === 'admin' && guestMeta.textContent) details.appendChild(guestMeta);
+                        if (guestMeta.textContent) details.appendChild(guestMeta);
 
                         const canManageAdmission = mode === 'combined' || checkedIn;
                         if (canManageAdmission) {
@@ -2738,7 +2757,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     } else {
                         // Hotel sees only the guest identity and check-in control.
                         details.appendChild(titleLine);
-                        if (currentStaffRole === 'admin' && guestMeta.textContent) details.appendChild(guestMeta);
+                        if (guestMeta.textContent) details.appendChild(guestMeta);
                         // The separate Check In control belongs only to the two-step workflow.
                         if (twoStepCheckInEnabled && !singleTeamCombinedMode && mode === 'hotel') appendCheckInAction();
                         if (currentStaffRole === 'admin') appendDeleteAction();
@@ -2902,6 +2921,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
         /** Update check-in state while enforcing restrictions required by the active staff workflow. */
         async function toggleCheckIn(id, currentState) {
+            if (!twoStepCheckInEnabled) {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Separate check-in actions are disabled in the one-step workflow.';
+                listError.classList.remove('hidden');
+                return;
+            }
             if (!db) {
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'The guest database is not connected. Please check the Firebase connection.';
@@ -3612,34 +3637,47 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
         }
 
-        // Event workflow setting is stored separately from admission pricing.
+        // Production mode is Admin-controlled; the DEV preview is permanently test-only.
         const eventCheckInActiveCheckbox = document.getElementById('eventCheckInActive');
         if (eventCheckInActiveCheckbox) eventCheckInActiveCheckbox.addEventListener('change', async () => {
             const status = document.getElementById('eventCheckInActiveStatus');
+            if (IS_DEVELOPMENT_BUILD) {
+                eventCheckInActiveCheckbox.checked = false;
+                if (status) status.textContent = 'DEV preview is locked to test mode. Activate live operations only on the production site.';
+                return;
+            }
             if (currentStaffRole !== 'admin' || !db) {
                 eventCheckInActiveCheckbox.checked = eventCheckInActive;
                 if (status) status.textContent = 'Only an authenticated Admin can change this setting.';
                 return;
             }
+            const previousActive = eventCheckInActive;
             const requested = eventCheckInActiveCheckbox.checked;
+            eventModeChangeInProgress = true;
             eventCheckInActiveCheckbox.disabled = true;
-            if (status) status.textContent = 'Saving event check-in mode…';
+            if (status) status.textContent = 'Saving event check-in mode… Operational actions are temporarily paused.';
             try {
-                await db.collection('event_settings').doc('workflow').set({
+                await db.collection('event_settings').doc(WORKFLOW_SETTINGS_DOC_ID).set({
                     eventCheckInActive: requested,
                     eventCheckInModeVersion: EVENT_CHECKIN_MODE_VERSION,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedBy: activeStaffUid || null
                 }, { merge: true });
+                eventCheckInActive = requested;
+                if (previousActive !== requested) clearSessionGuestOverrides();
+                updateEventCheckInModeUI();
+                refreshGuestlistView();
                 if (status) status.textContent = requested
-                    ? 'Activating live mode. Future check-ins, payments, upgrades and chip actions will be saved permanently.'
-                    : 'Activating test mode. Actions will stay in this browser tab and will not change real guest records.';
+                    ? 'LIVE MODE ACTIVE. Future check-ins, payments, upgrades and chip actions are saved permanently.'
+                    : 'TEST MODE ACTIVE. Future operational actions are session-only; guest registrations remain permanent.';
             } catch (error) {
                 console.error('Event check-in mode save failed:', error);
                 eventCheckInActiveCheckbox.checked = eventCheckInActive;
+                updateEventCheckInModeUI();
                 if (status) status.textContent = 'Could not save the event mode. Check Firestore permissions and try again.';
             } finally {
-                eventCheckInActiveCheckbox.disabled = false;
+                eventModeChangeInProgress = false;
+                eventCheckInActiveCheckbox.disabled = IS_DEVELOPMENT_BUILD;
             }
         });
 
@@ -3655,7 +3693,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             workflowCheckbox.disabled = true;
             if (status) status.textContent = 'Saving workflow setting…';
             try {
-                await db.collection('event_settings').doc('workflow').set({
+                await db.collection('event_settings').doc(WORKFLOW_SETTINGS_DOC_ID).set({
                     twoStepCheckInEnabled: requested,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedBy: activeStaffUid || null
