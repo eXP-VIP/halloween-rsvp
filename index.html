@@ -855,7 +855,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.18.6</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.18.7</p>
         </div>
     </footer>
 
@@ -925,6 +925,7 @@
         let workflowSettingsUnsubscribe = null;
         let twoStepCheckInEnabled = true;
         // Fail safe: the real event workflow is inactive until an Admin explicitly activates it.
+        const EVENT_CHECKIN_MODE_VERSION = '2026.10.18.7';
         let eventCheckInActive = false;
         // Test operational states live only in this page session's memory; reload/sign-out clears them.
         let sessionGuestOverrides = {};
@@ -2260,7 +2261,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     const previousWorkflowSetting = twoStepCheckInEnabled;
                     const previousEventCheckInActive = eventCheckInActive;
                     twoStepCheckInEnabled = value.twoStepCheckInEnabled !== false;
-                    eventCheckInActive = value.eventCheckInActive === true;
+                    eventCheckInActive = value.eventCheckInActive === true &&
+                        value.eventCheckInModeVersion === EVENT_CHECKIN_MODE_VERSION;
                     if (previousEventCheckInActive !== eventCheckInActive) clearSessionGuestOverrides();
                     updateEventCheckInModeUI();
                     const input = document.getElementById('twoStepCheckInEnabled');
@@ -3625,6 +3627,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             try {
                 await db.collection('event_settings').doc('workflow').set({
                     eventCheckInActive: requested,
+                    eventCheckInModeVersion: EVENT_CHECKIN_MODE_VERSION,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedBy: activeStaffUid || null
                 }, { merge: true });
