@@ -488,8 +488,8 @@
                     <input id="guestName" type="text" name="Full Name" autocomplete="name" required class="form-field" placeholder="Name used at the entrance">
                 </div>
                 <div>
-                    <label for="guestInviter" class="form-label">Invited by <span class="normal-case tracking-normal text-gray-400">(optional)</span></label>
-                    <input id="guestInviter" type="text" name="Invited By" class="form-field" placeholder="Name of your inviter (optional)">
+                    <label for="guestInviter" class="form-label">Invited by</label>
+                    <input id="guestInviter" type="text" name="Invited By" class="form-field" placeholder="Name of your inviter">
                 </div>
                 <button type="submit" id="submitBtn" class="gold-btn w-full py-4 rounded-lg uppercase font-serif text-sm tracking-widest mt-3">Add me to the Guest List</button>
                 <p class="text-gray-400 text-xs text-center leading-relaxed">Your details are used to organise the guest list and check-in for this event.</p>
@@ -819,7 +819,7 @@
                         <label for="internationsFileInput" class="form-label">Guest-list spreadsheet</label>
                         <input id="internationsFileInput" type="file" accept=".xlsx,.xls,.csv,.ods" class="form-field text-sm mb-3">
                         <div id="internationsImportOptions" class="hidden space-y-3">
-                            <p class="text-xs text-sky-100">Names are combined automatically from First Name + Last Name. The Status field is imported as the member type/status.</p>
+                            <p class="text-xs text-sky-100">Names are combined automatically from First Name + Last Name. Membership Type (or Status) sets the member category and badges; Country is retained and shown as a flag.</p>
                             <div id="internationsImportPreview" class="rounded-lg border border-sky-400/20 bg-black/30 p-3 text-xs text-gray-200"></div>
                             <button type="button" id="confirmInternationsImport" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Synchronize full InterNations Members-List</button>
                         </div>
@@ -855,7 +855,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.18.2</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.18.3</p>
         </div>
     </footer>
 
@@ -1300,6 +1300,34 @@
         function normalizeGuestName(value) {
             return sanitizeGuestDisplayName(value).toLocaleLowerCase();
         }
+
+        /** Map country names and common country codes to Unicode flag emoji. */
+        function normalizeCountryKey(value) {
+            return String(value || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/&/g, ' and ').toLocaleLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        }
+        const COUNTRY_FLAG_CODES = (() => {
+            const map = {};
+            const pairs = String.raw`
+Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Anguilla:AI|Antarctica:AQ|Antigua and Barbuda:AG|Argentina:AR|Armenia:AM|Aruba:AW|Australia:AU|Austria:AT|Azerbaijan:AZ|Bahamas:BS|Bahrain:BH|Bangladesh:BD|Barbados:BB|Belarus:BY|Belgium:BE|Belize:BZ|Benin:BJ|Bermuda:BM|Bhutan:BT|Bolivia:BO|Bonaire Sint Eustatius and Saba:BQ|Bosnia and Herzegovina:BA|Botswana:BW|Bouvet Island:BV|Brazil:BR|British Indian Ocean Territory:IO|Brunei:BN|Brunei Darussalam:BN|Bulgaria:BG|Burkina Faso:BF|Burundi:BI|Cabo Verde:CV|Cape Verde:CV|Cambodia:KH|Cameroon:CM|Canada:CA|Cayman Islands:KY|Central African Republic:CF|Chad:TD|Chile:CL|China:CN|Christmas Island:CX|Cocos Keeling Islands:CC|Colombia:CO|Comoros:KM|Congo:CG|Republic of the Congo:CG|Democratic Republic of the Congo:CD|DR Congo:CD|Congo Kinshasa:CD|Cook Islands:CK|Costa Rica:CR|Croatia:HR|Cuba:CU|Curacao:CW|Curaçao:CW|Cyprus:CY|Czechia:CZ|Czech Republic:CZ|Côte d'Ivoire:CI|Ivory Coast:CI|Denmark:DK|Djibouti:DJ|Dominica:DM|Dominican Republic:DO|Ecuador:EC|Egypt:EG|El Salvador:SV|Equatorial Guinea:GQ|Eritrea:ER|Estonia:EE|Eswatini:SZ|Swaziland:SZ|Ethiopia:ET|Falkland Islands:FK|Falkland Islands Malvinas:FK|Faroe Islands:FO|Fiji:FJ|Finland:FI|France:FR|French Guiana:GF|French Polynesia:PF|French Southern Territories:TF|Gabon:GA|Gambia:GM|Georgia:GE|Germany:DE|Deutschland:DE|Ghana:GH|Gibraltar:GI|Greece:GR|Greenland:GL|Grenada:GD|Guadeloupe:GP|Guam:GU|Guatemala:GT|Guernsey:GG|Guinea:GN|Guinea Bissau:GW|Guyana:GY|Haiti:HT|Heard Island and McDonald Islands:HM|Vatican City:VA|Holy See:VA|Honduras:HN|Hong Kong:HK|Hungary:HU|Iceland:IS|India:IN|Indonesia:ID|Iran:IR|Iraq:IQ|Ireland:IE|Isle of Man:IM|Israel:IL|Italy:IT|Jamaica:JM|Japan:JP|Jersey:JE|Jordan:JO|Kazakhstan:KZ|Kenya:KE|Kiribati:KI|North Korea:KP|Korea North:KP|Korea Democratic Peoples Republic of:KP|South Korea:KR|Korea South:KR|Korea Republic of:KR|Kuwait:KW|Kyrgyzstan:KG|Laos:LA|Lao People's Democratic Republic:LA|Latvia:LV|Lebanon:LB|Lesotho:LS|Liberia:LR|Libya:LY|Liechtenstein:LI|Lithuania:LT|Luxembourg:LU|Macao:MO|Macau:MO|Madagascar:MG|Malawi:MW|Malaysia:MY|Maldives:MV|Mali:ML|Malta:MT|Marshall Islands:MH|Martinique:MQ|Mauritania:MR|Mauritius:MU|Mayotte:YT|Mexico:MX|Micronesia:FM|Federated States of Micronesia:FM|Moldova:MD|Monaco:MC|Mongolia:MN|Montenegro:ME|Montserrat:MS|Morocco:MA|Mozambique:MZ|Myanmar:MM|Burma:MM|Namibia:NA|Nauru:NR|Nepal:NP|Netherlands:NL|The Netherlands:NL|Holland:NL|New Caledonia:NC|New Zealand:NZ|Nicaragua:NI|Niger:NE|Nigeria:NG|Niue:NU|Norfolk Island:NF|North Macedonia:MK|Northern Mariana Islands:MP|Norway:NO|Oman:OM|Pakistan:PK|Palau:PW|Palestine:PS|State of Palestine:PS|Palestine State of:PS|Panama:PA|Papua New Guinea:PG|Paraguay:PY|Peru:PE|Philippines:PH|Pitcairn:PN|Poland:PL|Portugal:PT|Puerto Rico:PR|Qatar:QA|Réunion:RE|Reunion:RE|Romania:RO|Russia:RU|Russian Federation:RU|Rwanda:RW|Saint Barthélemy:BL|Saint Barthelemy:BL|Saint Helena:SH|Saint Helena Ascension and Tristan da Cunha:SH|Saint Kitts and Nevis:KN|Saint Lucia:LC|Saint Martin:MF|Saint Pierre and Miquelon:PM|Saint Vincent and the Grenadines:VC|Samoa:WS|San Marino:SM|Sao Tome and Principe:ST|Saudi Arabia:SA|Senegal:SN|Serbia:RS|Seychelles:SC|Sierra Leone:SL|Singapore:SG|Sint Maarten:SX|Slovakia:SK|Slovenia:SI|Solomon Islands:SB|Somalia:SO|South Africa:ZA|South Georgia and the South Sandwich Islands:GS|South Sudan:SS|Spain:ES|España:ES|Sri Lanka:LK|Sudan:SD|Suriname:SR|Svalbard and Jan Mayen:SJ|Sweden:SE|Switzerland:CH|Schweiz:CH|Syria:SY|Syrian Arab Republic:SY|Taiwan:TW|Tajikistan:TJ|Tanzania:TZ|Thailand:TH|Timor Leste:TL|East Timor:TL|Togo:TG|Tokelau:TK|Tonga:TO|Trinidad and Tobago:TT|Tunisia:TN|Türkiye:TR|Turkey:TR|Turkmenistan:TM|Turks and Caicos Islands:TC|Tuvalu:TV|Uganda:UG|Ukraine:UA|United Arab Emirates:AE|UAE:AE|United Kingdom:GB|Great Britain:GB|UK:GB|United States:US|United States of America:US|USA:US|US:US|Uruguay:UY|Uzbekistan:UZ|Vanuatu:VU|Venezuela:VE|Vietnam:VN|Viet Nam:VN|British Virgin Islands:VG|Virgin Islands British:VG|U.S. Virgin Islands:VI|US Virgin Islands:VI|Wallis and Futuna:WF|Western Sahara:EH|Yemen:YE|Zambia:ZM|Zimbabwe:ZW|Österreich:AT|Osterreich:AT|Belgique:BE|Brasil:BR|Danmark:DK|Espagne:ES|Italia:IT|Nederland:NL|Norge:NO|Polska:PL|Schweden:SE|Suomi:FI|Sverige:SE|Vereinigte Staaten:US|Vereinigtes Königreich:GB|Vereinigtes Koenigreich:GB|Indien:IN|Tuerkei:TR|Tschechien:CZ|Kroatien:HR|Griechenland:GR|Rumänien:RO|Rumaenien:RO|Ungarn:HU|Mexiko:MX|Kanada:CA|Australien:AU|Neuseeland:NZ|Irland:IE|Finnland:FI|Island:IS|Luxemburg:LU|Slowakei:SK|Slowenien:SI|Zypern:CY|Malta:MT|Estland:EE|Lettland:LV|Litauen:LT|Schottland:GB|England:GB|Wales:GB|Nordirland:GB|U.S.A.:US|U.S.:US|DEU:DE|AUT:AT|CHE:CH|ESP:ES|FRA:FR|ITA:IT|ISR:IL|IND:IN|CHN:CN|CAN:CA|AUS:AU|NZL:NZ|IRL:IE|NLD:NL|BEL:BE|SWE:SE|NOR:NO|DNK:DK|POL:PL|CZE:CZ|PRT:PT|GRC:GR|TUR:TR|ARG:AR|BRA:BR|MEX:MX|JPN:JP|KOR:KR|ZAF:ZA|SGP:SG|HKG:HK|ARE:AE|GBR:GB|MYS:MY|THA:TH|PHL:PH|IDN:ID|PAK:PK|BGD:BD|LKA:LK|NPL:NP|UKR:UA|RUS:RU|ROU:RO|SRB:RS|HRV:HR|BGR:BG|GEO:GE|ARM:AM|AZE:AZ|KAZ:KZ|UZB:UZ|COL:CO|CHL:CL|PER:PE|URY:UY|VEN:VE
+`.split('|');
+            pairs.forEach((pair) => {
+                const splitAt = pair.lastIndexOf(':');
+                const name = pair.slice(0, splitAt).trim();
+                const code = pair.slice(splitAt + 1).trim().toUpperCase();
+                if (name && /^[A-Z]{2}$/.test(code)) map[normalizeCountryKey(name)] = code;
+            });
+            return map;
+        })();
+        function getCountryFlag(country) {
+            const raw = sanitizeGuestDisplayName(country);
+            if (!raw) return '';
+            const key = normalizeCountryKey(raw);
+            const code = COUNTRY_FLAG_CODES[key] || (/^[A-Z]{2}$/i.test(raw) ? raw.toUpperCase() : '');
+            if (!/^[A-Z]{2}$/.test(code)) return '';
+            return Array.from(code, (letter) => String.fromCodePoint(0x1F1E6 + letter.charCodeAt(0) - 65)).join('');
+        }
+
         /** Clean existing stored names once per Admin session; only compatibility/invisible formatting is changed. */
         let storedGuestNamesNormalizedThisSession = false;
         async function normalizeStoredGuestNames(guestDocs) {
@@ -1324,16 +1352,21 @@
 
         /** Extract first/last-name fields from spreadsheet rows with varying column headers. */
         function readImportedNameParts(row) {
-            const firstHeader = pendingInternationsHeaders.find((header) => /^(first|given)\s*name$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
-            const lastHeader = pendingInternationsHeaders.find((header) => /^(last|family|sur)\s*name$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
-            const statusHeader = pendingInternationsHeaders.find((header) => /^(status|membership status|member status)$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
+            const cleanHeader = (header) => String(header).replace(/^\uFEFF/, '').trim();
+            const firstHeader = pendingInternationsHeaders.find((header) => /^(first|given)\s*name$/i.test(cleanHeader(header)));
+            const lastHeader = pendingInternationsHeaders.find((header) => /^(last|family|sur)\s*name$/i.test(cleanHeader(header)));
+            // Prefer the explicit membership type over a generic Status column if both are present.
+            const statusHeader = pendingInternationsHeaders.find((header) => /^(membership type|member type|membership|type)$/i.test(cleanHeader(header))) ||
+                pendingInternationsHeaders.find((header) => /^(membership status|member status|status)$/i.test(cleanHeader(header)));
+            const countryHeader = pendingInternationsHeaders.find((header) => /^(country|country name|country of residence|country of origin|country\s*\/\s*region)$/i.test(cleanHeader(header)));
             const firstName = firstHeader ? sanitizeGuestDisplayName(row[firstHeader]) : '';
             const lastName = lastHeader ? sanitizeGuestDisplayName(row[lastHeader]) : '';
             return {
                 name: [firstName, lastName].filter(Boolean).join(' ').trim(),
                 firstName,
                 lastName,
-                membershipStatus: statusHeader ? String(row[statusHeader] || '').trim() : ''
+                membershipStatus: statusHeader ? sanitizeGuestDisplayName(row[statusHeader]) : '',
+                country: countryHeader ? sanitizeGuestDisplayName(row[countryHeader]) : ''
             };
         }
 
@@ -1352,8 +1385,10 @@
                 if (!key) { blankRows++; return; }
                 if (!seen.has(key)) {
                     seen.set(key, { ...parts, key });
-                } else if (!seen.get(key).membershipStatus && parts.membershipStatus) {
-                    seen.get(key).membershipStatus = parts.membershipStatus;
+                } else {
+                    const existingEntry = seen.get(key);
+                    if (!existingEntry.membershipStatus && parts.membershipStatus) existingEntry.membershipStatus = parts.membershipStatus;
+                    if (!existingEntry.country && parts.country) existingEntry.country = parts.country;
                 }
             });
             return { entries: Array.from(seen.values()), blankRows, duplicateRows: pendingInternationsRows.length - seen.size - blankRows };
@@ -1529,6 +1564,7 @@
                             lastName: entry.lastName
                         };
                         if (entry.membershipStatus) updateData.interNationsStatus = entry.membershipStatus;
+                        if (entry.country) updateData.country = entry.country;
                         operations.push({ type: 'update', ref: existing.ref, data: updateData });
                     } else {
                         added++;
@@ -1549,7 +1585,8 @@
                             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                             importedAt: firebase.firestore.FieldValue.serverTimestamp(),
                             welcomeDrinkChipIssued: false,
-                            ...(entry.membershipStatus ? { interNationsStatus: entry.membershipStatus } : {})
+                            ...(entry.membershipStatus ? { interNationsStatus: entry.membershipStatus } : {}),
+                            ...(entry.country ? { country: entry.country } : {})
                         }});
                     }
                 });
@@ -1574,6 +1611,7 @@
                             importNameKey: firebase.firestore.FieldValue.delete(),
                             importedAt: firebase.firestore.FieldValue.delete(),
                             interNationsStatus: firebase.firestore.FieldValue.delete(),
+                            country: firebase.firestore.FieldValue.delete(),
                             membershipRemovedAt: firebase.firestore.FieldValue.serverTimestamp()
                         }});
                     } else {
@@ -2351,7 +2389,9 @@
                     const inviterIdentity = guestByNameKey.get(inviterKey)?.data || data;
                     const welcomeDrinkEarned = hasEarnedReferralDrink(inviterIdentity, qualifiedCount);
                     const referralBadgeState = getReferralBadgeState(inviterIdentity, invitedCount, qualifiedCount);
-                    const isMemberRecord = isInterNationsMember(data) || Boolean(findImportedMemberData(data));
+                    const matchedMemberData = findImportedMemberData(data);
+                    const memberDetails = isImportedMemberRecord(data) ? data : (matchedMemberData || data);
+                    const isMemberRecord = isImportedMemberRecord(data) || Boolean(matchedMemberData);
                     const isPaymentCard = mode === 'payment' || mode === 'combined';
                     const isPaid = Boolean(data.paid);
                     const paymentComplete = isPaymentCard && isPaymentWorkflowComplete(item);
@@ -2386,13 +2426,37 @@
                     name.className = 'font-medium text-sm text-white break-words';
                     name.textContent = sanitizeGuestDisplayName(data.name) || '(No name provided)';
                     titleLine.appendChild(name);
+                    const memberCountry = String(memberDetails.country || data.country || '').trim();
+                    const countryFlag = getCountryFlag(memberCountry);
+                    if (countryFlag) {
+                        const countryBadge = document.createElement('span');
+                        countryBadge.className = 'inline-flex items-center justify-center rounded-full border border-gray-500/40 bg-black/30 px-2 py-1 text-sm leading-none';
+                        countryBadge.textContent = countryFlag;
+                        countryBadge.title = memberCountry;
+                        countryBadge.setAttribute('aria-label', 'Country: ' + memberCountry);
+                        titleLine.appendChild(countryBadge);
+                    }
 
                     const typeBadge = document.createElement('span');
                     typeBadge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
                         (isMemberRecord ? 'border-sky-400/50 bg-sky-950/50 text-sky-100' : 'border-gray-500/50 bg-gray-800/60 text-gray-200');
-                    const memberStatus = String(data.interNationsStatus || '').trim();
+                    const memberStatus = String(memberDetails.interNationsStatus || data.interNationsStatus || '').trim();
                     typeBadge.textContent = getGuestCategory(data).toLocaleUpperCase();
-                    if (currentStaffRole === 'admin' || mode === 'combined') titleLine.appendChild(typeBadge);
+                    if (isMemberRecord || currentStaffRole === 'admin' || mode === 'combined') titleLine.appendChild(typeBadge);
+                    const memberStatusKey = normalizeGuestName(memberStatus);
+                    const appendMemberBadge = (label, title, kind) => {
+                        const badge = document.createElement('span');
+                        badge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
+                            (kind === 'new'
+                                ? 'border-amber-300/60 bg-amber-900/30 text-amber-100'
+                                : 'border-violet-300/50 bg-violet-950/40 text-violet-100');
+                        badge.textContent = label;
+                        badge.title = title;
+                        titleLine.appendChild(badge);
+                    };
+                    if (isMemberRecord && /consul/.test(memberStatusKey)) appendMemberBadge('CONSUL', 'InterNations Consul', 'member');
+                    if (isMemberRecord && /buddy/.test(memberStatusKey)) appendMemberBadge('BUDDY', 'Newcomers’ Buddy', 'member');
+                    if (isMemberRecord && /(?:\b1st\b|\bfirst\b)\s*[-–—]?\s*event\b/.test(memberStatusKey)) appendMemberBadge('NEW', 'First InterNations event', 'new');
                     if (mode === 'combined' || mode === 'payment') {
                         // Show completed status badges on combined and payment lists; pending states are clear from available actions.
                         if (checkedIn) {
@@ -2537,7 +2601,7 @@
                         details.appendChild(titleLine);
                         if (currentStaffRole === 'admin' && guestMeta.textContent) details.appendChild(guestMeta);
                         // The separate Check In control belongs only to the two-step workflow.
-                        if (twoStepCheckInEnabled && mode === 'hotel') appendCheckInAction();
+                        if (twoStepCheckInEnabled && !singleTeamCombinedMode && mode === 'hotel') appendCheckInAction();
                         if (currentStaffRole === 'admin') appendDeleteAction();
                     }
 
