@@ -855,7 +855,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.18.1</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.18.2</p>
         </div>
     </footer>
 
@@ -926,22 +926,13 @@
         let twoStepCheckInEnabled = true;
         // Fail safe: the real event workflow is inactive until an Admin explicitly activates it.
         let eventCheckInActive = false;
-        const SESSION_GUEST_OVERRIDE_KEY = 'the-dean-after-dark-checkin-test-state-v1';
-        let sessionGuestOverrides = readSessionGuestOverrides();
+        // Test operational states live only in this page session's memory; reload/sign-out clears them.
+        let sessionGuestOverrides = {};
         let singleTeamCombinedMode = false;
         let cachedUnaccountedReferrals = [];
-        /** Load per-tab test changes. They are never sent to Firestore and clear on sign-out, tab close or mode change. */
-        function readSessionGuestOverrides() {
-            try {
-                const value = JSON.parse(sessionStorage.getItem(SESSION_GUEST_OVERRIDE_KEY) || '{}');
-                return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-            } catch (_) {
-                return {};
-            }
-        }
+        /** Test changes are memory-only and disappear on reload, sign-out or mode change. */
         function clearSessionGuestOverrides() {
             sessionGuestOverrides = {};
-            try { sessionStorage.removeItem(SESSION_GUEST_OVERRIDE_KEY); } catch (_) {}
         }
         /** Return operational status for live mode, or a clean, non-persistent test baseline while inactive. */
         function getEffectiveGuestData(guestDoc) {
@@ -985,7 +976,6 @@
             if (!db || !id) throw new Error('The guest database is not connected.');
             if (!eventCheckInActive) {
                 sessionGuestOverrides[id] = { ...(sessionGuestOverrides[id] || {}), ...update };
-                try { sessionStorage.setItem(SESSION_GUEST_OVERRIDE_KEY, JSON.stringify(sessionGuestOverrides)); } catch (_) {}
                 refreshGuestlistView();
                 return;
             }
@@ -1299,10 +1289,37 @@
 
         renderPricingForm();
 
-        /** Normalize spacing and casing so imported names can be compared and de-duplicated consistently. */
-        // IMPORT PIPELINE: spreadsheet exports vary, so normalization and duplicate handling are shared by preview and import.
+        /** Convert compatibility-styled Unicode to standard text and remove invisible/control characters without stripping accents or non-Latin letters. */
+        function sanitizeGuestDisplayName(value) {
+            return String(value || '').normalize('NFKC')
+                .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
+                .replace(/[\u00AD\u200B\u200E\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '')
+                .replace(/\s+/g, ' ').trim();
+        }
+        /** Shared normalized key for matching and duplicate prevention. */
         function normalizeGuestName(value) {
-            return String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+            return sanitizeGuestDisplayName(value).toLocaleLowerCase();
+        }
+        /** Clean existing stored names once per Admin session; only compatibility/invisible formatting is changed. */
+        let storedGuestNamesNormalizedThisSession = false;
+        async function normalizeStoredGuestNames(guestDocs) {
+            if (!db || !Array.isArray(guestDocs)) return;
+            const updates = [];
+            guestDocs.forEach((guestDoc) => {
+                const data = guestDoc.data() || {};
+                const clean = {};
+                ['name', 'firstName', 'lastName', 'invitedBy'].forEach((field) => {
+                    if (typeof data[field] !== 'string') return;
+                    const normalized = sanitizeGuestDisplayName(data[field]);
+                    if (normalized !== data[field]) clean[field] = normalized;
+                });
+                if (Object.keys(clean).length) updates.push({ ref: guestDoc.ref, data: clean });
+            });
+            for (let i = 0; i < updates.length; i += 400) {
+                const batch = db.batch();
+                updates.slice(i, i + 400).forEach((item) => batch.update(item.ref, item.data));
+                await batch.commit();
+            }
         }
 
         /** Extract first/last-name fields from spreadsheet rows with varying column headers. */
@@ -1310,8 +1327,8 @@
             const firstHeader = pendingInternationsHeaders.find((header) => /^(first|given)\s*name$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
             const lastHeader = pendingInternationsHeaders.find((header) => /^(last|family|sur)\s*name$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
             const statusHeader = pendingInternationsHeaders.find((header) => /^(status|membership status|member status)$/i.test(String(header).replace(/^\uFEFF/, '').trim()));
-            const firstName = firstHeader ? String(row[firstHeader] || '').replace(/\s+/g, ' ').trim() : '';
-            const lastName = lastHeader ? String(row[lastHeader] || '').replace(/\s+/g, ' ').trim() : '';
+            const firstName = firstHeader ? sanitizeGuestDisplayName(row[firstHeader]) : '';
+            const lastName = lastHeader ? sanitizeGuestDisplayName(row[lastHeader]) : '';
             return {
                 name: [firstName, lastName].filter(Boolean).join(' ').trim(),
                 firstName,
@@ -1708,13 +1725,13 @@
             statusMessage.classList.add('hidden');
             errorMessage.classList.add('hidden');
 
-            const fullName = document.getElementById('guestName').value.trim().replace(/\s+/g, ' ');
+            const fullName = sanitizeGuestDisplayName(document.getElementById('guestName').value);
             const nameParts = fullName.split(/\s+/).filter(Boolean);
             const guest = {
                 name: fullName,
                 firstName: nameParts.shift() || '',
                 lastName: nameParts.join(' '),
-                invitedBy: document.getElementById('guestInviter').value.trim(),
+                invitedBy: sanitizeGuestDisplayName(document.getElementById('guestInviter').value),
                 checkedIn: false,
                 checkedInAt: null,
                 paid: false,
@@ -1886,6 +1903,7 @@
         function showStaffLogin() {
             activeStaffUid = null;
             currentStaffRole = null;
+            storedGuestNamesNormalizedThisSession = false;
             // Discard all simulated check-in/payment/drink changes when the staff session ends.
             clearSessionGuestOverrides();
             stopStaffRealtimeListeners();
@@ -2186,6 +2204,10 @@
             guestlistUnsubscribe = db.collection('halloween_guests').onSnapshot((snapshot) => {
                 try {
                 cachedGuestSnapshot = snapshot;
+                if (currentStaffRole === 'admin' && !storedGuestNamesNormalizedThisSession) {
+                    storedGuestNamesNormalizedThisSession = true;
+                    normalizeStoredGuestNames(snapshot.docs).catch((error) => console.warn('Existing guest-name normalization could not be completed:', error));
+                }
                 const effectiveGuestDocs = snapshot.docs.map(makeEffectiveGuestDoc);
                 cachedGuestDocs = effectiveGuestDocs;
                 listError.classList.add('hidden');
@@ -2362,7 +2384,7 @@
                     titleLine.className = 'flex flex-wrap items-center gap-2';
                     const name = document.createElement('p');
                     name.className = 'font-medium text-sm text-white break-words';
-                    name.textContent = data.name || '(No name provided)';
+                    name.textContent = sanitizeGuestDisplayName(data.name) || '(No name provided)';
                     titleLine.appendChild(name);
 
                     const typeBadge = document.createElement('span');
@@ -2386,11 +2408,11 @@
                             paymentStateBadge.textContent = 'PAID';
                             titleLine.appendChild(paymentStateBadge);
                         }
-                        if (chipAlreadyIssued) {
+                        if (isPaid && drinkEntitled) {
                             const welcomeDrinkStateBadge = document.createElement('span');
                             welcomeDrinkStateBadge.className = 'inline-flex items-center rounded-full border border-amber-300/60 bg-amber-900/30 px-2 py-1 text-[9px] font-semibold tracking-wider text-amber-100';
                             welcomeDrinkStateBadge.textContent = 'WELCOME DRINK';
-                            welcomeDrinkStateBadge.title = 'Welcome-drink chip has been issued.';
+                            welcomeDrinkStateBadge.title = chipAlreadyIssued ? 'Welcome-drink chip has been issued.' : 'Welcome drink is included or earned for this guest.';
                             titleLine.appendChild(welcomeDrinkStateBadge);
                         }
                     }
