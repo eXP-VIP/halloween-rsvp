@@ -744,7 +744,7 @@
                         </div>
                         <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules, referral eligibility and the admission workflow. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid.</p>
                         <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
-                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="eventCheckInActive" type="checkbox" class="mt-1 accent-amber-300"><span><strong>Event check-in active (live mode)</strong><span class="block text-xs text-gray-400 mt-1">Inactive: saved operational states are hidden for a clean test slate; new check-ins, payments, drink upgrades and chip actions stay in this browser tab and are cleared on sign-out, tab close or mode change. Active: actions are saved to real guest records. Public guest registrations are always saved normally.</span></span></label>
+                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="eventCheckInActive" type="checkbox" class="mt-1 accent-amber-300"><span><strong>Event check-in active (live mode)</strong><span class="block text-xs text-gray-400 mt-1">Inactive: check-in, payment, drink-upgrade and chip actions are temporary in this tab and cleared on sign-out, reload or mode switch. The first live activation clears legacy operational test statuses but preserves every guest registration, member detail and date. Public registrations are always permanent.</span></span></label>
                             <p id="eventCheckInActiveStatus" role="status" aria-live="polite" class="text-xs text-amber-100 mt-2">Event check-in is inactive. Testing changes are session-only.</p>
                         </div>
                         <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
@@ -855,7 +855,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.18.9</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Development build 2026.10.18.10</p>
         </div>
     </footer>
 
@@ -928,9 +928,10 @@
         let workflowSettingsUnsubscribe = null;
         let twoStepCheckInEnabled = true;
         // Fail safe: the real event workflow is inactive until an Admin explicitly activates it.
-        const EVENT_CHECKIN_MODE_VERSION = '2026.10.18.9';
+        const EVENT_CHECKIN_MODE_VERSION = '2026.10.18.10';
         let eventCheckInActive = false;
         let eventModeChangeInProgress = false;
+        let operationalStateBaselineVersion = null;
         // Test operational states live only in this page session's memory; reload/sign-out clears them.
         let sessionGuestOverrides = {};
         let singleTeamCombinedMode = false;
@@ -1000,6 +1001,38 @@
                 return;
             }
             await db.collection('halloween_guests').doc(id).update(update);
+        }
+        /** On the first live activation after this build, remove legacy test status without deleting or rewriting guest identities. */
+        async function resetStoredOperationalStatusesForLiveStart() {
+            const snapshot = await db.collection('halloween_guests').get();
+            const docs = snapshot.docs;
+            const paymentAndDrinkFields = {
+                paid: false,
+                paidAt: null,
+                amountPaid: null,
+                paymentStatusUpdatedAt: null,
+                welcomeDrinkChipIssued: false,
+                welcomeDrinkChipIssuedAt: null,
+                welcomeDrinkChipIssuedBy: null,
+                welcomeDrinkUpgradeSelected: false,
+                welcomeDrinkUpgradePrice: null,
+                welcomeDrinkUpgradeUpdatedAt: null
+            };
+            // Clear payment/drink fields first so Firestore rules permit the subsequent check-in reset.
+            for (let start = 0; start < docs.length; start += 400) {
+                const batch = db.batch();
+                docs.slice(start, start + 400).forEach((doc) => batch.update(doc.ref, paymentAndDrinkFields));
+                await batch.commit();
+            }
+            for (let start = 0; start < docs.length; start += 400) {
+                const batch = db.batch();
+                docs.slice(start, start + 400).forEach((doc) => batch.update(doc.ref, {
+                    checkedIn: false,
+                    checkedInAt: null
+                }));
+                await batch.commit();
+            }
+            return docs.length;
         }
         /** Update the persistent mode banner and status shown to every staff role. */
         function updateEventCheckInModeUI() {
@@ -1322,10 +1355,24 @@
         renderPricingForm();
 
         /** Normalize mathematical/full-width Unicode before evaluating names. */
+        const LATIN_SMALL_CAPS_TO_ASCII = Object.freeze({
+            'ᴀ':'a','ʙ':'b','ᴄ':'c','ᴅ':'d','ᴇ':'e','ꜰ':'f','ɢ':'g','ʜ':'h','ɪ':'i',
+            'ᴊ':'j','ᴋ':'k','ʟ':'l','ᴍ':'m','ɴ':'n','ᴏ':'o','ᴘ':'p','ʀ':'r','ꜱ':'s',
+            'ᴛ':'t','ᴜ':'u','ᴠ':'v','ᴡ':'w','ʏ':'y','ᴢ':'z'
+        });
         function compatibilityNormalizeGuestText(value) {
-            return String(value || '')
+            let normalized = String(value || '')
                 .replace(/[\u{1D400}-\u{1D7FF}]/gu, (character) => character.normalize('NFKC'))
                 .normalize('NFKC');
+            const containsSmallCaps = /[ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘʀꜱᴛᴜᴠᴡʏᴢ]/u.test(normalized);
+            normalized = normalized.replace(/[ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘʀꜱᴛᴜᴠᴡʏᴢ]/gu,
+                (character) => LATIN_SMALL_CAPS_TO_ASCII[character] || character);
+            // Small-cap Unicode is a styling choice, not meaningful name casing; present it as normal title case.
+            if (containsSmallCaps) {
+                normalized = normalized.replace(/(^|[\s'’.-])(\p{Ll})/gu,
+                    (_match, separator, letter) => separator + letter.toLocaleUpperCase());
+            }
+            return normalized;
         }
         /** Correct the known legacy-font corruption of the imported Deoraj S record. */
         function isKnownDeorajNameGlitch(value) {
@@ -1345,6 +1392,19 @@
         /** Shared normalized key for matching and duplicate prevention. */
         function normalizeGuestName(value) {
             return sanitizeGuestDisplayName(value).toLocaleLowerCase();
+        }
+        /** Stable aliases let imports match a corrected display name to its original imported identity. */
+        function getStoredGuestNameKeys(data) {
+            if (!data || typeof data !== 'object') return [];
+            const combinedName = [data.firstName, data.lastName]
+                .filter((part) => typeof part === 'string' && part.trim())
+                .join(' ');
+            return Array.from(new Set([data.name, combinedName, data.importNameKey]
+                .map((value) => normalizeGuestName(value))
+                .filter(Boolean)));
+        }
+        function storedGuestMatchesInput(data, inputKeys) {
+            return getStoredGuestNameKeys(data).some((key) => inputKeys.has(key));
         }
         /** Return the oldest known signup/import timestamp so date sorting is consistent for members and RSVPs. */
         function oldestGuestDateMillis(data) {
@@ -1506,13 +1566,13 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
             const result = getUniqueImportedNames();
             const inputKeys = new Set(result.entries.map(item => item.key));
-            const existingKeys = new Set(cachedGuestDocs.map(doc => normalizeGuestName((doc.data() || {}).name)).filter(Boolean));
+            const existingKeys = new Set(cachedGuestDocs.flatMap(doc => getStoredGuestNameKeys(doc.data() || {})));
             const newNames = result.entries.filter(item => !existingKeys.has(item.key));
             const matchingNames = result.entries.length - newNames.length;
             const missingMembers = cachedGuestDocs.filter(doc => {
                 const data = doc.data() || {};
-                const key = normalizeGuestName(data.name);
-                return isImportedMemberRecord(data) && key && !inputKeys.has(key);
+                return isImportedMemberRecord(data) && getStoredGuestNameKeys(data).length > 0 &&
+                    !storedGuestMatchesInput(data, inputKeys);
             });
             const looksLikeRsvp = data => Boolean(
                 data.rsvpSubmitted === true ||
@@ -1533,18 +1593,32 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             note.className = 'text-gray-300 mb-2';
             note.textContent = 'Confirming synchronizes to this full Members-List: new members are added, matches are updated, member-only records missing from the file are removed, and records marked as separate RSVPs are retained as RSVPs. Existing status is preserved for matches.';
             preview.appendChild(note);
-            const newNamesLine = document.createElement('p');
-            newNamesLine.className = 'text-gray-400 break-words mb-1';
-            newNamesLine.textContent = 'New names: ' + (newNames.slice(0, 10).map(item => item.name).join(', ') || 'none') + (newNames.length > 10 ? ' …' : '');
-            preview.appendChild(newNamesLine);
-            const removeNamesLine = document.createElement('p');
-            removeNamesLine.className = 'text-amber-200 break-words mb-1';
-            removeNamesLine.textContent = 'To remove: ' + (removeFromList.slice(0, 15).map(doc => doc.data().name || '(No name)').join(', ') || 'none') + (removeFromList.length > 15 ? ' …' : '');
-            preview.appendChild(removeNamesLine);
-            const retainedLine = document.createElement('p');
-            retainedLine.className = 'text-sky-200 break-words';
-            retainedLine.textContent = 'Keep as RSVPs: ' + (preserveAsRsvp.slice(0, 10).map(doc => doc.data().name || '(No name)').join(', ') || 'none') + (preserveAsRsvp.length > 10 ? ' …' : '');
-            preview.appendChild(retainedLine);
+            const appendNameList = (label, items, getName, toneClass) => {
+                const details = document.createElement('details');
+                details.className = 'rounded border border-gray-700/70 bg-black/20 p-2 mb-2';
+                const heading = document.createElement('summary');
+                heading.className = 'cursor-pointer font-semibold ' + toneClass;
+                heading.textContent = label + ' (' + items.length + ')';
+                details.appendChild(heading);
+                const list = document.createElement('div');
+                list.className = 'mt-2 max-h-48 overflow-y-auto pr-2 text-xs text-gray-300 space-y-1';
+                if (!items.length) {
+                    const none = document.createElement('p');
+                    none.textContent = 'None';
+                    list.appendChild(none);
+                } else {
+                    items.forEach((item) => {
+                        const line = document.createElement('p');
+                        line.textContent = getName(item) || '(No name)';
+                        list.appendChild(line);
+                    });
+                }
+                details.appendChild(list);
+                preview.appendChild(details);
+            };
+            appendNameList('New members to add', newNames, item => item.name, 'text-gray-200');
+            appendNameList('Members to remove', removeFromList, doc => doc.data().name, 'text-amber-200');
+            appendNameList('Existing RSVPs to retain', preserveAsRsvp, doc => doc.data().name, 'text-sky-200');
             confirm.disabled = result.entries.length === 0;
             confirm.textContent = 'Synchronize Members-List (' + newNames.length + ' add · ' + removeFromList.length + ' remove)';
         }
@@ -1608,8 +1682,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             const inputKeys = new Set(result.entries.map(item => item.key));
             const latestPreview = cachedGuestDocs.filter(doc => {
                 const data = doc.data() || {};
-                const key = normalizeGuestName(data.name);
-                return isImportedMemberRecord(data) && key && !inputKeys.has(key);
+                return isImportedMemberRecord(data) && getStoredGuestNameKeys(data).length > 0 &&
+                    !storedGuestMatchesInput(data, inputKeys);
             });
             const looksLikeRsvp = data => Boolean(
                 data.rsvpSubmitted === true ||
@@ -1638,14 +1712,14 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const docsByName = new Map();
                 current.forEach(doc => {
                     const data = doc.data() || {};
-                    const key = normalizeGuestName(data.name);
-                    if (!key) return;
-                    if (!docsByName.has(key)) docsByName.set(key, []);
-                    docsByName.get(key).push(doc);
-                    const existing = byName.get(key);
-                    if (!existing || (isImportedMemberRecord(data) && !isImportedMemberRecord(existing.data() || {}))) {
-                        byName.set(key, doc);
-                    }
+                    getStoredGuestNameKeys(data).forEach((key) => {
+                        if (!docsByName.has(key)) docsByName.set(key, []);
+                        docsByName.get(key).push(doc);
+                        const existing = byName.get(key);
+                        if (!existing || (isImportedMemberRecord(data) && !isImportedMemberRecord(existing.data() || {}))) {
+                            byName.set(key, doc);
+                        }
+                    });
                 });
                 let added = 0, matched = 0, removed = 0, retainedAsRsvp = 0;
                 const operations = [];
@@ -1690,6 +1764,26 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         }
                         if (entry.membershipStatus) updateData.interNationsStatus = entry.membershipStatus;
                         if (entry.country) updateData.country = entry.country;
+                        // Preserve the earliest import date found on this identity; create one only if no prior date exists.
+                        const knownImportDates = sameNameDocs.map((candidateDoc) => {
+                            const value = (candidateDoc.data() || {}).importedAt;
+                            if (!value) return null;
+                            const millis = typeof value.toMillis === 'function' ? value.toMillis()
+                                : value instanceof Date ? value.getTime() : Date.parse(value);
+                            return Number.isFinite(millis) ? { value, millis } : null;
+                        }).filter(Boolean).sort((a, b) => a.millis - b.millis);
+                        const priorImportMillis = prior.importedAt
+                            ? (typeof prior.importedAt.toMillis === 'function' ? prior.importedAt.toMillis()
+                                : prior.importedAt instanceof Date ? prior.importedAt.getTime() : Date.parse(prior.importedAt))
+                            : null;
+                        if (knownImportDates.length) {
+                            const earliestImport = knownImportDates[0];
+                            if (!prior.importedAt || !Number.isFinite(priorImportMillis) || earliestImport.millis < priorImportMillis) {
+                                updateData.importedAt = earliestImport.value;
+                            }
+                        } else if (!prior.importedAt) {
+                            updateData.importedAt = firebase.firestore.FieldValue.serverTimestamp();
+                        }
                         operations.push({ type: 'update', ref: existing.ref, data: updateData });
                     } else {
                         added++;
@@ -1718,8 +1812,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
                 current.forEach(doc => {
                     const data = doc.data() || {};
-                    const key = normalizeGuestName(data.name);
-                    if (!isImportedMemberRecord(data) || !key || latestInputKeys.has(key)) return;
+                    if (!isImportedMemberRecord(data) || !getStoredGuestNameKeys(data).length ||
+                        storedGuestMatchesInput(data, latestInputKeys)) return;
                     currentMissing.push({ doc, data });
                 });
                 currentMissing.forEach(({doc, data}) => {
@@ -2327,6 +2421,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     const value = doc.exists ? doc.data() || {} : {};
                     const previousWorkflowSetting = twoStepCheckInEnabled;
                     const previousEventCheckInActive = eventCheckInActive;
+                    operationalStateBaselineVersion = typeof value.operationalStateBaselineVersion === 'string'
+                        ? value.operationalStateBaselineVersion : null;
                     twoStepCheckInEnabled = value.twoStepCheckInEnabled !== false;
                     eventCheckInActive = !IS_DEVELOPMENT_BUILD && value.eventCheckInActive === true &&
                         value.eventCheckInModeVersion === EVENT_CHECKIN_MODE_VERSION;
@@ -3708,29 +3804,42 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
             const previousActive = eventCheckInActive;
             const requested = eventCheckInActiveCheckbox.checked;
-            if (requested && !previousActive && !window.confirm(
-                'ACTIVATE LIVE EVENT OPERATIONS?\n\nCheck-ins, payments, drink upgrades and welcome-drink chips will be saved permanently to the real guest records until you deactivate this mode.'
-            )) {
-                eventCheckInActiveCheckbox.checked = false;
-                if (status) status.textContent = 'Live mode was not activated. Operational actions remain session-only.';
-                return;
+            const needsLegacyStatusReset = requested && !previousActive &&
+                operationalStateBaselineVersion !== EVENT_CHECKIN_MODE_VERSION;
+            if (requested && !previousActive) {
+                const resetWarning = needsLegacyStatusReset
+                    ? 'This first activation also clears previously saved check-in, payment, upgrade and chip test statuses. Guest registrations, member details, inviters and dates are preserved.'
+                    : 'Previously recorded live operational states will be retained when resuming live mode.';
+                if (!window.confirm('ACTIVATE LIVE EVENT OPERATIONS?\n\n' + resetWarning +
+                    '\n\nFuture check-ins, payments, drink upgrades and welcome-drink chips will be saved permanently until live mode is deactivated.')) {
+                    eventCheckInActiveCheckbox.checked = false;
+                    if (status) status.textContent = 'Live mode was not activated. Operational actions remain session-only.';
+                    return;
+                }
             }
             eventModeChangeInProgress = true;
             eventCheckInActiveCheckbox.disabled = true;
             if (status) status.textContent = 'Saving event check-in mode… Operational actions are temporarily paused.';
             try {
+                let resetGuestCount = null;
+                if (needsLegacyStatusReset) {
+                    if (status) status.textContent = 'Clearing old operational test statuses while preserving the guest list and import dates…';
+                    resetGuestCount = await resetStoredOperationalStatusesForLiveStart();
+                }
                 await db.collection('event_settings').doc(WORKFLOW_SETTINGS_DOC_ID).set({
                     eventCheckInActive: requested,
                     eventCheckInModeVersion: EVENT_CHECKIN_MODE_VERSION,
+                    ...(requested ? { operationalStateBaselineVersion: EVENT_CHECKIN_MODE_VERSION } : {}),
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedBy: activeStaffUid || null
                 }, { merge: true });
                 eventCheckInActive = requested;
+                if (requested) operationalStateBaselineVersion = EVENT_CHECKIN_MODE_VERSION;
                 if (previousActive !== requested) clearSessionGuestOverrides();
                 updateEventCheckInModeUI();
                 refreshGuestlistView();
                 if (status) status.textContent = requested
-                    ? 'LIVE MODE ACTIVE. Future check-ins, payments, upgrades and chip actions are saved permanently.'
+                    ? 'LIVE MODE ACTIVE. ' + (resetGuestCount === null ? 'Existing live status retained. ' : 'Reset old operational test status on ' + resetGuestCount + ' guest record(s). ') + 'Future actions are saved permanently.'
                     : 'TEST MODE ACTIVE. Future operational actions are session-only; guest registrations remain permanent.';
             } catch (error) {
                 console.error('Event check-in mode save failed:', error);
