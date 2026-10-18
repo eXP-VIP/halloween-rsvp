@@ -855,7 +855,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.18.10</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.18.12</p>
         </div>
     </footer>
 
@@ -1376,7 +1376,7 @@
         }
         /** Correct the known legacy-font corruption of the imported Deoraj S record. */
         function isKnownDeorajNameGlitch(value) {
-            return /^Deo\s*\uF7D8\u01DD\u0100S$/iu.test(compatibilityNormalizeGuestText(value).trim());
+            return /^Deo\s*(?:\uF7D8)?\u01DD\u0100S$/iu.test(compatibilityNormalizeGuestText(value).trim());
         }
         /** Normalize compatibility-styled Unicode and remove invisible/control formatting while preserving legitimate accents and non-Latin names. */
         function sanitizeGuestDisplayName(value) {
@@ -1477,36 +1477,6 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 .join(' ').toLocaleLowerCase();
         }
 
-        /** Clean existing stored names once per Admin session; only compatibility/invisible formatting is changed. */
-        let storedGuestNamesNormalizedThisSession = false;
-        async function normalizeStoredGuestNames(guestDocs) {
-            if (!db || !Array.isArray(guestDocs)) return;
-            const updates = [];
-            guestDocs.forEach((guestDoc) => {
-                const data = guestDoc.data() || {};
-                const clean = {};
-                const combinedName = [data.firstName, data.lastName].filter((part) => typeof part === 'string' && part.trim()).join(' ');
-                const deorajCorrection = isKnownDeorajNameGlitch(data.name) || isKnownDeorajNameGlitch(combinedName);
-                if (deorajCorrection) {
-                    if (data.name !== 'Deoraj S') clean.name = 'Deoraj S';
-                    if (data.firstName !== 'Deoraj') clean.firstName = 'Deoraj';
-                    if (data.lastName !== 'S') clean.lastName = 'S';
-                } else {
-                    ['name', 'firstName', 'lastName', 'invitedBy'].forEach((field) => {
-                        if (typeof data[field] !== 'string') return;
-                        const normalized = sanitizeGuestDisplayName(data[field]);
-                        if (normalized !== data[field]) clean[field] = normalized;
-                    });
-                }
-                if (Object.keys(clean).length) updates.push({ ref: guestDoc.ref, data: clean });
-            });
-            for (let i = 0; i < updates.length; i += 400) {
-                const batch = db.batch();
-                updates.slice(i, i + 400).forEach((item) => batch.update(item.ref, item.data));
-                await batch.commit();
-            }
-        }
-
         /** Extract first/last-name fields from spreadsheet rows with varying column headers. */
         function readImportedNameParts(row) {
             const cleanHeader = (header) => String(header).replace(/^\uFEFF/, '').trim();
@@ -1517,13 +1487,11 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 pendingInternationsHeaders.find((header) => /^(membership status|member status|status)$/i.test(cleanHeader(header)));
             const countryHeader = pendingInternationsHeaders.find((header) => /^(country|countries|country name|country of residence|country of origin|country\s*\/\s*region|country code|nationality)$/i.test(cleanHeader(header))) ||
                 pendingInternationsHeaders.find((header) => /\bcountr(?:y|ies)\b|\bnationality\b/i.test(cleanHeader(header).replace(/[_-]+/g, ' ')));
-            const rawFirstName = firstHeader ? String(row[firstHeader] || '') : '';
-            const rawLastName = lastHeader ? String(row[lastHeader] || '') : '';
-            const deorajCorrection = isKnownDeorajNameGlitch([rawFirstName, rawLastName].filter(Boolean).join(' '));
-            const firstName = deorajCorrection ? 'Deoraj' : sanitizeGuestDisplayName(rawFirstName);
-            const lastName = deorajCorrection ? 'S' : sanitizeGuestDisplayName(rawLastName);
+            // Retain the source-cell text in Firestore; normalize names for matching and display only.
+            const firstName = firstHeader ? String(row[firstHeader] || '').trim() : '';
+            const lastName = lastHeader ? String(row[lastHeader] || '').trim() : '';
             return {
-                name: deorajCorrection ? 'Deoraj S' : [firstName, lastName].filter(Boolean).join(' ').trim(),
+                name: [firstName, lastName].filter(Boolean).join(' ').trim(),
                 firstName,
                 lastName,
                 membershipStatus: statusHeader ? sanitizeGuestDisplayName(row[statusHeader]) : '',
@@ -1611,7 +1579,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 } else {
                     items.forEach((item) => {
                         const line = document.createElement('p');
-                        line.textContent = getName(item) || '(No name)';
+                        line.textContent = sanitizeGuestDisplayName(getName(item)) || '(No name)';
                         list.appendChild(line);
                     });
                 }
@@ -1748,7 +1716,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                                 candidate.source === 'website' || Boolean(String(candidate.invitedBy || '').trim());
                         });
                         const updateData = {
-                            name: sanitizeGuestDisplayName(entry.name),
+                            name: entry.name,
                             guestType: 'internations_member',
                             source: 'internations_import',
                             rsvpSubmitted: wasRsvp,
@@ -2364,7 +2332,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 details.className = 'min-w-0';
                 const name = document.createElement('p');
                 name.className = 'font-medium break-words';
-                name.textContent = entry.name;
+                name.textContent = sanitizeGuestDisplayName(entry.name) || '(No name provided)';
                 const meta = document.createElement('p');
                 meta.className = 'text-[10px] text-gray-400 mt-1';
                 meta.textContent = entry.checkedIn + ' checked in · ' + entry.checkedInPaid + ' checked in and paid';
@@ -2469,18 +2437,6 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             guestlistUnsubscribe = db.collection('halloween_guests').onSnapshot((snapshot) => {
                 try {
                 cachedGuestSnapshot = snapshot;
-                if (currentStaffRole === 'admin' && !storedGuestNamesNormalizedThisSession) {
-                    storedGuestNamesNormalizedThisSession = true;
-                    normalizeStoredGuestNames(snapshot.docs).catch((error) => {
-                        storedGuestNamesNormalizedThisSession = false;
-                        const normalizationError = document.getElementById('guestlistError');
-                        if (normalizationError) {
-                            normalizationError.textContent = 'Saved name formatting could not be normalized in the database. Displayed names will still be cleaned; check Admin write permissions.';
-                            normalizationError.classList.remove('hidden');
-                        }
-                        console.warn('Existing guest-name normalization could not be completed:', error);
-                    });
-                }
                 const effectiveGuestDocs = snapshot.docs.map(makeEffectiveGuestDoc);
                 cachedGuestDocs = effectiveGuestDocs;
                 listError.classList.add('hidden');
@@ -2712,9 +2668,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         (checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'));
                     card.dataset.guestId = doc.id;
                     card.dataset.listType = mode;
-                    const nameParts = String(data.name || '').trim().split(/\s+/).filter(Boolean);
-                    card.dataset.sortFirstName = String(data.firstName || nameParts[0] || '').toLocaleLowerCase();
-                    card.dataset.sortLastName = String(data.lastName || nameParts.slice(1).join(' ') || '').toLocaleLowerCase();
+                    const nameParts = sanitizeGuestDisplayName(data.name || '').trim().split(/\s+/).filter(Boolean);
+                    card.dataset.sortFirstName = String(nameParts[0] || sanitizeGuestDisplayName(data.firstName) || '').toLocaleLowerCase();
+                    card.dataset.sortLastName = String(nameParts.slice(1).join(' ') || sanitizeGuestDisplayName(data.lastName) || '').toLocaleLowerCase();
                     const signupMillis = oldestGuestDateMillis(data);
                     const checkInMillis = timestampMillis(data.checkedInAt);
                     const paymentMillis = timestampMillis(data.paidAt);
@@ -2823,8 +2779,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         if (checkInUndoBlocked) checkInButton.classList.add('is-disabled');
                         checkInButton.setAttribute('aria-pressed', String(checkedIn));
                         checkInButton.setAttribute('aria-label', checkInUndoBlocked
-                            ? 'Cannot undo check-in for ' + (data.name || 'this guest') + ' until payment, chip and upgrade are reversed'
-                            : (checkedIn ? 'Undo check-in for ' + (data.name || 'this guest') : 'Check in ' + (data.name || 'this guest')));
+                            ? 'Cannot undo check-in for ' + (sanitizeGuestDisplayName(data.name) || 'this guest') + ' until payment, chip and upgrade are reversed'
+                            : (checkedIn ? 'Undo check-in for ' + (sanitizeGuestDisplayName(data.name) || 'this guest') : 'Check in ' + (sanitizeGuestDisplayName(data.name) || 'this guest')));
                         checkInButton.addEventListener('click', () => toggleCheckIn(doc.id, checkedIn));
                         actions.appendChild(checkInButton);
                     };
@@ -2833,7 +2789,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         deleteButton.type = 'button';
                         deleteButton.className = 'shrink-0 rounded border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200 hover:bg-red-900/70 transition-colors';
                         deleteButton.textContent = 'DELETE';
-                        deleteButton.setAttribute('aria-label', 'Delete guest ' + (data.name || ''));
+                        deleteButton.setAttribute('aria-label', 'Delete guest ' + sanitizeGuestDisplayName(data.name));
                         deleteButton.addEventListener('click', () => deleteGuest(doc.id, data.name));
                         actions.appendChild(deleteButton);
                     };
@@ -3174,7 +3130,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 ? cachedGuestDocs.filter((doc) => normalizeGuestName((doc.data() || {}).name) === key)
                 : [];
             const targetDocs = matchingDocs.length ? matchingDocs : [{ id, ref: db.collection('halloween_guests').doc(id) }];
-            const confirmed = window.confirm(`Delete ${guestName || 'this guest'} and all duplicate records with the same name from the guest list? This cannot be undone.`);
+            const displayGuestName = sanitizeGuestDisplayName(guestName) || 'this guest';
+            const confirmed = window.confirm(`Delete ${displayGuestName} and all duplicate records with the same name from the guest list? This cannot be undone.`);
             if (!confirmed) return;
             try {
                 for (let start = 0; start < targetDocs.length; start += 400) {
