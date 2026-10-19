@@ -522,7 +522,7 @@
             <div id="errorMessage" role="alert" aria-live="assertive" class="hidden mt-6 p-5 rounded-lg bg-red-950/60 border border-red-400/40 text-center text-red-200 text-sm leading-relaxed"></div>
         </section>
 
-        <!-- Staff-only interface. The DEV login is Firebase Authentication backed; keep authorization enforced by Firestore rules and Cloud Functions. -->
+        <!-- Staff-only interface. Firebase Authentication is backed by Firestore rules and Cloud Functions. -->
         <!-- Staff console: reveal operational tools only after Firebase Authentication and an active role profile have been verified. -->
         <div id="hostessPortal" class="hidden relative z-20 w-full mt-8 mb-8">
             <div class="glass-panel rounded-2xl p-5 sm:p-8 max-w-6xl w-full mx-auto gold-border-glow">
@@ -567,6 +567,23 @@
                         Hotel check-in is available only when two-step check-in is enabled. Ask the event Admin to enable two-step mode for this role.
                     </div>
                     <h4 class="staff-subheading mb-2">Live event overview</h4>
+                    <!-- Registration alerts distinguish the previous-login catch-up from genuinely new sign-ups during this session. -->
+                    <div id="signupAlertArea" class="space-y-2 mb-4 hidden" aria-live="polite" aria-atomic="true">
+                        <div id="signupSinceLastLoginAlert" class="hidden rounded-lg border border-amber-400/40 bg-amber-950/30 px-3 py-2">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-user-plus text-amber-200" aria-hidden="true"></i>
+                                <p class="flex-1 text-xs text-amber-100"><strong id="signupSinceLastLoginCount">0</strong> new sign-ups since your last login</p>
+                                <button type="button" onclick="dismissSignupCatchupAlert()" class="text-[10px] text-gray-300 hover:text-white underline">Dismiss</button>
+                            </div>
+                        </div>
+                        <div id="signupLiveAlert" class="hidden rounded-lg border border-emerald-400/40 bg-emerald-950/30 px-3 py-2">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-bell text-emerald-200" aria-hidden="true"></i>
+                                <p class="flex-1 text-xs text-emerald-100"><strong id="signupLiveCount">0</strong> new sign-ups during this session</p>
+                                <span class="text-[9px] uppercase tracking-wider text-emerald-200">New</span>
+                            </div>
+                        </div>
+                    </div>
                     <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                         <div class="staff-metric-card">
                             <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</p>
@@ -594,6 +611,11 @@
                                         </tbody>
                                     </table>
                                 </div>
+                            </div>
+                            <!-- This is a count of actual recent RSVP identities, not an attendance forecast. -->
+                            <div class="mt-3 pt-3 border-t border-gold/10 flex items-center justify-between gap-3">
+                                <p class="text-[10px] uppercase tracking-wider text-gray-400">New sign-ups (24h)</p>
+                                <p id="newSignups24hCount" class="text-lg font-semibold text-emerald-200 tabular-nums">0</p>
                             </div>
                         </div>
                                                 <div class="staff-metric-card">
@@ -856,7 +878,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.18.13</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.19.02</p>
         </div>
     </footer>
 
@@ -876,7 +898,7 @@
         // Staff access uses Firebase Authentication plus a server-enforced event_users/{uid} role record.
         const WHATSAPP_GROUP_INVITE_URL = "https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58";
         const STAFF_ROLES = ['admin', 'hotel', 'internations'];
-        // DEV reads independent workflow settings and is always locked to session-only operational testing.
+        // DEV reads independent workflow settings; LIVE uses production settings and Admin-controlled event mode.
         const IS_DEVELOPMENT_BUILD = document.querySelector('meta[name="app-build-target"]')?.content === 'dev';
         const WORKFLOW_SETTINGS_DOC_ID = IS_DEVELOPMENT_BUILD ? 'workflow_dev' : 'workflow';
         let currentStaffRole = null;
@@ -885,6 +907,20 @@
         let staffActivationPromise = null;
         let guestlistUnsubscribe = null;
         let cachedGuestSnapshot = null;
+        // Sign-up alert history is scoped to this staff UID and browser; Firestore role documents are intentionally read-only.
+        const SIGNUP_ALERT_STORAGE_PREFIX = 'halloween-signup-alert-last-login-v1:';
+        // DEV and LIVE share an origin, so keep their local alert history separate.
+        function signupAlertStorageKey(uid) {
+            return SIGNUP_ALERT_STORAGE_PREFIX + (IS_DEVELOPMENT_BUILD ? 'dev:' : 'live:') + uid;
+        }
+        let signupAlertSessionUid = null;
+        let signupAlertSessionStartedAt = 0;
+        let signupAlertPreviousLoginAt = null;
+        let signupAlertInitialSnapshotProcessed = false;
+        let signupAlertSeenGuestIds = new Set();
+        let signupAlertCatchupPersonKeys = new Set();
+        let signupAlertLivePersonKeys = new Set();
+        let signupAlertCatchupDismissed = false;
 
         const firebaseConfigured = Boolean(
             firebaseConfig.apiKey &&
@@ -907,6 +943,65 @@
             } catch (error) {
                 console.error('Firebase initialisation failed:', error);
             }
+        }
+
+        /** Convert a Firestore Timestamp, Date or serialized date into milliseconds; invalid values return null. */
+        function signupAlertTimestampMillis(value) {
+            if (!value) return null;
+            if (typeof value.toMillis === 'function') return value.toMillis();
+            if (value instanceof Date) return value.getTime();
+            const parsed = Date.parse(value);
+            return Number.isFinite(parsed) ? parsed : null;
+        }
+
+        /** Public RSVP records count as sign-ups; imported member records and operational-only updates do not. */
+        function isSignupAlertRsvp(data) {
+            if (!data || isImportedMemberRecord(data)) return false;
+            return data.source === 'website' || data.rsvpSource === 'website' ||
+                data.rsvpSubmitted === true ||
+                (Boolean(data.createdAt) && Object.prototype.hasOwnProperty.call(data, 'invitedBy'));
+        }
+
+        /** Begin one alert session, retaining the previous successful login marker until the first guest snapshot arrives. */
+        function beginSignupAlertSession(uid) {
+            signupAlertSessionUid = uid;
+            signupAlertSessionStartedAt = Date.now();
+            signupAlertInitialSnapshotProcessed = false;
+            signupAlertSeenGuestIds = new Set();
+            signupAlertCatchupPersonKeys = new Set();
+            signupAlertLivePersonKeys = new Set();
+            signupAlertCatchupDismissed = false;
+            signupAlertPreviousLoginAt = null;
+            try {
+                const saved = Number(localStorage.getItem(signupAlertStorageKey(uid)));
+                if (Number.isFinite(saved) && saved > 0) signupAlertPreviousLoginAt = saved;
+            } catch (error) {
+                // The live alert still works if browser storage is blocked; only cross-login catch-up is unavailable.
+                console.warn('Sign-up alert history is unavailable in this browser:', error);
+            }
+            updateSignupAlertsUI();
+        }
+
+        /** Keep the alert area hidden unless at least one useful sign-up alert has content to show. */
+        function updateSignupAlertsUI() {
+            const area = document.getElementById('signupAlertArea');
+            const catchup = document.getElementById('signupSinceLastLoginAlert');
+            const live = document.getElementById('signupLiveAlert');
+            const catchupCount = document.getElementById('signupSinceLastLoginCount');
+            const liveCount = document.getElementById('signupLiveCount');
+            const showCatchup = signupAlertCatchupPersonKeys.size > 0 && !signupAlertCatchupDismissed;
+            const showLive = signupAlertLivePersonKeys.size > 0;
+            if (catchupCount) catchupCount.textContent = String(signupAlertCatchupPersonKeys.size);
+            if (liveCount) liveCount.textContent = String(signupAlertLivePersonKeys.size);
+            if (catchup) catchup.classList.toggle('hidden', !showCatchup);
+            if (live) live.classList.toggle('hidden', !showLive);
+            if (area) area.classList.toggle('hidden', !showCatchup && !showLive);
+        }
+
+        /** Dismiss only the previous-login catch-up; live-session sign-ups remain visible. */
+        function dismissSignupCatchupAlert() {
+            signupAlertCatchupDismissed = true;
+            updateSignupAlertsUI();
         }
 
         /** Show the private WhatsApp group link only when its configured URL matches the expected invite-link shape. */
@@ -1375,24 +1470,42 @@
             }
             return normalized;
         }
+        // Name cleanup is used repeatedly across grouping, referrals, search, badges and sorting.
+        // Cache each raw input so expensive Unicode normalization runs only once per distinct value.
+        const GUEST_NAME_CACHE_LIMIT = 4096;
+        const guestNameDisplayCache = new Map();
+        const guestNameKeyCache = new Map();
+        function cachedGuestNameResult(cache, value, compute) {
+            const source = String(value || '');
+            if (cache.has(source)) return cache.get(source);
+            const result = compute(source);
+            if (cache.size >= GUEST_NAME_CACHE_LIMIT) cache.delete(cache.keys().next().value);
+            cache.set(source, result);
+            return result;
+        }
         /** Correct the known legacy-font corruption of the imported Deoraj S record. */
         function isKnownDeorajNameGlitch(value) {
-            return /^Deo\s*(?:\uF7D8)?\u01DD\u0100S$/iu.test(compatibilityNormalizeGuestText(value).trim());
+            // The caller passes compatibility-normalized text, so avoid normalizing it a second time.
+            return /^Deo\s*(?:\uF7D8)?\u01DD\u0100S$/iu.test(String(value || '').trim());
         }
         /** Normalize compatibility-styled Unicode and remove invisible/control formatting while preserving legitimate accents and non-Latin names. */
         function sanitizeGuestDisplayName(value) {
-            const compatibilityText = compatibilityNormalizeGuestText(value);
-            if (isKnownDeorajNameGlitch(compatibilityText)) return 'Deoraj S';
-            return compatibilityText
-                .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
-                .replace(/[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFE00-\uFE0F\uFEFF\uFFF0-\uFFF8\u{E0000}-\u{E007F}\uE000-\uF8FF\u{F0000}-\u{FFFFD}\u{100000}-\u{10FFFD}]/gu, '')
-                // Remove common overlay/strike marks used to disguise otherwise ordinary names.
-                .replace(/[\u0334-\u0338\u20D2\u20E5]/g, '')
-                .replace(/\s+/g, ' ').trim();
+            return cachedGuestNameResult(guestNameDisplayCache, value, (source) => {
+                const compatibilityText = compatibilityNormalizeGuestText(source);
+                if (isKnownDeorajNameGlitch(compatibilityText)) return 'Deoraj S';
+                return compatibilityText
+                    .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
+                    .replace(/[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFE00-\uFE0F\uFEFF\uFFF0-\uFFF8\u{E0000}-\u{E007F}\uE000-\uF8FF\u{F0000}-\u{FFFFD}\u{100000}-\u{10FFFD}]/gu, '')
+                    // Remove common overlay/strike marks used to disguise otherwise ordinary names.
+                    .replace(/[\u0334-\u0338\u20D2\u20E5]/g, '')
+                    .replace(/\s+/g, ' ').trim();
+            });
         }
         /** Shared normalized key for matching and duplicate prevention. */
         function normalizeGuestName(value) {
-            return sanitizeGuestDisplayName(value).toLocaleLowerCase();
+            return cachedGuestNameResult(guestNameKeyCache, value, (source) =>
+                sanitizeGuestDisplayName(source).toLocaleLowerCase()
+            );
         }
         /** Stable aliases let imports match a corrected display name to its original imported identity. */
         function getStoredGuestNameKeys(data) {
@@ -2134,6 +2247,14 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             // Discard all simulated check-in/payment/drink changes when the staff session ends.
             clearSessionGuestOverrides();
             stopStaffRealtimeListeners();
+            signupAlertSessionUid = null;
+            signupAlertPreviousLoginAt = null;
+            signupAlertInitialSnapshotProcessed = false;
+            signupAlertSeenGuestIds = new Set();
+            signupAlertCatchupPersonKeys = new Set();
+            signupAlertLivePersonKeys = new Set();
+            signupAlertCatchupDismissed = false;
+            updateSignupAlertsUI();
             document.getElementById('staffLoginSection').classList.remove('hidden');
             document.getElementById('guestlistSection').classList.add('hidden');
             document.getElementById('staffIdentity').textContent = '';
@@ -2167,6 +2288,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 }
                 applyStaffRole(profile.role);
                 activeStaffUid = user.uid;
+                beginSignupAlertSession(user.uid);
                 document.getElementById('staffIdentity').textContent = 'Signed in as ' + username + ' · ' + ({ admin: 'Admin', hotel: 'Hotel', internations: 'InterNations' }[profile.role] || profile.role);
                 document.getElementById('staffLoginSection').classList.add('hidden');
                 document.getElementById('guestlistSection').classList.remove('hidden');
@@ -2439,6 +2561,48 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 cachedGuestSnapshot = snapshot;
                 const effectiveGuestDocs = snapshot.docs.map(makeEffectiveGuestDoc);
                 cachedGuestDocs = effectiveGuestDocs;
+
+                // Process the first snapshot as a catch-up window; later added documents are live-session sign-ups.
+                // The timestamp is per staff UID but stored locally because event_users role documents are read-only.
+                if (signupAlertSessionUid && !signupAlertInitialSnapshotProcessed) {
+                    const currentIds = new Set();
+                    effectiveGuestDocs.forEach((guestDoc) => {
+                        currentIds.add(guestDoc.id);
+                        const data = guestDoc.data() || {};
+                        if (!isSignupAlertRsvp(data)) return;
+                        const signupAt = signupAlertTimestampMillis(data.createdAt);
+                        if (signupAt == null) return;
+                        const personKey = normalizeGuestName(data.name) || guestDoc.id;
+                        if (signupAlertPreviousLoginAt != null &&
+                            signupAt >= signupAlertPreviousLoginAt &&
+                            signupAt < signupAlertSessionStartedAt) {
+                            signupAlertCatchupPersonKeys.add(personKey);
+                        } else if (signupAt >= signupAlertSessionStartedAt) {
+                            signupAlertLivePersonKeys.add(personKey);
+                        }
+                    });
+                    signupAlertSeenGuestIds = currentIds;
+                    signupAlertInitialSnapshotProcessed = true;
+                    try {
+                        localStorage.setItem(signupAlertStorageKey(signupAlertSessionUid), String(signupAlertSessionStartedAt));
+                    } catch (error) {
+                        console.warn('Could not save the last-login marker for sign-up alerts:', error);
+                    }
+                    updateSignupAlertsUI();
+                } else if (signupAlertSessionUid && signupAlertInitialSnapshotProcessed) {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type !== 'added' || signupAlertSeenGuestIds.has(change.doc.id)) return;
+                        signupAlertSeenGuestIds.add(change.doc.id);
+                        const data = change.doc.data() || {};
+                        if (!isSignupAlertRsvp(data)) return;
+                        const signupAt = signupAlertTimestampMillis(data.createdAt);
+                        if (signupAt == null || signupAt >= signupAlertSessionStartedAt) {
+                            signupAlertLivePersonKeys.add(normalizeGuestName(data.name) || change.doc.id);
+                        }
+                    });
+                    updateSignupAlertsUI();
+                }
+
                 listError.classList.add('hidden');
                 const categoryPeople = new Map();
                 effectiveGuestDocs.forEach(guestDoc => {
@@ -2455,6 +2619,19 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 categoryPeople.forEach(person=>{const category=getGuestCategory(person.data);categoryTotals[category].total++;if(person.paid)categoryTotals[category].paid++;});
                 const totalGuestRecords=categoryPeople.size;
                 const totalPaidRecords=Array.from(categoryPeople.values()).filter(person=>person.paid).length;
+                // Count distinct RSVP identities created in the last 24 hours; imported membership rows are excluded.
+                const signup24hCutoff = Date.now() - 24 * 60 * 60 * 1000;
+                const recentSignupPersonKeys = new Set();
+                effectiveGuestDocs.forEach((guestDoc) => {
+                    const data = guestDoc.data() || {};
+                    if (!isSignupAlertRsvp(data)) return;
+                    const signupAt = signupAlertTimestampMillis(data.createdAt);
+                    if (signupAt != null && signupAt >= signup24hCutoff) {
+                        recentSignupPersonKeys.add(normalizeGuestName(data.name) || guestDoc.id);
+                    }
+                });
+                const recentSignupCount = document.getElementById('newSignups24hCount');
+                if (recentSignupCount) recentSignupCount.textContent = String(recentSignupPersonKeys.size);
                 const nonAlbatrossTotal = categoryTotals.Basics.total + categoryTotals.RSVPs.total;
                 const nonAlbatrossPaid = categoryTotals.Basics.paid + categoryTotals.RSVPs.paid;
                 const formatRate = (albatross, rest) => {
