@@ -1375,24 +1375,42 @@
             }
             return normalized;
         }
+        // Name cleanup is used repeatedly across grouping, referrals, search, badges and sorting.
+        // Cache each raw input so expensive Unicode normalization runs only once per distinct value.
+        const GUEST_NAME_CACHE_LIMIT = 4096;
+        const guestNameDisplayCache = new Map();
+        const guestNameKeyCache = new Map();
+        function cachedGuestNameResult(cache, value, compute) {
+            const source = String(value || '');
+            if (cache.has(source)) return cache.get(source);
+            const result = compute(source);
+            if (cache.size >= GUEST_NAME_CACHE_LIMIT) cache.delete(cache.keys().next().value);
+            cache.set(source, result);
+            return result;
+        }
         /** Correct the known legacy-font corruption of the imported Deoraj S record. */
         function isKnownDeorajNameGlitch(value) {
-            return /^Deo\s*(?:\uF7D8)?\u01DD\u0100S$/iu.test(compatibilityNormalizeGuestText(value).trim());
+            // The caller passes compatibility-normalized text, so avoid normalizing it a second time.
+            return /^Deo\s*(?:\uF7D8)?\u01DD\u0100S$/iu.test(String(value || '').trim());
         }
         /** Normalize compatibility-styled Unicode and remove invisible/control formatting while preserving legitimate accents and non-Latin names. */
         function sanitizeGuestDisplayName(value) {
-            const compatibilityText = compatibilityNormalizeGuestText(value);
-            if (isKnownDeorajNameGlitch(compatibilityText)) return 'Deoraj S';
-            return compatibilityText
-                .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
-                .replace(/[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFE00-\uFE0F\uFEFF\uFFF0-\uFFF8\u{E0000}-\u{E007F}\uE000-\uF8FF\u{F0000}-\u{FFFFD}\u{100000}-\u{10FFFD}]/gu, '')
-                // Remove common overlay/strike marks used to disguise otherwise ordinary names.
-                .replace(/[\u0334-\u0338\u20D2\u20E5]/g, '')
-                .replace(/\s+/g, ' ').trim();
+            return cachedGuestNameResult(guestNameDisplayCache, value, (source) => {
+                const compatibilityText = compatibilityNormalizeGuestText(source);
+                if (isKnownDeorajNameGlitch(compatibilityText)) return 'Deoraj S';
+                return compatibilityText
+                    .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
+                    .replace(/[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFE00-\uFE0F\uFEFF\uFFF0-\uFFF8\u{E0000}-\u{E007F}\uE000-\uF8FF\u{F0000}-\u{FFFFD}\u{100000}-\u{10FFFD}]/gu, '')
+                    // Remove common overlay/strike marks used to disguise otherwise ordinary names.
+                    .replace(/[\u0334-\u0338\u20D2\u20E5]/g, '')
+                    .replace(/\s+/g, ' ').trim();
+            });
         }
         /** Shared normalized key for matching and duplicate prevention. */
         function normalizeGuestName(value) {
-            return sanitizeGuestDisplayName(value).toLocaleLowerCase();
+            return cachedGuestNameResult(guestNameKeyCache, value, (source) =>
+                sanitizeGuestDisplayName(source).toLocaleLowerCase()
+            );
         }
         /** Stable aliases let imports match a corrected display name to its original imported identity. */
         function getStoredGuestNameKeys(data) {
