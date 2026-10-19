@@ -935,7 +935,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.19.09</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.19.10</p>
         </div>
     </footer>
 
@@ -1084,6 +1084,7 @@
         let pendingInternationsHeaders = [];
         let pendingInternationsNameColumn = '';
         let cachedGuestDocs = [];
+        let cachedEstimatedWelcomeDrinkKeys = new Set();
         let pricingUnsubscribe = null;
         let workflowSettingsUnsubscribe = null;
         let twoStepCheckInEnabled = true;
@@ -1403,7 +1404,7 @@
                 const key = normalizeGuestName(data.name) || doc.id;
                 if (key && !guests.has(key)) guests.set(key, data);
             });
-            const withWelcome = new Set();
+            const withWelcome = new Set(cachedEstimatedWelcomeDrinkKeys);
             guests.forEach(data => {
                 const key = normalizeGuestName(data.name);
                 if (!key) return;
@@ -3306,6 +3307,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     else if (rule.mode === 'upgrade' && Boolean(item.data.welcomeDrinkUpgradeSelected)) kind = 'upgrades';
                     if (kind && !estimatedDrinksByPerson.has(key)) estimatedDrinksByPerson.set(key, kind);
                 });
+                cachedEstimatedWelcomeDrinkKeys = new Set(estimatedDrinksByPerson.keys());
                 const drinkForecastCounts = { referrals: 0, included: 0, upgrades: 0 };
                 const drinkIssuedCounts = { referrals: 0, included: 0, upgrades: 0 };
                 estimatedDrinksByPerson.forEach((kind, key) => {
