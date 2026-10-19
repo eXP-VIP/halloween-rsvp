@@ -584,11 +584,30 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Hotel receives only the operational guest total, its own check-in count, and country diversity. -->
+                    <div id="hotelSummaryStats" class="staff-metric-card hidden mb-4">
+                        <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</p>
+                        <div class="flex items-start gap-3 mt-2">
+                            <div class="min-w-0">
+                                <p id="hotelGuestTotalCount" class="text-3xl font-semibold text-gold tabular-nums">0</p>
+                                <p class="text-[10px] uppercase tracking-wider text-gray-400">Total</p>
+                            </div>
+                            <span class="text-2xl text-gray-500">/</span>
+                            <div class="min-w-0">
+                                <p id="hotelGuestCheckedInCount" class="text-3xl font-semibold text-emerald-200 tabular-nums">0</p>
+                                <p class="text-[10px] uppercase tracking-wider text-gray-400">Check-in</p>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-gold/10 flex items-center justify-between gap-3">
+                            <p class="text-[10px] uppercase tracking-wider text-gray-400">Countries represented</p>
+                            <p id="hotelGuestCountryCount" class="text-lg font-semibold text-sky-200 tabular-nums">0</p>
+                        </div>
+                    </div>
                     <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                         <div class="staff-metric-card">
                             <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</p>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-start gap-2">
                                     <div class="min-w-0">
                                         <p id="guestTotalCount" class="text-3xl font-semibold text-gold tabular-nums">0</p>
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Total</p>
@@ -611,11 +630,6 @@
                                         </tbody>
                                     </table>
                                 </div>
-                            </div>
-                            <!-- Count distinct newly added guest identities, including new import-only members but not existing guests re-imported. -->
-                            <div class="mt-3 pt-3 border-t border-gold/10 flex items-center justify-between gap-3">
-                                <p class="text-[10px] uppercase tracking-wider text-gray-400">New guests (24h)</p>
-                                <p id="newSignups24hCount" class="text-lg font-semibold text-emerald-200 tabular-nums">0</p>
                             </div>
                             <!-- Country count is based on distinct country flags among unique guest identities, not RSVP or import rows. -->
                             <div class="mt-2 flex items-center justify-between gap-3">
@@ -699,7 +713,7 @@
                         <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                         <button type="button" class="sort-option" data-sort-group="checkin" data-sort="firstName" aria-pressed="false" onclick="setGuestSort('firstName')">First name</button>
                         <button type="button" class="sort-option" data-sort-group="checkin" data-sort="lastName" aria-pressed="false" onclick="setGuestSort('lastName')">Last Name</button>
-                        <button type="button" class="sort-option" data-sort-group="checkin" data-sort="signupNewest" aria-pressed="false" onclick="setGuestSort('signupNewest')">Signup</button>
+                        <button type="button" id="hotelSignupSortButton" class="sort-option" data-sort-group="checkin" data-sort="signupNewest" aria-pressed="false" onclick="setGuestSort('signupNewest')">Signup</button>
                     </div>
                     <div id="notCheckedInListSection" class="mb-4">
                         <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Not checked in <span id="hotelOpenCount" class="text-amber-100">(0)</span></p>
@@ -1578,6 +1592,26 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             return Array.from(code, (letter) => String.fromCodePoint(0x1F1E6 + letter.charCodeAt(0) - 65)).join('');
         }
         /** Country searches resolve full country names even when source data contains a two-letter code or flag. */
+        // ISO alpha-3 labels make country flags readable at a glance on the staff guest cards.
+        const COUNTRY_ALPHA3_BY_ALPHA2 = {
+            DE:'DEU', AT:'AUT', CH:'CHE', FR:'FRA', IT:'ITA', ES:'ESP', PT:'PRT', NL:'NLD', BE:'BEL', LU:'LUX',
+            GB:'GBR', IE:'IRL', US:'USA', CA:'CAN', MX:'MEX', AR:'ARG', BR:'BRA', CL:'CHL', CO:'COL', IL:'ISR',
+            TR:'TUR', GR:'GRC', CY:'CYP', PL:'POL', CZ:'CZE', SK:'SVK', HU:'HUN', RO:'ROU', BG:'BGR', HR:'HRV',
+            SI:'SVN', RS:'SRB', BA:'BIH', ME:'MNE', MK:'MKD', AL:'ALB', UA:'UKR', RU:'RUS', BY:'BLR', DK:'DNK',
+            SE:'SWE', NO:'NOR', FI:'FIN', IS:'ISL', EE:'EST', LV:'LVA', LT:'LTU', MT:'MLT', MD:'MDA', GE:'GEO',
+            AM:'ARM', AZ:'AZE', KZ:'KAZ', IN:'IND', PK:'PAK', BD:'BGD', LK:'LKA', NP:'NPL', CN:'CHN', JP:'JPN',
+            KR:'KOR', TH:'THA', VN:'VNM', PH:'PHL', ID:'IDN', MY:'MYS', SG:'SGP', AU:'AUS', NZ:'NZL', ZA:'ZAF',
+            EG:'EGY', MA:'MAR', TN:'TUN', NG:'NGA', GH:'GHA', KE:'KEN', ET:'ETH', AE:'ARE', SA:'SAU', QA:'QAT'
+        };
+        function getCountryAlpha3Code(country) {
+            const flag = getCountryFlag(country);
+            if (flag) {
+                const alpha2 = Array.from(flag, letter => String.fromCharCode(letter.codePointAt(0) - 0x1F1E6 + 65)).join('');
+                if (COUNTRY_ALPHA3_BY_ALPHA2[alpha2]) return COUNTRY_ALPHA3_BY_ALPHA2[alpha2];
+            }
+            const raw = sanitizeGuestDisplayName(country).trim();
+            return /^[A-Za-z]{3}$/.test(raw) ? raw.toUpperCase() : '';
+        }
         function getCountrySearchTerms(country) {
             const raw = sanitizeGuestDisplayName(country);
             if (!raw) return '';
@@ -2185,6 +2219,10 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 if (element) element.classList.toggle('hidden', !visible);
             };
             show('staffSummaryStats', role !== 'hotel');
+            show('hotelSummaryStats', role === 'hotel');
+            // Sign-up history and import timestamps are administrative details, not operational check-in data.
+            show('hotelSignupSortButton', role === 'admin');
+            show('signupAlertArea', role === 'admin');
             show('unrecognizedWelcomeDrinkSection', role === 'admin');
             show('collectedMetric', role === 'admin');
             const statsGrid = document.getElementById('staffSummaryStats');
@@ -2664,6 +2702,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const representedCountryKeys = new Set(countryByPerson.values());
                 const countryCount = document.getElementById('guestCountryCount');
                 if (countryCount) countryCount.textContent = String(representedCountryKeys.size);
+                const hotelCountryCount = document.getElementById('hotelGuestCountryCount');
+                if (hotelCountryCount) hotelCountryCount.textContent = String(representedCountryKeys.size);
                 const nonAlbatrossTotal = categoryTotals.Basics.total + categoryTotals.RSVPs.total;
                 const nonAlbatrossPaid = categoryTotals.Basics.paid + categoryTotals.RSVPs.paid;
                 const formatRate = (albatross, rest) => {
@@ -2671,6 +2711,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     return (Number(albatross) / Number(rest)).toFixed(1);
                 };
                 document.getElementById('guestTotalCount').textContent = totalGuestRecords;
+                const hotelGuestTotalMetric = document.getElementById('hotelGuestTotalCount');
+                if (hotelGuestTotalMetric) hotelGuestTotalMetric.textContent = String(totalGuestRecords);
                 document.getElementById('guestPaidCount').textContent = totalPaidRecords;
                 document.getElementById('guestAlbatrossTotal').textContent = categoryTotals.Albatross.total;
                 document.getElementById('guestAlbatrossPaid').textContent = categoryTotals.Albatross.paid;
@@ -2901,7 +2943,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     if (countryFlag) {
                         const countryBadge = document.createElement('span');
                         countryBadge.className = 'inline-flex items-center justify-center rounded-full border border-gray-500/40 bg-black/30 px-2 py-1 text-sm leading-none';
-                        countryBadge.textContent = countryFlag;
+                        const countryAlpha3 = getCountryAlpha3Code(memberCountry);
+                        countryBadge.className = 'inline-flex items-center justify-center gap-1 rounded-full border border-gray-500/40 bg-black/30 px-2 py-1 text-xs leading-none';
+                        countryBadge.textContent = countryFlag + (countryAlpha3 ? ' ' + countryAlpha3 : '');
                         countryBadge.title = memberCountry;
                         countryBadge.setAttribute('aria-label', 'Country: ' + memberCountry);
                         titleLine.appendChild(countryBadge);
@@ -2914,9 +2958,10 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                             : 'border-sky-300/70 bg-sky-950/70 text-sky-100');
                     const memberStatus = String(memberDetails.interNationsStatus || data.interNationsStatus || '').trim();
                     typeBadge.textContent = tier === 'friends' ? 'RSVP' : getGuestCategory(data).toLocaleUpperCase();
-                    if (isMemberRecord || currentStaffRole === 'admin' || isPaymentCard) titleLine.appendChild(typeBadge);
+                    if (currentStaffRole !== 'hotel' && (isMemberRecord || currentStaffRole === 'admin' || isPaymentCard)) titleLine.appendChild(typeBadge);
                     const memberStatusKey = normalizeGuestName(memberStatus);
                     const appendMemberBadge = (label, title, kind) => {
+                        if (currentStaffRole === 'hotel') return;
                         const badge = document.createElement('span');
                         badge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold tracking-wider ' +
                             (kind === 'new'
@@ -2930,7 +2975,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     if (isMemberRecord && /ambassador/.test(memberStatusKey)) appendMemberBadge('AMBASSADOR', 'InterNations Ambassador', 'member');
                     if (isMemberRecord && /buddy/.test(memberStatusKey)) appendMemberBadge('BUDDY', 'Newcomers’ Buddy', 'member');
                     if (isMemberRecord && /(?:\b1st\b|\bfirst\b)\s*[-–—]?\s*event\b/.test(memberStatusKey)) appendMemberBadge('NEW', 'First InterNations event', 'new');
-                    if (mode === 'combined' || mode === 'payment') {
+                    if (currentStaffRole !== 'hotel' && (mode === 'combined' || mode === 'payment')) {
                         // Show completed status badges on combined and payment lists; pending states are clear from available actions.
                         if (checkedIn) {
                             const checkInStateBadge = document.createElement('span');
@@ -2961,8 +3006,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         return millis == null ? '' : new Date(millis).toLocaleDateString([], { day: '2-digit', month: 'short' });
                     };
                     const metaParts = [];
-                    const importedDate = isInterNationsMember(data) ? formatMetaDate(data.importedAt) : '';
-                    const signupDate = (data.rsvpSubmitted || !isInterNationsMember(data)) ? formatMetaDate(data.createdAt) : '';
+                    const importedDate = currentStaffRole === 'admin' && isInterNationsMember(data) ? formatMetaDate(data.importedAt) : '';
+                    const signupDate = currentStaffRole === 'admin' && (data.rsvpSubmitted || !isInterNationsMember(data)) ? formatMetaDate(data.createdAt) : '';
                     const invitedBy = sanitizeGuestDisplayName(data.invitedBy || '');
                     if (importedDate) metaParts.push('Imported: ' + importedDate);
                     if (signupDate) metaParts.push('Signed up: ' + signupDate);
@@ -3438,6 +3483,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             const counts = filterContainerCards(['guestNotCheckedInContainer', 'guestCheckedInContainer', 'combinedGuestContainer', 'combinedPaidContainer'], query);
             document.getElementById('hotelOpenCount').textContent = '(' + counts.guestNotCheckedInContainer + ')';
             document.getElementById('hotelCheckedCount').textContent = '(' + counts.guestCheckedInContainer + ')';
+            // Hotel's summary counts only guests checked in by this shared event list, not payments.
+            const hotelCheckedMetric = document.getElementById('hotelGuestCheckedInCount');
+            if (hotelCheckedMetric) hotelCheckedMetric.textContent = String(counts.guestCheckedInContainer);
             document.getElementById('combinedGuestCount').textContent = '(' + counts.combinedGuestContainer + ')';
             document.getElementById('combinedPaidCount').textContent = '(' + counts.combinedPaidContainer + ')';
         }
