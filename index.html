@@ -2653,13 +2653,15 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const recentSignupCount = document.getElementById('newSignups24hCount');
                 if (recentSignupCount) recentSignupCount.textContent = String(recentGuestPersonKeys.size);
 
-                // Count countries once per unique guest and normalize aliases/codes through the existing country-to-flag mapping.
-                const representedCountryKeys = new Set();
-                categoryPeople.forEach((person) => {
-                    const country = String((person.data || {}).country || '').trim();
-                    const flag = getCountryFlag(country);
-                    if (flag) representedCountryKeys.add(flag);
+                // Merge country values across duplicate RSVP/member records before counting unique represented countries.
+                const countryByPerson = new Map();
+                effectiveGuestDocs.forEach((guestDoc) => {
+                    const data = guestDoc.data() || {};
+                    const personKey = normalizeGuestName(data.name) || guestDoc.id;
+                    const flag = getCountryFlag(data.country);
+                    if (flag && !countryByPerson.has(personKey)) countryByPerson.set(personKey, flag);
                 });
+                const representedCountryKeys = new Set(countryByPerson.values());
                 const countryCount = document.getElementById('guestCountryCount');
                 if (countryCount) countryCount.textContent = String(representedCountryKeys.size);
                 const nonAlbatrossTotal = categoryTotals.Basics.total + categoryTotals.RSVPs.total;
