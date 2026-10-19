@@ -377,6 +377,9 @@
             border-radius: 0.65rem;
             background: rgba(0, 0, 0, 0.28);
         }
+        body.admin-stats-compact #staffSummaryStats .staff-metric-card table { display: none !important; }
+        body.admin-stats-compact #staffSummaryStats .staff-metric-card > div.grid > div.min-w-0.flex.justify-end { display: none !important; }
+        body.admin-stats-compact #staffSummaryStats .staff-metric-card > div.grid { grid-template-columns: 1fr !important; }
         .staff-metric-card > p:first-child {
             min-height: 1.5rem;
             display: flex;
@@ -410,7 +413,7 @@
         }
     </style>
 </head>
-<body class="halloween-bg min-h-screen relative flex flex-col selection:bg-gold selection:text-black">
+<body class="halloween-bg min-h-screen relative flex flex-col selection:bg-gold selection:text-black admin-stats-compact">
     <!-- Public RSVP page: staff and confirmation modes are toggled by the script below. -->
     <main class="relative z-10 flex-1 container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
         <!-- Event identity, date and primary navigation into registration. -->
@@ -579,6 +582,7 @@
                                 <p class="flex-1 text-xs text-amber-100"><strong id="signupSinceLastLoginCount">0</strong> new sign-ups since your last login</p>
                                 <button type="button" onclick="dismissSignupCatchupAlert()" class="text-[10px] text-gray-300 hover:text-white underline">Dismiss</button>
                             </div>
+                            <ul id="signupSinceLastLoginNames" class="list-disc pl-8 mt-2 text-[10px] text-amber-100 space-y-1"></ul>
                         </div>
                         <div id="signupLiveAlert" class="hidden rounded-lg border border-emerald-400/40 bg-emerald-950/30 px-3 py-2">
                             <div class="flex items-center gap-2">
@@ -586,6 +590,7 @@
                                 <p class="flex-1 text-xs text-emerald-100"><strong id="signupLiveCount">0</strong> new sign-ups during this session</p>
                                 <span class="text-[9px] uppercase tracking-wider text-emerald-200">New</span>
                             </div>
+                            <ul id="signupLiveNames" class="list-disc pl-8 mt-2 text-[10px] text-emerald-100 space-y-1"></ul>
                         </div>
                     </div>
                     <!-- Hotel receives only the operational guest total, its own check-in count, and country diversity. -->
@@ -609,6 +614,7 @@
                             </span>
                         </div>
                     </div>
+                    <div class="flex justify-end mb-2"><button type="button" id="adminStatsViewToggle" class="sort-option hidden" onclick="toggleAdminStatsView()">Full view</button></div>
                     <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                         <div class="staff-metric-card">
                             <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</p>
@@ -680,10 +686,10 @@
                                 </div>
                                 <div id="extraDrinkAdminControls" class="hidden flex flex-wrap gap-2" role="group" aria-label="Extra drink policy">
                                     <button type="button" class="sort-option" data-extra-drink-mode="none" aria-pressed="false" onclick="setExtraDrinkMode('none')">None</button>
-                                    <button type="button" class="sort-option" data-extra-drink-mode="without_welcome" aria-pressed="false" onclick="setExtraDrinkMode('without_welcome')">One per guest without a welcome drink</button>
-                                    <button type="button" class="sort-option" data-extra-drink-mode="everyone" aria-pressed="false" onclick="setExtraDrinkMode('everyone')">One per guest, everybody</button>
+                                    <button type="button" class="sort-option" data-extra-drink-mode="without_welcome" aria-pressed="false" onclick="setExtraDrinkMode('without_welcome')">Guests without Welcome drink (*1)</button>
+                                    <button type="button" class="sort-option" data-extra-drink-mode="everyone" aria-pressed="false" onclick="setExtraDrinkMode('everyone')">All guests (*1)</button>
                                 </div>
-                                <p id="extraDrinkPolicyDescription" class="text-[10px] text-gray-400 mt-2">No extra drinks selected. Reference price: €10 per drink.</p>
+                                <p id="extraDrinkPolicyDescription" class="hidden text-[10px] text-gray-400 mt-2"></p>
                             </div>
                         </div>
                         <div id="collectedMetric" class="staff-metric-card">
@@ -718,10 +724,10 @@
 
                     
 
-                    <section id="paidDrinksForecast" class="mt-4 rounded-xl border border-sky-400/20 bg-black/25 p-4" aria-labelledby="paidDrinksForecastHeading">
+                    <section id="paidDrinksForecast" class="mt-4 rounded-xl border border-sky-400/20 bg-black/25 p-4 hidden" aria-labelledby="paidDrinksForecastHeading">
                         <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-                            <div><h5 id="paidDrinksForecastHeading" class="text-xs uppercase tracking-wider text-sky-200">Paid drinks</h5><p class="text-[10px] text-gray-400 mt-1">Reference value: €10 per extra drink</p></div>
-                            <button type="button" id="attendance66Button" class="sort-option" onclick="calculateAttendanceForecast()">Calculate at 66% attendance</button>
+                            <div><h5 id="paidDrinksForecastHeading" class="text-xs uppercase tracking-wider text-sky-200">Paid drinks</h5><p class="text-[10px] text-gray-400 mt-1">Reference price: €10 per drink.</p></div>
+                            <button type="button" id="attendance66Button" class="sort-option" onclick="toggleAttendanceForecast()">100% attendance</button>
                         </div>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <div><p class="text-[10px] uppercase tracking-wider text-gray-400">Expected guests</p><p id="attendance66Guests" class="text-lg font-semibold text-gold tabular-nums">—</p></div>
@@ -935,7 +941,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.19.10</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.20.01</p>
         </div>
     </footer>
 
@@ -1055,6 +1061,27 @@
             const liveCount = document.getElementById('signupLiveCount');
             const showCatchup = signupAlertCatchupPersonKeys.size > 0 && !signupAlertCatchupDismissed;
             const showLive = signupAlertLivePersonKeys.size > 0;
+            const nameForKey = key => {
+                const doc = (Array.isArray(cachedGuestDocs) ? cachedGuestDocs : []).find(item => {
+                    const data = typeof item.data === 'function' ? (item.data() || {}) : (item.data || {});
+                    return (normalizeGuestName(data.name) || item.id) === key;
+                });
+                if (!doc) return key;
+                const data = typeof doc.data === 'function' ? (doc.data() || {}) : (doc.data || {});
+                return String(data.name || key).trim();
+            };
+            const renderNames = (id, keys) => {
+                const list = document.getElementById(id);
+                if (!list) return;
+                list.replaceChildren();
+                [...keys].map(nameForKey).sort((a, b) => a.localeCompare(b)).forEach(name => {
+                    const item = document.createElement('li');
+                    item.textContent = name;
+                    list.appendChild(item);
+                });
+            };
+            renderNames('signupSinceLastLoginNames', signupAlertCatchupPersonKeys);
+            renderNames('signupLiveNames', signupAlertLivePersonKeys);
             if (catchupCount) catchupCount.textContent = String(signupAlertCatchupPersonKeys.size);
             if (liveCount) liveCount.textContent = String(signupAlertLivePersonKeys.size);
             if (catchup) catchup.classList.toggle('hidden', !showCatchup);
@@ -1419,37 +1446,68 @@
                 none: 'No extra drinks selected.',
                 without_welcome: 'One extra drink per guest without a welcome drink.',
                 everyone: 'One extra drink per registered guest, including guests with a welcome drink.'
-            })[mode] + ' Reference price: €10 per drink.';
+            })[mode] || '';
         }
 
+        let attendanceForecastRate = 1;
+        const attendanceScaledStatIds = [
+            'guestTotalCount', 'guestPaidCount', 'guestAlbatrossTotal', 'guestAlbatrossPaid', 'guestBasicsTotal', 'guestBasicsPaid', 'guestFriendsTotal', 'guestFriendsPaid',
+            'drinkEstimateTotal', 'welcomeDrinkChipCount', 'drinkReferralEstimate', 'drinkReferralIssued', 'drinkIncludedEstimate', 'drinkIncludedIssued', 'drinkUpgradeEstimate', 'drinkUpgradeIssued',
+            'fullAttendanceAmount', 'collectedAmount', 'paymentAlbatrossPotential', 'paymentAlbatrossPaid', 'paymentBasicsPotential', 'paymentBasicsPaid', 'paymentRsvpsPotential', 'paymentRsvpsPaid'
+        ];
+        function applyAttendanceStatsView(captureFullValues = false) {
+            attendanceScaledStatIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (captureFullValues || el.dataset.fullAttendanceValue === undefined) el.dataset.fullAttendanceValue = el.textContent || '0';
+                const raw = String(el.dataset.fullAttendanceValue || '0').trim();
+                const number = Number(raw.replace(/\./g, '').replace(',', '.')) || 0;
+                el.textContent = String(Math.round(number * attendanceForecastRate)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            });
+            const button = document.getElementById('attendance66Button');
+            if (button) button.textContent = attendanceForecastRate === 1 ? '100% attendance' : '66% attendance';
+            const countEl = document.getElementById('potentialExtraDrinkCount');
+            const earningsEl = document.getElementById('attendance66DrinkValue');
+            const count = Math.max(0, Number(countEl && countEl.textContent) || 0);
+            if (earningsEl) earningsEl.textContent = '€' + Math.round(count * attendanceForecastRate * 10).toLocaleString('de-DE');
+        }
+        function toggleAttendanceForecast() {
+            if (currentStaffRole !== 'admin') return;
+            attendanceForecastRate = attendanceForecastRate === 1 ? 0.66 : 1;
+            applyAttendanceStatsView(false);
+        }
+        function toggleAdminStatsView() {
+            if (currentStaffRole !== 'admin') return;
+            const compact = document.body.classList.toggle('admin-stats-compact');
+            const button = document.getElementById('adminStatsViewToggle');
+            if (button) button.textContent = compact ? 'Full view' : 'Compact view';
+        }
+        function saveExtraDrinkModeOnly() {
+            if (!db) return;
+            const status = document.getElementById('pricingSaveStatus');
+            db.collection('event_settings').doc('pricing').set({
+                extraDrinkMode: pricingSettings.extraDrinkMode || 'none',
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true }).then(() => {
+                if (status) status.textContent = 'Extra-drink policy saved.';
+            }).catch(error => {
+                console.error('Extra-drink policy save failed:', error);
+                if (status) status.textContent = 'Could not save extra-drink policy.';
+            });
+        }
         function setExtraDrinkMode(mode) {
             if (currentStaffRole !== 'admin' || !['none', 'without_welcome', 'everyone'].includes(mode)) return;
             pricingSettings.extraDrinkMode = mode;
-            renderPricingForm();
+            document.querySelectorAll('[data-extra-drink-mode]').forEach(button => {
+                const selected = button.dataset.extraDrinkMode === mode;
+                button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+                button.classList.toggle('bg-gold/20', selected);
+                button.classList.toggle('border-gold', selected);
+                button.classList.toggle('text-gold', selected);
+            });
             updateExtraDrinkForecastDisplay();
-            void savePricingSettings();
-        }
-
-        function calculateAttendanceForecast() {
-            const money = value => '€' + Math.round(Number(value || 0)).toLocaleString('de-DE');
-            const guestCount = Math.max(0, Number((document.getElementById('guestTotalCount') || {}).textContent) || 0);
-            const parseAmount = id => {
-                const text = String((document.getElementById(id) || {}).textContent || '0').trim();
-                return Math.max(0, Number(text.replace(/\./g, '').replace(',', '.')) || 0);
-            };
-            const fullEntryPotential = parseAmount('fullAttendanceAmount');
-            const extraDrinks = parseAmount('potentialExtraDrinkCount');
-            const expectedGuests = Math.round(guestCount * 0.66);
-            const entryValue = fullEntryPotential * 0.66;
-            const drinkCount = Math.round(extraDrinks * 0.66);
-            const drinkValue = drinkCount * 10;
-            const put = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
-            put('attendance66Guests', expectedGuests.toLocaleString('de-DE'));
-            put('attendance66Entry', money(entryValue));
-            put('attendance66DrinkCount', drinkCount.toLocaleString('de-DE'));
-            put('attendance66DrinkValue', money(drinkValue));
-            put('attendance66Total', money(entryValue + drinkValue));
-            put('attendance66Description', '66% of registered guests (rounded); entry revenue is 66% of full-attendance admission potential. Extra drinks are rounded to whole drinks at €10 each.');
+            applyAttendanceStatsView(false);
+            saveExtraDrinkModeOnly();
         }
 
         /** Populate the admin pricing controls from the normalized settings document. */
@@ -2354,6 +2412,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             show('staffSummaryStats', role !== 'hotel');
             show('hotelSummaryStats', role === 'hotel');
             show('adminNewGuestMetric', role === 'admin');
+            show('adminStatsViewToggle', role === 'admin');
+            show('paidDrinksForecast', role === 'admin');
             // Sign-up history and import timestamps are administrative details, not operational check-in data.
             show('hotelSignupSortButton', role === 'admin');
             show('signupAlertArea', role === 'admin');
@@ -3383,6 +3443,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 applyGuestSorts();
                 filterHotelGuests();
                 filterPaymentGuests();
+                applyAttendanceStatsView(true);
                 } catch (error) {
                     console.error('Guest list render failed:', error);
                     listError.textContent = 'The guest records were received but the list could not be rendered: ' + (error && error.message ? error.message : String(error));
