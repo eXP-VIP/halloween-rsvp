@@ -696,12 +696,12 @@
                             </div>
                         </div>
                         <div id="collectedMetric" class="staff-metric-card">
-                            <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Payments (€)</p>
+                            <div class="flex flex-wrap items-center justify-between gap-2"><p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Payments (€)</p><div class="flex items-center gap-2"><p class="text-[10px] text-gray-400">Reference price: €10 per drink.</p><button type="button" id="attendance66Button" class="sort-option" onclick="toggleAttendanceForecast()">100% attendance</button></div></div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                                 <div class="flex items-center gap-2">
                                     <div class="min-w-0">
                                         <p id="fullAttendanceAmount" class="text-3xl font-semibold text-gold tabular-nums">0</p>
-                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Potential</p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Potential incl. drinks</p><p id="potentialDrinkEarnings" class="text-xs text-sky-200 tabular-nums mt-1">Drinks: €0</p>
                                     </div>
                                     <span class="text-2xl text-gray-500">/</span>
                                     <div class="min-w-0">
@@ -726,14 +726,6 @@
                     
 
                     
-
-                    <section id="paidDrinksForecast" class="mt-4 rounded-xl border border-sky-400/20 bg-black/25 p-4 hidden" aria-labelledby="paidDrinksForecastHeading">
-                        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-                            <div><h5 id="paidDrinksForecastHeading" class="text-xs uppercase tracking-wider text-sky-200">Paid drinks</h5><p class="text-[10px] text-gray-400 mt-1">Reference price: €10 per drink.</p></div>
-                            <button type="button" id="attendance66Button" class="sort-option" onclick="toggleAttendanceForecast()">100% attendance</button>
-                        </div>
-                        <div class="mt-2"><p id="attendance66DrinkValue" class="text-2xl font-semibold text-sky-200 tabular-nums">€0</p></div>
-                    </section>
 
                     <!-- Destructive admin utility: restore replaces the supported event collections and must remain admin-only and confirmation-gated. -->
                     
@@ -937,7 +929,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.20.01</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.20.02</p>
         </div>
     </footer>
 
@@ -1447,26 +1439,34 @@
         }
 
         let attendanceForecastRate = 1;
-        const attendanceScaledStatIds = [
-            'guestTotalCount', 'guestPaidCount', 'guestAlbatrossTotal', 'guestAlbatrossPaid', 'guestBasicsTotal', 'guestBasicsPaid', 'guestFriendsTotal', 'guestFriendsPaid',
-            'drinkEstimateTotal', 'welcomeDrinkChipCount', 'drinkReferralEstimate', 'drinkReferralIssued', 'drinkIncludedEstimate', 'drinkIncludedIssued', 'drinkUpgradeEstimate', 'drinkUpgradeIssued', 'potentialExtraDrinkCount',
-            'fullAttendanceAmount', 'collectedAmount', 'paymentAlbatrossPotential', 'paymentAlbatrossPaid', 'paymentBasicsPotential', 'paymentBasicsPaid', 'paymentRsvpsPotential', 'paymentRsvpsPaid'
-        ];
+        const attendanceScaledStatIds = ['paymentAlbatrossPotential', 'paymentBasicsPotential', 'paymentRsvpsPotential'];
+        function parseStatAmount(value) {
+            return Math.max(0, Number(String(value || '0').trim().replace(/\./g, '').replace(',', '.')) || 0);
+        }
         function updatePaidDrinkEarnings() {
             const countEl = document.getElementById('potentialExtraDrinkCount');
-            const earningsEl = document.getElementById('attendance66DrinkValue');
-            const count = Math.max(0, Number(countEl && (countEl.dataset.fullAttendanceValue || countEl.textContent)) || 0);
-            if (earningsEl) earningsEl.textContent = '€' + Math.round(count * attendanceForecastRate * 10).toLocaleString('de-DE');
+            const earningsEl = document.getElementById('potentialDrinkEarnings');
+            const count = Math.max(0, parseStatAmount(countEl && (countEl.dataset.fullAttendanceValue || countEl.textContent)));
+            const drinkValue = Math.round(count * attendanceForecastRate * 10);
+            if (earningsEl) earningsEl.textContent = 'Drinks: €' + drinkValue.toLocaleString('de-DE');
+            const totalEl = document.getElementById('fullAttendanceAmount');
+            if (totalEl) {
+                const ticketPotential = parseStatAmount(totalEl.dataset.fullTicketPotential || totalEl.textContent);
+                totalEl.textContent = Math.round(ticketPotential * attendanceForecastRate + drinkValue).toLocaleString('de-DE');
+            }
         }
         function applyAttendanceStatsView(captureFullValues = false) {
             attendanceScaledStatIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
-                if ((captureFullValues && id !== 'potentialExtraDrinkCount') || el.dataset.fullAttendanceValue === undefined) el.dataset.fullAttendanceValue = el.textContent || '0';
-                const raw = String(el.dataset.fullAttendanceValue || '0').trim();
-                const number = Number(raw.replace(/\./g, '').replace(',', '.')) || 0;
-                el.textContent = String(Math.round(number * attendanceForecastRate)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                if (captureFullValues || el.dataset.fullAttendanceValue === undefined) el.dataset.fullAttendanceValue = el.textContent || '0';
+                el.textContent = Math.round(parseStatAmount(el.dataset.fullAttendanceValue) * attendanceForecastRate).toLocaleString('de-DE');
             });
+            const countEl = document.getElementById('potentialExtraDrinkCount');
+            if (countEl) {
+                if (countEl.dataset.fullAttendanceValue === undefined) countEl.dataset.fullAttendanceValue = countEl.textContent || '0';
+                countEl.textContent = Math.round(parseStatAmount(countEl.dataset.fullAttendanceValue) * attendanceForecastRate).toLocaleString('de-DE');
+            }
             const button = document.getElementById('attendance66Button');
             if (button) button.textContent = attendanceForecastRate === 1 ? '100% attendance' : '66% attendance';
             updatePaidDrinkEarnings();
@@ -1476,7 +1476,7 @@
             attendanceForecastRate = attendanceForecastRate === 1 ? 0.66 : 1;
             applyAttendanceStatsView(false);
         }
-        function toggleAdminStatsView() {
+                function toggleAdminStatsView() {
             if (currentStaffRole !== 'admin') return;
             const compact = document.body.classList.toggle('admin-stats-compact');
             const button = document.getElementById('adminStatsViewToggle');
@@ -2413,7 +2413,6 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             show('hotelSummaryStats', role === 'hotel');
             show('adminNewGuestMetric', role === 'admin');
             show('adminStatsViewToggle', role === 'admin');
-            show('paidDrinksForecast', role === 'admin');
             // Sign-up history and import timestamps are administrative details, not operational check-in data.
             show('hotelSignupSortButton', role === 'admin');
             show('signupAlertArea', role === 'admin');
@@ -3426,7 +3425,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 });
                 const formatEuroAmount = (value) => Math.round(Number(value || 0)).toLocaleString('de-DE');
                 document.getElementById('collectedAmount').textContent = formatEuroAmount(totalCollected);
-                document.getElementById('fullAttendanceAmount').textContent = formatEuroAmount(maxFullAttendance);
+                const potentialTotalEl = document.getElementById('fullAttendanceAmount');
+                potentialTotalEl.dataset.fullTicketPotential = formatEuroAmount(maxFullAttendance);
+                potentialTotalEl.textContent = formatEuroAmount(maxFullAttendance);
                 document.getElementById('paymentAlbatrossTicket').textContent = formatEuroAmount(pricingSettings.basePrices.paidMembers);
                 document.getElementById('paymentAlbatrossPotential').textContent = formatEuroAmount(categoryPaymentTotals.Albatross.potential);
                 document.getElementById('paymentAlbatrossPaid').textContent = formatEuroAmount(categoryPaymentTotals.Albatross.paid);
