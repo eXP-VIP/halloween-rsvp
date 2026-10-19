@@ -673,6 +673,18 @@
                                     </table>
                                 </div>
                             </div>
+                            <div class="mt-3 pt-3 border-t border-gold/10">
+                                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                    <p class="text-[10px] uppercase tracking-wider text-gray-300">Potential extra drinks</p>
+                                    <p class="text-xs text-gray-200"><strong id="potentialExtraDrinkCount" class="text-gold tabular-nums">0</strong> drinks</p>
+                                </div>
+                                <div id="extraDrinkAdminControls" class="hidden flex flex-wrap gap-2" role="group" aria-label="Extra drink policy">
+                                    <button type="button" class="sort-option" data-extra-drink-mode="none" aria-pressed="false" onclick="setExtraDrinkMode('none')">None</button>
+                                    <button type="button" class="sort-option" data-extra-drink-mode="without_welcome" aria-pressed="false" onclick="setExtraDrinkMode('without_welcome')">One per guest without a welcome drink</button>
+                                    <button type="button" class="sort-option" data-extra-drink-mode="everyone" aria-pressed="false" onclick="setExtraDrinkMode('everyone')">One per guest, everybody</button>
+                                </div>
+                                <p id="extraDrinkPolicyDescription" class="text-[10px] text-gray-400 mt-2">No extra drinks selected. Reference price: €10 per drink.</p>
+                            </div>
                         </div>
                         <div id="collectedMetric" class="staff-metric-card">
                             <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Payments (€)</p>
@@ -705,6 +717,21 @@
                     
 
                     
+
+                    <section id="paidDrinksForecast" class="mt-4 rounded-xl border border-sky-400/20 bg-black/25 p-4" aria-labelledby="paidDrinksForecastHeading">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                            <div><h5 id="paidDrinksForecastHeading" class="text-xs uppercase tracking-wider text-sky-200">Paid drinks</h5><p class="text-[10px] text-gray-400 mt-1">Reference value: €10 per extra drink</p></div>
+                            <button type="button" id="attendance66Button" class="sort-option" onclick="calculateAttendanceForecast()">Calculate at 66% attendance</button>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div><p class="text-[10px] uppercase tracking-wider text-gray-400">Expected guests</p><p id="attendance66Guests" class="text-lg font-semibold text-gold tabular-nums">—</p></div>
+                            <div><p class="text-[10px] uppercase tracking-wider text-gray-400">Entry payments</p><p id="attendance66Entry" class="text-lg font-semibold text-gold tabular-nums">—</p></div>
+                            <div><p class="text-[10px] uppercase tracking-wider text-gray-400">Paid drinks</p><p id="attendance66DrinkCount" class="text-lg font-semibold text-sky-200 tabular-nums">—</p></div>
+                            <div><p class="text-[10px] uppercase tracking-wider text-gray-400">Drink value</p><p id="attendance66DrinkValue" class="text-lg font-semibold text-sky-200 tabular-nums">—</p></div>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-sky-400/15 flex flex-wrap items-center justify-between gap-2"><p class="text-xs text-gray-300">Estimated entry + drink value</p><p id="attendance66Total" class="text-xl font-semibold text-emerald-200 tabular-nums">—</p></div>
+                        <p id="attendance66Description" class="text-[10px] text-gray-400 mt-2">Select an extra-drink policy above, then calculate the 66% attendance forecast.</p>
+                    </section>
 
                     <!-- Destructive admin utility: restore replaces the supported event collections and must remain admin-only and confirmation-gated. -->
                     
@@ -908,7 +935,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.19.08</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.19.09</p>
         </div>
     </footer>
 
@@ -1205,6 +1232,7 @@
         // Defaults for admission tiers, drink treatment and referral rewards; event_settings/pricing can override them.
         const DEFAULT_PRICING = {
             basePrices: { basics: 15, paidMembers: 5, friends: 20 },
+            extraDrinkMode: 'none',
             drinkRules: {
                 basics: { mode: 'not_allowed', price: 0 },
                 paidMembers: { mode: 'not_allowed', price: 0 },
@@ -1244,6 +1272,7 @@
                 };
             };
             return {
+                extraDrinkMode: ['none', 'without_welcome', 'everyone'].includes(raw.extraDrinkMode) ? raw.extraDrinkMode : DEFAULT_PRICING.extraDrinkMode,
                 basePrices: {
                     basics: amount(raw.basePrices && raw.basePrices.basics, 15),
                     paidMembers: amount(raw.basePrices && raw.basePrices.paidMembers, 5),
@@ -1362,8 +1391,75 @@
             };
         }
 
+        function updateExtraDrinkForecastDisplay() {
+            const output = document.getElementById('potentialExtraDrinkCount');
+            const description = document.getElementById('extraDrinkPolicyDescription');
+            if (!output) return;
+            const mode = pricingSettings.extraDrinkMode || 'none';
+            const docs = Array.isArray(cachedGuestDocs) ? cachedGuestDocs : [];
+            const guests = new Map();
+            docs.forEach(doc => {
+                const data = typeof doc.data === 'function' ? (doc.data() || {}) : (doc.data || {});
+                const key = normalizeGuestName(data.name) || doc.id;
+                if (key && !guests.has(key)) guests.set(key, data);
+            });
+            const withWelcome = new Set();
+            guests.forEach(data => {
+                const key = normalizeGuestName(data.name);
+                if (!key) return;
+                const rule = pricingSettings.drinkRules[getGuestTier(data)] || { mode: 'not_allowed' };
+                if (rule.mode === 'included' || Boolean(data.welcomeDrinkUpgradeSelected)) withWelcome.add(key);
+            });
+            let count = 0;
+            if (mode === 'everyone') count = guests.size;
+            if (mode === 'without_welcome') count = [...guests.keys()].filter(key => !withWelcome.has(key)).length;
+            output.textContent = String(count);
+            if (description) description.textContent = ({
+                none: 'No extra drinks selected.',
+                without_welcome: 'One extra drink per guest without a welcome drink.',
+                everyone: 'One extra drink per registered guest, including guests with a welcome drink.'
+            })[mode] + ' Reference price: €10 per drink.';
+        }
+
+        function setExtraDrinkMode(mode) {
+            if (currentStaffRole !== 'admin' || !['none', 'without_welcome', 'everyone'].includes(mode)) return;
+            pricingSettings.extraDrinkMode = mode;
+            renderPricingForm();
+            updateExtraDrinkForecastDisplay();
+            void savePricingSettings();
+        }
+
+        function calculateAttendanceForecast() {
+            const money = value => '€' + Math.round(Number(value || 0)).toLocaleString('de-DE');
+            const guestCount = Math.max(0, Number((document.getElementById('guestTotalCount') || {}).textContent) || 0);
+            const parseAmount = id => {
+                const text = String((document.getElementById(id) || {}).textContent || '0').trim();
+                return Math.max(0, Number(text.replace(/\./g, '').replace(',', '.')) || 0);
+            };
+            const fullEntryPotential = parseAmount('fullAttendanceAmount');
+            const extraDrinks = parseAmount('potentialExtraDrinkCount');
+            const expectedGuests = Math.round(guestCount * 0.66);
+            const entryValue = fullEntryPotential * 0.66;
+            const drinkCount = Math.round(extraDrinks * 0.66);
+            const drinkValue = drinkCount * 10;
+            const put = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+            put('attendance66Guests', expectedGuests.toLocaleString('de-DE'));
+            put('attendance66Entry', money(entryValue));
+            put('attendance66DrinkCount', drinkCount.toLocaleString('de-DE'));
+            put('attendance66DrinkValue', money(drinkValue));
+            put('attendance66Total', money(entryValue + drinkValue));
+            put('attendance66Description', '66% of registered guests (rounded); entry revenue is 66% of full-attendance admission potential. Extra drinks are rounded to whole drinks at €10 each.');
+        }
+
         /** Populate the admin pricing controls from the normalized settings document. */
         function renderPricingForm() {
+            document.querySelectorAll('[data-extra-drink-mode]').forEach(button => {
+                const selected = button.dataset.extraDrinkMode === (pricingSettings.extraDrinkMode || 'none');
+                button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+                button.classList.toggle('bg-gold/20', selected);
+                button.classList.toggle('border-gold', selected);
+                button.classList.toggle('text-gold', selected);
+            });
             const fields = {
                 basePriceBasics: pricingSettings.basePrices.basics,
                 basePricePaidMembers: pricingSettings.basePrices.paidMembers,
@@ -1435,6 +1531,7 @@
                                 paidMembers: { mode: document.getElementById('drinkModePaidMembers').value, price: amount('drinkPricePaidMembers', 'Albatross drink upgrade') },
                                 friends: { mode: document.getElementById('drinkModeFriends').value, price: amount('drinkPriceFriends', 'RSVPs drink upgrade') }
                             },
+                            extraDrinkMode: pricingSettings.extraDrinkMode || 'none',
                             referralRules: {
                                 basics: { eligible: document.getElementById('referralEligibleBasics').checked, threshold: whole('referralThresholdBasics', 'Basics referral threshold') },
                                 paidMembers: { eligible: document.getElementById('referralEligiblePaidMembers').checked, threshold: whole('referralThresholdPaidMembers', 'Albatross referral threshold') },
@@ -2268,6 +2365,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
             show('adminToolsHeading', role === 'admin');
             show('adminPricingPanel', role === 'admin');
+            show('extraDrinkAdminControls', role === 'admin');
             show('internationsImportPanel', role === 'admin');
             show('databaseBackupPanel', role === 'admin');
             applyWorkflowRoleVisibility();
@@ -3216,6 +3314,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 });
                 const estimatedDrinkTotal = estimatedDrinksByPerson.size;
                 document.getElementById('drinkEstimateTotal').textContent = estimatedDrinkTotal;
+                updateExtraDrinkForecastDisplay();
                 const issuedEligibleDrinkTotal = Object.values(drinkIssuedCounts).reduce((sum, count) => sum + count, 0);
                 document.getElementById('welcomeDrinkChipCount').textContent = issuedEligibleDrinkTotal;
                 document.getElementById('drinkReferralEstimate').textContent = drinkForecastCounts.referrals;
