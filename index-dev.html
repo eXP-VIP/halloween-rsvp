@@ -2786,9 +2786,21 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if (!pricingUnsubscribe) {
                 pricingUnsubscribe = db.collection('event_settings').doc('pricing').onSnapshot((doc) => {
                     if (doc.exists) {
-                        pricingSettings = normalizePricingSettings(doc.data());
+                        const nextPricingSettings = normalizePricingSettings(doc.data());
+                        const chargeRulesChanged = JSON.stringify({
+                            basePrices: pricingSettings.basePrices,
+                            drinkRules: pricingSettings.drinkRules,
+                            referralRules: pricingSettings.referralRules
+                        }) !== JSON.stringify({
+                            basePrices: nextPricingSettings.basePrices,
+                            drinkRules: nextPricingSettings.drinkRules,
+                            referralRules: nextPricingSettings.referralRules
+                        });
+                        pricingSettings = nextPricingSettings;
                         renderPricingForm();
-                        if (document.getElementById('guestlistSection') && !document.getElementById('guestlistSection').classList.contains('hidden')) loadLiveGuestlist();
+                        updateExtraDrinkForecastDisplay();
+                        updatePaidDrinkEarnings();
+                        if (chargeRulesChanged && document.getElementById('guestlistSection') && !document.getElementById('guestlistSection').classList.contains('hidden')) loadLiveGuestlist();
                     }
                 }, (error) => {
                     console.error('Pricing settings listener failed:', error);
