@@ -909,6 +909,10 @@
         let cachedGuestSnapshot = null;
         // Sign-up alert history is scoped to this staff UID and browser; Firestore role documents are intentionally read-only.
         const SIGNUP_ALERT_STORAGE_PREFIX = 'halloween-signup-alert-last-login-v1:';
+        // DEV and LIVE share an origin, so keep their local alert history separate.
+        function signupAlertStorageKey(uid) {
+            return SIGNUP_ALERT_STORAGE_PREFIX + (IS_DEVELOPMENT_BUILD ? 'dev:' : 'live:') + uid;
+        }
         let signupAlertSessionUid = null;
         let signupAlertSessionStartedAt = 0;
         let signupAlertPreviousLoginAt = null;
@@ -969,7 +973,7 @@
             signupAlertCatchupDismissed = false;
             signupAlertPreviousLoginAt = null;
             try {
-                const saved = Number(localStorage.getItem(SIGNUP_ALERT_STORAGE_PREFIX + uid));
+                const saved = Number(localStorage.getItem(signupAlertStorageKey(uid)));
                 if (Number.isFinite(saved) && saved > 0) signupAlertPreviousLoginAt = saved;
             } catch (error) {
                 // The live alert still works if browser storage is blocked; only cross-login catch-up is unavailable.
@@ -2580,7 +2584,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     signupAlertSeenGuestIds = currentIds;
                     signupAlertInitialSnapshotProcessed = true;
                     try {
-                        localStorage.setItem(SIGNUP_ALERT_STORAGE_PREFIX + signupAlertSessionUid, String(signupAlertSessionStartedAt));
+                        localStorage.setItem(signupAlertStorageKey(signupAlertSessionUid), String(signupAlertSessionStartedAt));
                     } catch (error) {
                         console.warn('Could not save the last-login marker for sign-up alerts:', error);
                     }
