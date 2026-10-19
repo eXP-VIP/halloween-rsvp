@@ -377,9 +377,12 @@
             border-radius: 0.65rem;
             background: rgba(0, 0, 0, 0.28);
         }
-        body.admin-stats-compact #staffSummaryStats .staff-metric-card table { display: none !important; }
-        body.admin-stats-compact #staffSummaryStats .staff-metric-card > div.grid > div.min-w-0.flex.justify-end { display: none !important; }
-        body.admin-stats-compact #staffSummaryStats .staff-metric-card > div.grid { grid-template-columns: 1fr !important; }
+        body.admin-stats-compact #guestSummaryMetric table,
+        body.admin-stats-compact #collectedMetric table { display: none !important; }
+        body.admin-stats-compact #guestSummaryMetric > div.grid > div.min-w-0.flex.justify-end,
+        body.admin-stats-compact #collectedMetric > div.grid > div.min-w-0.flex.justify-end { display: none !important; }
+        body.admin-stats-compact #guestSummaryMetric > div.grid,
+        body.admin-stats-compact #collectedMetric > div.grid { grid-template-columns: 1fr !important; }
         .staff-metric-card > p:first-child {
             min-height: 1.5rem;
             display: flex;
@@ -616,7 +619,7 @@
                     </div>
                     <div class="flex justify-end mb-2"><button type="button" id="adminStatsViewToggle" class="sort-option hidden" onclick="toggleAdminStatsView()">Full view</button></div>
                     <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                        <div class="staff-metric-card">
+                        <div id="guestSummaryMetric" class="staff-metric-card">
                             <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</p>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                                 <div class="flex items-start gap-2">
@@ -1086,7 +1089,7 @@
             if (liveCount) liveCount.textContent = String(signupAlertLivePersonKeys.size);
             if (catchup) catchup.classList.toggle('hidden', !showCatchup);
             if (live) live.classList.toggle('hidden', !showLive);
-            if (area) area.classList.toggle('hidden', !showCatchup && !showLive);
+            if (area) area.classList.toggle('hidden', currentStaffRole !== 'admin' || (!showCatchup && !showLive));
         }
 
         /** Dismiss only the previous-login catch-up; live-session sign-ups remain visible. */
@@ -1455,6 +1458,12 @@
             'drinkEstimateTotal', 'welcomeDrinkChipCount', 'drinkReferralEstimate', 'drinkReferralIssued', 'drinkIncludedEstimate', 'drinkIncludedIssued', 'drinkUpgradeEstimate', 'drinkUpgradeIssued',
             'fullAttendanceAmount', 'collectedAmount', 'paymentAlbatrossPotential', 'paymentAlbatrossPaid', 'paymentBasicsPotential', 'paymentBasicsPaid', 'paymentRsvpsPotential', 'paymentRsvpsPaid'
         ];
+        function updatePaidDrinkEarnings() {
+            const countEl = document.getElementById('potentialExtraDrinkCount');
+            const earningsEl = document.getElementById('attendance66DrinkValue');
+            const count = Math.max(0, Number(countEl && countEl.textContent) || 0);
+            if (earningsEl) earningsEl.textContent = '€' + Math.round(count * attendanceForecastRate * 10).toLocaleString('de-DE');
+        }
         function applyAttendanceStatsView(captureFullValues = false) {
             attendanceScaledStatIds.forEach(id => {
                 const el = document.getElementById(id);
@@ -1466,10 +1475,7 @@
             });
             const button = document.getElementById('attendance66Button');
             if (button) button.textContent = attendanceForecastRate === 1 ? '100% attendance' : '66% attendance';
-            const countEl = document.getElementById('potentialExtraDrinkCount');
-            const earningsEl = document.getElementById('attendance66DrinkValue');
-            const count = Math.max(0, Number(countEl && countEl.textContent) || 0);
-            if (earningsEl) earningsEl.textContent = '€' + Math.round(count * attendanceForecastRate * 10).toLocaleString('de-DE');
+            updatePaidDrinkEarnings();
         }
         function toggleAttendanceForecast() {
             if (currentStaffRole !== 'admin') return;
@@ -1506,7 +1512,7 @@
                 button.classList.toggle('text-gold', selected);
             });
             updateExtraDrinkForecastDisplay();
-            applyAttendanceStatsView(false);
+            updatePaidDrinkEarnings();
             saveExtraDrinkModeOnly();
         }
 
