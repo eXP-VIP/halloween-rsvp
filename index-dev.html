@@ -694,13 +694,14 @@
                         </div>
                         <div id="collectedMetric" class="staff-metric-card">
                             <div class="flex flex-wrap items-center justify-between gap-2"><p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Payments (€)</p><button type="button" id="attendance66Button" class="sort-option" onclick="toggleAttendanceForecast()">100% attendance</button></div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 items-start">
                                 <div class="min-w-0">
-                                    <div class="grid grid-cols-2 gap-3">
+                                    <div class="flex items-center gap-2">
                                         <div class="min-w-0">
                                             <p id="fullAttendanceAmount" class="text-3xl font-semibold text-gold tabular-nums">0</p>
                                             <p class="text-[10px] uppercase tracking-wider text-gray-400">Potential</p>
                                         </div>
+                                        <span class="text-2xl text-gray-500">/</span>
                                         <div class="min-w-0">
                                             <p id="collectedAmount" class="text-3xl font-semibold text-emerald-200 tabular-nums">0</p>
                                             <p class="text-[10px] uppercase tracking-wider text-gray-400">Paid</p>
@@ -712,7 +713,7 @@
                                         <p class="text-[10px] text-gray-400 mt-1">Reference price: €10 per drink.</p>
                                     </div>
                                 </div>
-                                <div class="min-w-0 flex justify-end">
+                                <div class="min-w-0 flex items-start justify-end">
                                     <table class="w-fit max-w-full table-auto border-collapse text-[10px] leading-4 text-gray-300 tabular-nums" aria-label="Ticket revenue by category">
                                         <thead class="sr-only"><tr><th scope="col">Category and ticket</th><th scope="col">Potential</th><th scope="col">Separator</th><th scope="col">Paid</th></tr></thead>
                                         <tbody>
@@ -932,7 +933,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.20.03</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.20.04</p>
         </div>
     </footer>
 
