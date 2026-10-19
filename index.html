@@ -612,10 +612,15 @@
                                     </table>
                                 </div>
                             </div>
-                            <!-- This is a count of actual recent RSVP identities, not an attendance forecast. -->
+                            <!-- Count distinct newly added guest identities, including new import-only members but not existing guests re-imported. -->
                             <div class="mt-3 pt-3 border-t border-gold/10 flex items-center justify-between gap-3">
-                                <p class="text-[10px] uppercase tracking-wider text-gray-400">New sign-ups (24h)</p>
+                                <p class="text-[10px] uppercase tracking-wider text-gray-400">New guests (24h)</p>
                                 <p id="newSignups24hCount" class="text-lg font-semibold text-emerald-200 tabular-nums">0</p>
+                            </div>
+                            <!-- Country count is based on distinct country flags among unique guest identities, not RSVP or import rows. -->
+                            <div class="mt-2 flex items-center justify-between gap-3">
+                                <p class="text-[10px] uppercase tracking-wider text-gray-400">Countries represented</p>
+                                <p id="guestCountryCount" class="text-lg font-semibold text-sky-200 tabular-nums">0</p>
                             </div>
                         </div>
                                                 <div class="staff-metric-card">
@@ -878,7 +883,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.19.02</p>
+            <p class="text-[9px] text-gray-600 mt-1 tracking-wide text-center">Live build 2026.10.19.03</p>
         </div>
     </footer>
 
@@ -2619,19 +2624,44 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 categoryPeople.forEach(person=>{const category=getGuestCategory(person.data);categoryTotals[category].total++;if(person.paid)categoryTotals[category].paid++;});
                 const totalGuestRecords=categoryPeople.size;
                 const totalPaidRecords=Array.from(categoryPeople.values()).filter(person=>person.paid).length;
-                // Count distinct RSVP identities created in the last 24 hours; imported membership rows are excluded.
+                // Count distinct guest identities created in the last 24 hours. Prefer RSVP creation dates when present;
+                // only use import dates for member-only identities, so refreshing an existing guest never makes them "new".
                 const signup24hCutoff = Date.now() - 24 * 60 * 60 * 1000;
-                const recentSignupPersonKeys = new Set();
+                const recentGuestDatesByPerson = new Map();
                 effectiveGuestDocs.forEach((guestDoc) => {
                     const data = guestDoc.data() || {};
-                    if (!isSignupAlertRsvp(data)) return;
-                    const signupAt = signupAlertTimestampMillis(data.createdAt);
-                    if (signupAt != null && signupAt >= signup24hCutoff) {
-                        recentSignupPersonKeys.add(normalizeGuestName(data.name) || guestDoc.id);
+                    const personKey = normalizeGuestName(data.name) || guestDoc.id;
+                    const isMemberOnlyRecord = isImportedMemberRecord(data);
+                    const timestampValue = isMemberOnlyRecord ? (data.importedAt || data.createdAt) : data.createdAt;
+                    const createdAt = signupAlertTimestampMillis(timestampValue);
+                    if (createdAt == null) return;
+                    let personDates = recentGuestDatesByPerson.get(personKey);
+                    if (!personDates) {
+                        personDates = { rsvpDates: [], importDates: [] };
+                        recentGuestDatesByPerson.set(personKey, personDates);
+                    }
+                    (isMemberOnlyRecord ? personDates.importDates : personDates.rsvpDates).push(createdAt);
+                });
+                const recentGuestPersonKeys = new Set();
+                recentGuestDatesByPerson.forEach((dates, personKey) => {
+                    // A real RSVP is the primary creation event; importing membership details for that RSVP is not a new guest.
+                    const relevantDates = dates.rsvpDates.length ? dates.rsvpDates : dates.importDates;
+                    if (relevantDates.length && Math.min(...relevantDates) >= signup24hCutoff) {
+                        recentGuestPersonKeys.add(personKey);
                     }
                 });
                 const recentSignupCount = document.getElementById('newSignups24hCount');
-                if (recentSignupCount) recentSignupCount.textContent = String(recentSignupPersonKeys.size);
+                if (recentSignupCount) recentSignupCount.textContent = String(recentGuestPersonKeys.size);
+
+                // Count countries once per unique guest and normalize aliases/codes through the existing country-to-flag mapping.
+                const representedCountryKeys = new Set();
+                categoryPeople.forEach((person) => {
+                    const country = String((person.data || {}).country || '').trim();
+                    const flag = getCountryFlag(country);
+                    if (flag) representedCountryKeys.add(flag);
+                });
+                const countryCount = document.getElementById('guestCountryCount');
+                if (countryCount) countryCount.textContent = String(representedCountryKeys.size);
                 const nonAlbatrossTotal = categoryTotals.Basics.total + categoryTotals.RSVPs.total;
                 const nonAlbatrossPaid = categoryTotals.Basics.paid + categoryTotals.RSVPs.paid;
                 const formatRate = (albatross, rest) => {
