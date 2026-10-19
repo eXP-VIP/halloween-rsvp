@@ -1438,6 +1438,7 @@
             if (mode === 'everyone') count = guests.size;
             if (mode === 'without_welcome') count = [...guests.keys()].filter(key => !withWelcome.has(key)).length;
             output.textContent = String(count);
+            output.dataset.fullAttendanceValue = String(count);
             if (description) description.textContent = ({
                 none: 'No extra drinks selected.',
                 without_welcome: 'One extra drink per guest without a welcome drink.',
@@ -1448,13 +1449,13 @@
         let attendanceForecastRate = 1;
         const attendanceScaledStatIds = [
             'guestTotalCount', 'guestPaidCount', 'guestAlbatrossTotal', 'guestAlbatrossPaid', 'guestBasicsTotal', 'guestBasicsPaid', 'guestFriendsTotal', 'guestFriendsPaid',
-            'drinkEstimateTotal', 'welcomeDrinkChipCount', 'drinkReferralEstimate', 'drinkReferralIssued', 'drinkIncludedEstimate', 'drinkIncludedIssued', 'drinkUpgradeEstimate', 'drinkUpgradeIssued',
+            'drinkEstimateTotal', 'welcomeDrinkChipCount', 'drinkReferralEstimate', 'drinkReferralIssued', 'drinkIncludedEstimate', 'drinkIncludedIssued', 'drinkUpgradeEstimate', 'drinkUpgradeIssued', 'potentialExtraDrinkCount',
             'fullAttendanceAmount', 'collectedAmount', 'paymentAlbatrossPotential', 'paymentAlbatrossPaid', 'paymentBasicsPotential', 'paymentBasicsPaid', 'paymentRsvpsPotential', 'paymentRsvpsPaid'
         ];
         function updatePaidDrinkEarnings() {
             const countEl = document.getElementById('potentialExtraDrinkCount');
             const earningsEl = document.getElementById('attendance66DrinkValue');
-            const count = Math.max(0, Number(countEl && countEl.textContent) || 0);
+            const count = Math.max(0, Number(countEl && (countEl.dataset.fullAttendanceValue || countEl.textContent)) || 0);
             if (earningsEl) earningsEl.textContent = '€' + Math.round(count * attendanceForecastRate * 10).toLocaleString('de-DE');
         }
         function applyAttendanceStatsView(captureFullValues = false) {
