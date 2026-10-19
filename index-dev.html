@@ -602,9 +602,9 @@
                                 <p class="text-[10px] uppercase tracking-wider text-gray-400">Check-in</p>
                             </div>
                         </div>
-                        <div class="mt-3 pt-3 border-t border-gold/10 flex items-center justify-between gap-3">
-                            <p class="text-[10px] uppercase tracking-wider text-gray-400">Countries represented</p>
+                        <div class="mt-3 pt-3 border-t border-gold/10 rounded-md border border-sky-400/20 bg-sky-950/20 px-2 py-2 text-center">
                             <p id="hotelGuestCountryCount" class="text-lg font-semibold text-sky-200 tabular-nums">0</p>
+                            <p class="text-[10px] uppercase tracking-wider text-sky-200">Countries represented</p>
                         </div>
                     </div>
                     <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
@@ -636,9 +636,21 @@
                                     </table>
                                 </div>
                             </div>
-                                            <tr id="adminNewGuestMetric" class="hidden"><th scope="row" class="text-left font-semibold text-violet-300 pr-2 whitespace-nowrap">New guests (24h)</th><td id="newSignups24hCount" colspan="3" class="text-right font-semibold text-violet-300 tabular-nums">0</td></tr>
-                                            <!-- Country count uses distinct countries among unique guest identities. -->
-                                            <tr><th scope="row" class="text-left font-semibold text-sky-300 pr-2 whitespace-nowrap">Countries represented</th><td id="guestCountryCount" colspan="3" class="text-right font-semibold text-sky-300 tabular-nums">0</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Compact metrics follow the same number-above-label pattern as Guests / Total / Paid. -->
+                            <div class="mt-3 pt-3 border-t border-gold/10 grid grid-cols-2 gap-3 text-center">
+                                <div id="adminNewGuestMetric" class="hidden rounded-md border border-violet-400/20 bg-violet-950/20 px-2 py-2">
+                                    <p id="newSignups24hCount" class="text-lg font-semibold text-violet-300 tabular-nums">0</p>
+                                    <p class="text-[10px] uppercase tracking-wider text-violet-200">New guests (24h)</p>
+                                </div>
+                                <div class="rounded-md border border-sky-400/20 bg-sky-950/20 px-2 py-2">
+                                    <p id="guestCountryCount" class="text-lg font-semibold text-sky-300 tabular-nums">0</p>
+                                    <p class="text-[10px] uppercase tracking-wider text-sky-200">Countries represented</p>
+                                </div>
+                            </div>
                         </div>
                                                 <div class="staff-metric-card">
                             <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Welcome drinks</p>
@@ -900,7 +912,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.19.06</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.19.07</p>
         </div>
     </footer>
 
@@ -976,12 +988,19 @@
             return Number.isFinite(parsed) ? parsed : null;
         }
 
-        /** Public RSVP records count as sign-ups; imported member records and operational-only updates do not. */
-        function isSignupAlertRsvp(data) {
-            if (!data || isImportedMemberRecord(data)) return false;
+        /** Track public RSVPs and newly imported member-only guests; ignore unrelated operational records. */
+        function isSignupAlertGuest(data) {
+            if (!data) return false;
+            if (isImportedMemberRecord(data)) return true;
             return data.source === 'website' || data.rsvpSource === 'website' ||
                 data.rsvpSubmitted === true ||
                 (Boolean(data.createdAt) && Object.prototype.hasOwnProperty.call(data, 'invitedBy'));
+        }
+        /** Use import time for member-only records and RSVP creation time for public sign-ups. */
+        function signupAlertCreatedAt(data) {
+            return signupAlertTimestampMillis(data && (isImportedMemberRecord(data)
+                ? (data.importedAt || data.createdAt)
+                : data.createdAt));
         }
 
         /** Begin one alert session, retaining the previous successful login marker until the first guest snapshot arrives. */
@@ -2633,8 +2652,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     effectiveGuestDocs.forEach((guestDoc) => {
                         currentIds.add(guestDoc.id);
                         const data = guestDoc.data() || {};
-                        if (!isSignupAlertRsvp(data)) return;
-                        const signupAt = signupAlertTimestampMillis(data.createdAt);
+                        if (!isSignupAlertGuest(data)) return;
+                        const signupAt = signupAlertCreatedAt(data);
                         if (signupAt == null) return;
                         const personKey = normalizeGuestName(data.name) || guestDoc.id;
                         if (signupAlertPreviousLoginAt != null &&
@@ -2658,8 +2677,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         if (change.type !== 'added' || signupAlertSeenGuestIds.has(change.doc.id)) return;
                         signupAlertSeenGuestIds.add(change.doc.id);
                         const data = change.doc.data() || {};
-                        if (!isSignupAlertRsvp(data)) return;
-                        const signupAt = signupAlertTimestampMillis(data.createdAt);
+                        if (!isSignupAlertGuest(data)) return;
+                        const signupAt = signupAlertCreatedAt(data);
                         if (signupAt == null || signupAt >= signupAlertSessionStartedAt) {
                             signupAlertLivePersonKeys.add(normalizeGuestName(data.name) || change.doc.id);
                         }
