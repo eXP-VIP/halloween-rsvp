@@ -1437,8 +1437,8 @@
             let count = 0;
             if (mode === 'everyone') count = guests.size;
             if (mode === 'without_welcome') count = [...guests.keys()].filter(key => !withWelcome.has(key)).length;
-            output.textContent = String(count);
             output.dataset.fullAttendanceValue = String(count);
+            output.textContent = String(Math.round(count * attendanceForecastRate));
             if (description) description.textContent = ({
                 none: 'No extra drinks selected.',
                 without_welcome: 'One extra drink per guest without a welcome drink.',
@@ -1462,7 +1462,7 @@
             attendanceScaledStatIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
-                if (captureFullValues || el.dataset.fullAttendanceValue === undefined) el.dataset.fullAttendanceValue = el.textContent || '0';
+                if ((captureFullValues && id !== 'potentialExtraDrinkCount') || el.dataset.fullAttendanceValue === undefined) el.dataset.fullAttendanceValue = el.textContent || '0';
                 const raw = String(el.dataset.fullAttendanceValue || '0').trim();
                 const number = Number(raw.replace(/\./g, '').replace(',', '.')) || 0;
                 el.textContent = String(Math.round(number * attendanceForecastRate)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
