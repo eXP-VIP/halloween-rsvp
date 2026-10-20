@@ -252,6 +252,25 @@
         }
 
 
+        /* Keep Total / Live stat pairs side by side and scale values to the available card width. */
+        .stat-pair-grid {
+            container-type: inline-size;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            align-items: start;
+            gap: .5rem;
+            width: 100%;
+        }
+        .stat-pair-grid > div { min-width: 0; }
+        .stat-pair-value {
+            min-width: 0;
+            max-width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            font-size: clamp(.75rem, 8cqi, 1.875rem);
+            line-height: 2.25rem;
+            font-variant-numeric: tabular-nums;
+        }
         /* Guest-card actions share sizing. Green means the operation is complete and clicking will undo it. */
         .guest-action-btn {
             display: inline-flex;
@@ -601,14 +620,14 @@
                     <!-- Hotel receives only the operational guest total, its own check-in count, and country diversity. -->
                     <div id="hotelSummaryStats" class="staff-metric-card hidden mb-4">
                         <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</p>
-                        <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2 mt-2">
+                        <div class="stat-pair-grid mt-2">
                             <div class="min-w-0">
-                                <p id="hotelGuestTotalCount" class="text-[clamp(1.25rem,5vw,1.875rem)] leading-9 font-semibold text-gold tabular-nums whitespace-nowrap">0</p>
+                                <p id="hotelGuestTotalCount" class="stat-pair-value font-semibold tabular-nums text-gold">0</p>
                                 <p class="text-[10px] uppercase tracking-wider text-gray-400">Total</p>
                             </div>
                             <span class="text-2xl leading-9 text-gray-500">/</span>
                             <div class="min-w-0">
-                                <p id="hotelGuestCheckedInCount" class="text-[clamp(1.25rem,5vw,1.875rem)] leading-9 font-semibold text-emerald-200 tabular-nums whitespace-nowrap">0</p>
+                                <p id="hotelGuestCheckedInCount" class="stat-pair-value font-semibold tabular-nums text-emerald-200">0</p>
                                 <p class="text-[10px] uppercase tracking-wider text-gray-400">Check-in</p>
                             </div>
                         </div>
@@ -624,14 +643,14 @@
                         <div id="guestSummaryMetric" class="staff-metric-card">
                             <h5 class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</h5>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                                <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2">
+                                <div class="stat-pair-grid">
                                     <div class="min-w-0">
-                                        <p id="guestTotalCount" class="text-[clamp(1.25rem,5vw,1.875rem)] leading-9 font-semibold text-gold tabular-nums whitespace-nowrap">0</p>
+                                        <p id="guestTotalCount" class="stat-pair-value font-semibold tabular-nums text-gold">0</p>
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Total</p>
                                     </div>
                                     <span class="text-2xl leading-9 text-gray-500">/</span>
                                     <div class="min-w-0">
-                                        <p id="guestPaidCount" class="text-[clamp(1.25rem,5vw,1.875rem)] leading-9 font-semibold text-emerald-200 tabular-nums whitespace-nowrap">0</p>
+                                        <p id="guestPaidCount" class="stat-pair-value font-semibold tabular-nums text-emerald-200">0</p>
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Paid</p>
                                     </div>
                                 </div>
@@ -662,14 +681,14 @@
                         <div id="welcomeDrinkMetric" class="staff-metric-card">
                             <h5 class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Welcome drinks</h5>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                                <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2">
+                                <div class="stat-pair-grid">
                                     <div class="min-w-0">
-                                        <p id="drinkEstimateTotal" class="text-[clamp(1.25rem,5vw,1.875rem)] leading-9 font-semibold text-gold tabular-nums whitespace-nowrap">0</p>
+                                        <p id="drinkEstimateTotal" class="stat-pair-value font-semibold tabular-nums text-gold">0</p>
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Total</p>
                                     </div>
                                     <span class="text-2xl leading-9 text-gray-500">/</span>
                                     <div class="min-w-0">
-                                        <p id="welcomeDrinkChipCount" class="text-[clamp(1.25rem,5vw,1.875rem)] leading-9 font-semibold text-emerald-200 tabular-nums whitespace-nowrap">0</p>
+                                        <p id="welcomeDrinkChipCount" class="stat-pair-value font-semibold tabular-nums text-emerald-200">0</p>
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Issued</p>
                                     </div>
                                 </div>
@@ -700,14 +719,14 @@
                             <div class="flex flex-wrap items-center justify-between gap-2"><h5 class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Revenue (€)</h5><button type="button" id="attendance66Button" class="sort-option" onclick="toggleAttendanceForecast()">100% attendance</button></div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 items-start">
                                 <div class="min-w-0">
-                                    <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2">
+                                    <div class="stat-pair-grid">
                                         <div class="min-w-0">
-                                            <p id="fullAttendanceAmount" class="text-[clamp(1.125rem,4.5vw,1.875rem)] leading-9 font-semibold text-gold tabular-nums whitespace-nowrap">0</p>
+                                            <p id="fullAttendanceAmount" class="stat-pair-value font-semibold tabular-nums text-gold">0</p>
                                             <p class="text-[10px] uppercase tracking-wider text-gray-400">Tickets</p>
                                         </div>
                                         <span class="text-2xl leading-9 text-gray-500">/</span>
                                         <div class="min-w-0">
-                                            <p id="collectedAmount" class="text-[clamp(1.125rem,4.5vw,1.875rem)] leading-9 font-semibold text-emerald-200 tabular-nums whitespace-nowrap">0</p>
+                                            <p id="collectedAmount" class="stat-pair-value font-semibold tabular-nums text-emerald-200">0</p>
                                             <p class="text-[10px] uppercase tracking-wider text-gray-400">Paid</p>
                                         </div>
                                     </div>
