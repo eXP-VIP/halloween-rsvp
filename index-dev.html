@@ -692,13 +692,12 @@
                                     <h6 class="m-0 text-[10px] font-semibold uppercase tracking-wider text-gold-light">Extra drinks estimate</h6>
                                     <p id="potentialExtraDrinkCount" class="text-sm font-semibold text-gold tabular-nums whitespace-nowrap">0</p>
                                 </div>
-                                <div id="extraDrinkAdminControls" class="hidden flex flex-wrap gap-2" role="group" aria-label="Extra drink policy">
-                                    <button type="button" class="sort-option" data-extra-drink-mode="none" aria-pressed="false" onclick="setExtraDrinkMode('none')">None</button>
-                                    <button type="button" class="sort-option" data-extra-drink-mode="2" aria-pressed="false" onclick="setExtraDrinkMode('2')">2 per guest</button>
-                                    <button type="button" class="sort-option" data-extra-drink-mode="3" aria-pressed="false" onclick="setExtraDrinkMode('3')">3 per guest</button>
-                                    <button type="button" class="sort-option" data-extra-drink-mode="4" aria-pressed="false" onclick="setExtraDrinkMode('4')">4 per guest</button>
+                                <div id="extraDrinkAdminControls" class="hidden flex items-center gap-2" role="group" aria-label="Extra drinks per guest">
+                                    <button type="button" class="sort-option" aria-label="Decrease extra drinks per guest" title="Decrease" onclick="adjustExtraDrinkMode(-1)">−</button>
+                                    <span class="text-xs text-gray-200 whitespace-nowrap"><span id="extraDrinkPerGuestValue">1</span> per guest</span>
+                                    <button type="button" class="sort-option" aria-label="Increase extra drinks per guest" title="Increase" onclick="adjustExtraDrinkMode(1)">+</button>
                                 </div>
-                                <p id="extraDrinkEstimateExplanation" class="hidden text-[10px] text-gray-400 mt-2">Estimate = guests × selected drinks per guest, minus welcome drinks already included.</p>
+                                <p id="extraDrinkEstimateExplanation" class="hidden text-[10px] text-gray-400 mt-2">Estimate = Total Drinks − Welcome Drinks.</p>
                             </div>
                         </div>
                         <div id="collectedMetric" class="staff-metric-card">
@@ -1278,7 +1277,7 @@
         // Defaults for admission tiers, drink treatment and referral rewards; event_settings/pricing can override them.
         const DEFAULT_PRICING = {
             basePrices: { basics: 15, paidMembers: 5, friends: 20 },
-            extraDrinkMode: 'none',
+            extraDrinkMode: '1',
             drinkRules: {
                 basics: { mode: 'not_allowed', price: 0 },
                 paidMembers: { mode: 'not_allowed', price: 0 },
@@ -1318,7 +1317,9 @@
                 };
             };
             return {
-                extraDrinkMode: ['none', '2', '3', '4'].includes(String(raw.extraDrinkMode)) ? String(raw.extraDrinkMode) : DEFAULT_PRICING.extraDrinkMode,
+                extraDrinkMode: Number.isInteger(Number(raw.extraDrinkMode)) && Number(raw.extraDrinkMode) >= 0 && Number(raw.extraDrinkMode) <= 10
+                    ? String(raw.extraDrinkMode)
+                    : (String(raw.extraDrinkMode) === 'none' ? '1' : DEFAULT_PRICING.extraDrinkMode),
                 basePrices: {
                     basics: amount(raw.basePrices && raw.basePrices.basics, 15),
                     paidMembers: amount(raw.basePrices && raw.basePrices.paidMembers, 5),
@@ -1443,8 +1444,8 @@
             const output = document.getElementById('potentialExtraDrinkCount');
             const revenueOutput = document.getElementById('potentialExtraDrinkRevenue');
             if (!output) return;
-            const mode = String(pricingSettings.extraDrinkMode || 'none');
-            const multiplier = ['2', '3', '4'].includes(mode) ? Number(mode) : 0;
+            const mode = String(pricingSettings.extraDrinkMode || '1');
+            const multiplier = Number.isInteger(Number(mode)) && Number(mode) >= 0 && Number(mode) <= 10 ? Number(mode) : 1;
             const docs = Array.isArray(cachedGuestDocs) ? cachedGuestDocs : [];
             const guests = new Map();
             docs.forEach(doc => {
@@ -1524,7 +1525,7 @@
             if (!db) return;
             const status = document.getElementById('pricingSaveStatus');
             db.collection('event_settings').doc('pricing').set({
-                extraDrinkMode: pricingSettings.extraDrinkMode || 'none',
+                extraDrinkMode: pricingSettings.extraDrinkMode || '1',
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true }).then(() => {
                 if (status) status.textContent = 'Extra-drink policy saved.';
@@ -1533,29 +1534,20 @@
                 if (status) status.textContent = 'Could not save extra-drink policy.';
             });
         }
-        function setExtraDrinkMode(mode) {
-            if (currentStaffRole !== 'admin' || !['none', '2', '3', '4'].includes(String(mode))) return;
-            pricingSettings.extraDrinkMode = mode;
-            document.querySelectorAll('[data-extra-drink-mode]').forEach(button => {
-                const selected = button.dataset.extraDrinkMode === mode;
-                button.setAttribute('aria-pressed', selected ? 'true' : 'false');
-                button.classList.toggle('bg-gold/20', selected);
-                button.classList.toggle('border-gold', selected);
-                button.classList.toggle('text-gold', selected);
-            });
+        function adjustExtraDrinkMode(delta) {
+            if (currentStaffRole !== 'admin' || !Number.isInteger(delta)) return;
+            const current = Number(pricingSettings.extraDrinkMode || '1');
+            pricingSettings.extraDrinkMode = String(Math.max(0, Math.min(10, current + delta)));
+            const value = document.getElementById('extraDrinkPerGuestValue');
+            if (value) value.textContent = pricingSettings.extraDrinkMode;
             updateExtraDrinkForecastDisplay();
             saveExtraDrinkModeOnly();
         }
 
         /** Populate the admin pricing controls from the normalized settings document. */
         function renderPricingForm() {
-            document.querySelectorAll('[data-extra-drink-mode]').forEach(button => {
-                const selected = button.dataset.extraDrinkMode === (pricingSettings.extraDrinkMode || 'none');
-                button.setAttribute('aria-pressed', selected ? 'true' : 'false');
-                button.classList.toggle('bg-gold/20', selected);
-                button.classList.toggle('border-gold', selected);
-                button.classList.toggle('text-gold', selected);
-            });
+            const extraDrinkValue = document.getElementById('extraDrinkPerGuestValue');
+            if (extraDrinkValue) extraDrinkValue.textContent = pricingSettings.extraDrinkMode || '1';
             const fields = {
                 basePriceBasics: pricingSettings.basePrices.basics,
                 basePricePaidMembers: pricingSettings.basePrices.paidMembers,
@@ -1627,7 +1619,7 @@
                                 paidMembers: { mode: document.getElementById('drinkModePaidMembers').value, price: amount('drinkPricePaidMembers', 'Albatross drink upgrade') },
                                 friends: { mode: document.getElementById('drinkModeFriends').value, price: amount('drinkPriceFriends', 'RSVPs drink upgrade') }
                             },
-                            extraDrinkMode: pricingSettings.extraDrinkMode || 'none',
+                            extraDrinkMode: pricingSettings.extraDrinkMode || '1',
                             referralRules: {
                                 basics: { eligible: document.getElementById('referralEligibleBasics').checked, threshold: whole('referralThresholdBasics', 'Basics referral threshold') },
                                 paidMembers: { eligible: document.getElementById('referralEligiblePaidMembers').checked, threshold: whole('referralThresholdPaidMembers', 'Albatross referral threshold') },
