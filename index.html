@@ -697,8 +697,7 @@
                                     <button type="button" class="sort-option" data-extra-drink-mode="3" aria-pressed="false" onclick="setExtraDrinkMode('3')">3 per guest</button>
                                     <button type="button" class="sort-option" data-extra-drink-mode="4" aria-pressed="false" onclick="setExtraDrinkMode('4')">4 per guest</button>
                                 </div>
-                                <p id="extraDrinkPolicyDescription" class="hidden text-[10px] text-gray-400 mt-2"></p>
-                                <p class="text-[10px] text-gray-400 mt-2">Counts account for a welcome drink already included.</p>
+                                <p id="extraDrinkEstimateExplanation" class="hidden text-[10px] text-gray-400 mt-2">Counts account for a welcome drink already included.</p>
                             </div>
                         </div>
                         <div id="collectedMetric" class="staff-metric-card">
@@ -942,7 +941,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.20.10</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.20.11</p>
         </div>
     </footer>
 
@@ -1438,7 +1437,6 @@
         function updateExtraDrinkForecastDisplay() {
             const output = document.getElementById('potentialExtraDrinkCount');
             const revenueOutput = document.getElementById('potentialExtraDrinkRevenue');
-            const description = document.getElementById('extraDrinkPolicyDescription');
             if (!output) return;
             const mode = String(pricingSettings.extraDrinkMode || 'none');
             const multiplier = ['2', '3', '4'].includes(mode) ? Number(mode) : 0;
@@ -1467,12 +1465,6 @@
                 revenueOutput.dataset.fullAttendanceValue = String(count * 10);
                 revenueOutput.textContent = Math.round(count * attendanceForecastRate * 10).toLocaleString('de-DE');
             }
-            if (description) description.textContent = ({
-                none: 'No extra drinks estimated.',
-                '2': '2 drinks per guest, minus estimated welcome drinks.',
-                '3': '3 drinks per guest, minus estimated welcome drinks.',
-                '4': '4 drinks per guest, minus estimated welcome drinks.'
-            })[mode] || '';
         }
 
         let attendanceForecastRate = 1;
@@ -1514,8 +1506,11 @@
             attendanceForecastRate = attendanceForecastRate === 1 ? 0.66 : 1;
             applyAttendanceStatsView(false);
         }
-                function toggleAdminStatsView() {
-            if (!['admin', 'internations'].includes(currentStaffRole)) return;
+                function canToggleAdminStatsView(role = currentStaffRole) {
+            return role === 'admin' || role === 'internations';
+        }
+        function toggleAdminStatsView() {
+            if (!canToggleAdminStatsView()) return;
             const compact = document.body.classList.toggle('admin-stats-compact');
             const button = document.getElementById('adminStatsViewToggle');
             if (button) button.textContent = compact ? 'Full view' : 'Compact view';
@@ -2449,7 +2444,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             show('staffSummaryStats', role !== 'hotel');
             show('hotelSummaryStats', role === 'hotel');
             show('adminNewGuestMetric', role === 'admin');
-            show('adminStatsViewToggle', role === 'admin' || role === 'internations');
+            show('adminStatsViewToggle', canToggleAdminStatsView(role));
             // Sign-up history and import timestamps are administrative details, not operational check-in data.
             show('hotelSignupSortButton', role === 'admin');
             show('signupAlertArea', role === 'admin');
@@ -2463,6 +2458,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             show('adminToolsHeading', role === 'admin');
             show('adminPricingPanel', role === 'admin');
             show('extraDrinkEstimateSection', role === 'admin');
+            show('extraDrinkEstimateExplanation', role === 'admin');
             show('extraDrinkAdminControls', role === 'admin');
             show('internationsImportPanel', role === 'admin');
             show('databaseBackupPanel', role === 'admin');
