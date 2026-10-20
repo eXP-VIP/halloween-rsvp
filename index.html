@@ -686,7 +686,7 @@
                                     </table>
                                 </div>
                             </div>
-                            <div class="mt-3 pt-3 border-t border-gold/10">
+                            <div id="extraDrinkEstimateSection" class="hidden mt-3 pt-3 border-t border-gold/10">
                                 <div class="flex items-baseline justify-between gap-2 mb-2">
                                     <h6 class="m-0 text-[10px] font-semibold uppercase tracking-wider text-gold-light">Extra drinks estimate</h6>
                                     <p id="potentialExtraDrinkCount" class="text-sm font-semibold text-gold tabular-nums whitespace-nowrap">0</p>
@@ -942,7 +942,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.20.09</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.20.10</p>
         </div>
     </footer>
 
@@ -1226,6 +1226,15 @@
         /** Update the persistent mode banner and status shown to every staff role. */
         function updateEventCheckInModeUI() {
             const active = eventCheckInActive;
+            const visibleActions = currentStaffRole === 'admin'
+                ? 'Check-ins, payments, drink upgrades and welcome-drink chip actions'
+                : currentStaffRole === 'hotel'
+                    ? (twoStepCheckInEnabled ? 'Check-in actions' : '')
+                    : currentStaffRole === 'internations'
+                        ? (twoStepCheckInEnabled
+                            ? 'Payments, drink upgrades and welcome-drink chip actions'
+                            : 'Check-ins, payments, drink upgrades and welcome-drink chip actions')
+                        : '';
             const checkbox = document.getElementById('eventCheckInActive');
             if (checkbox) {
                 checkbox.checked = active;
@@ -1251,11 +1260,17 @@
                 title.classList.toggle('text-emerald-100', active);
                 title.textContent = IS_DEVELOPMENT_BUILD ? 'DEV PREVIEW · TEST MODE' : (active ? 'EVENT CHECK-IN ACTIVE · LIVE MODE' : 'EVENT CHECK-IN INACTIVE · TEST MODE');
             }
-            if (message) message.textContent = IS_DEVELOPMENT_BUILD
-                ? 'This DEV preview is always test-only. Check-ins, payments, drink upgrades and chip actions disappear on sign-out or reload; real guest registrations remain saved.'
-                : active
-                    ? 'Check-ins, payments, drink upgrades and chip actions are saved to the real guest records.'
-                    : 'Check-ins, payments, drink upgrades and chip actions are temporary in this browser tab. Real guest registrations remain saved.';
+            if (message) {
+                if (!visibleActions) {
+                    message.textContent = 'No operational actions are available to this role in the current workflow. Public guest registrations remain saved.';
+                } else if (IS_DEVELOPMENT_BUILD) {
+                    message.textContent = `This DEV preview is always test-only. ${visibleActions} are temporary in this browser tab and clear on sign-out or reload; public guest registrations remain saved.`;
+                } else if (active) {
+                    message.textContent = `${visibleActions} are saved permanently to the real guest records.`;
+                } else {
+                    message.textContent = `${visibleActions} are temporary in this browser tab. Public guest registrations remain saved.`;
+                }
+            }
         }
 
         // Defaults for admission tiers, drink treatment and referral rewards; event_settings/pricing can override them.
@@ -1500,7 +1515,7 @@
             applyAttendanceStatsView(false);
         }
                 function toggleAdminStatsView() {
-            if (currentStaffRole !== 'admin') return;
+            if (!['admin', 'internations'].includes(currentStaffRole)) return;
             const compact = document.body.classList.toggle('admin-stats-compact');
             const button = document.getElementById('adminStatsViewToggle');
             if (button) button.textContent = compact ? 'Full view' : 'Compact view';
@@ -2434,7 +2449,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             show('staffSummaryStats', role !== 'hotel');
             show('hotelSummaryStats', role === 'hotel');
             show('adminNewGuestMetric', role === 'admin');
-            show('adminStatsViewToggle', role === 'admin');
+            show('adminStatsViewToggle', role === 'admin' || role === 'internations');
             // Sign-up history and import timestamps are administrative details, not operational check-in data.
             show('hotelSignupSortButton', role === 'admin');
             show('signupAlertArea', role === 'admin');
@@ -2447,10 +2462,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
             show('adminToolsHeading', role === 'admin');
             show('adminPricingPanel', role === 'admin');
+            show('extraDrinkEstimateSection', role === 'admin');
             show('extraDrinkAdminControls', role === 'admin');
             show('internationsImportPanel', role === 'admin');
             show('databaseBackupPanel', role === 'admin');
             applyWorkflowRoleVisibility();
+            updateEventCheckInModeUI();
         }
 
         /** Display a staff sign-in or access-denied message in the dedicated feedback area. */
