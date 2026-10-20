@@ -544,8 +544,8 @@
                 <div class="flex justify-between items-center gap-4 mb-5 border-b border-gold/20 pb-4">
                     <div class="min-w-0">
                         <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Management Portal</h3>
-                        <p class="text-xs text-gray-400 mt-1">Guest list, check-in, payment and event administration</p>
-                         <p id="adminPortalBuildVersion" class="hidden text-[9px] text-gray-500 mt-1 tracking-wide" aria-label="Application build version">Development build 2026.10.20.14</p>
+                        <p id="adminPortalDescription" class="text-xs text-gray-400 mt-1">Guest list, check-in, payment and event administration</p>
+                         <p id="adminPortalBuildVersion" class="hidden text-[9px] text-gray-500 mt-1 tracking-wide" aria-label="Application build version">Development build 2026.10.20.15</p>
                     </div>
                     <button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white shrink-0"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
@@ -931,6 +931,7 @@
 
                 </div>
             </div>
+            <p id="adminPortalFooterBuildVersion" class="hidden text-[9px] text-gray-600 mt-2 tracking-wide text-center" aria-label="Application build version">Development build 2026.10.20.15</p>
         </div>
     </main>
 
@@ -940,11 +941,11 @@
         </div>
         <p class="font-serif tracking-wider">THE DEAN AFTER DARK</p>
         <p class="mt-1">The Dean Munich, Autograph Collection by Marriott</p>
-        <p class="mt-1 text-gray-400"><a href="https://www.google.com/maps/search/?api=1&amp;query=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" target="_blank" rel="noopener noreferrer" class="underline decoration-gold/50 underline-offset-4 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Open The Dean Munich address in Google Maps">Landsberger Straße 68, 80339 München <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1" aria-hidden="true"></i></a></p>
-        <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
+        <p class="mt-1 text-gray-400"><a href="https://www.google.com/maps/search/?api=1&amp;query=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" target="_blank" rel="noopener noreferrer" class="underline decoration-gold/50 underline-offset-4 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Open The Dean Munich address in Google Maps">Landsberger Straße 68, 80339 München · Westend <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1" aria-hidden="true"></i></a></p>
+        <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.20.14</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.20.15</p>
         </div>
     </footer>
 
@@ -2439,6 +2440,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         function applyStaffRole(role) {
             if (!STAFF_ROLES.includes(role)) throw new Error('The account does not have a valid staff role.');
             currentStaffRole = role;
+            const portalDescription = document.getElementById('adminPortalDescription');
+            if (portalDescription) portalDescription.textContent = role === 'admin'
+                ? 'Guest list, check-in, payment and event administration'
+                : role === 'internations'
+                    ? 'Guest list, check-in and payment'
+                    : 'Guest list and check-in';
             guestSortBy = role === 'admin' ? 'signupNewest' : 'firstName';
             // Admin defaults to newest sign-up; Hotel defaults to first name.
             applyGuestSorts();
@@ -2456,6 +2463,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             show('adminNewGuestMetric', role === 'admin');
             show('adminStatsViewToggle', canToggleAdminStatsView(role));
             show('adminPortalBuildVersion', role === 'admin');
+            show('adminPortalFooterBuildVersion', role === 'admin');
             // Sign-up history and import timestamps are administrative details, not operational check-in data.
             show('hotelSignupSortButton', role === 'admin');
             show('signupAlertArea', role === 'admin');
@@ -3265,6 +3273,34 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     if (invitedBy) metaParts.push('Invited by: ' + invitedBy);
                     guestMeta.textContent = metaParts.join(' · ');
 
+                    // Show member referral status on every Admin/InterNations guest list,
+                    // including not-yet-checked-in members. RSVP referral badges remain in payment views.
+                    if (referralBadgeState && currentStaffRole !== 'hotel' && (isPaymentCard || isMemberRecord)) {
+                        const badge = document.createElement('span');
+                        const isNonEligibleReferral = referralBadgeState.startsWith('noneligible-');
+                        const referralStage = isNonEligibleReferral ? referralBadgeState.slice('noneligible-'.length) : referralBadgeState;
+                        const referralStageCopy = referralStage === 'insufficient'
+                            ? 'The required number of referrals has not yet registered.'
+                            : referralStage === 'pending'
+                                ? 'Enough referrals are registered, but the required number have not all checked in and paid yet.'
+                                : 'Enough referrals have checked in and paid.';
+                        badge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-bold tracking-wider ' +
+                            (referralStage === 'insufficient'
+                                ? 'border-slate-300/70 bg-slate-200/10 text-slate-200'
+                                : referralStage === 'pending'
+                                    ? 'border-amber-400/60 bg-amber-800/30 text-amber-100'
+                                    : 'border-amber-300 bg-amber-300/20 text-amber-100 shadow-sm shadow-amber-400/20');
+                        badge.textContent = isNonEligibleReferral
+                            ? 'REFERRAL NON ELIGIBLE'
+                            : referralStage === 'insufficient'
+                                ? 'REFERRAL INSUFFICIENT'
+                                : referralStage === 'pending' ? 'REFERRAL PENDING' : 'REFERRAL DRINK';
+                        badge.title = (isNonEligibleReferral
+                            ? 'This member is not eligible for a referral drink. '
+                            : '') + referralStageCopy;
+                        titleLine.appendChild(badge);
+                    }
+
                     const actions = document.createElement('div');
                     actions.className = mode === 'combined'
                         ? 'flex w-full min-w-0 flex-wrap items-center gap-2 self-stretch sm:w-auto sm:shrink-0 sm:self-center'
@@ -3300,32 +3336,6 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     };
 
                     if (isPaymentCard) {
-                        if (referralBadgeState) {
-                            const badge = document.createElement('span');
-                            const isNonEligibleReferral = referralBadgeState.startsWith('noneligible-');
-                            const referralStage = isNonEligibleReferral ? referralBadgeState.slice('noneligible-'.length) : referralBadgeState;
-                            const referralStageCopy = referralStage === 'insufficient'
-                                ? 'The required number of referrals has not yet registered.'
-                                : referralStage === 'pending'
-                                    ? 'Enough referrals are registered, but the required number have not all checked in and paid yet.'
-                                    : 'Enough referrals have checked in and paid.';
-                            badge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-bold tracking-wider ' +
-                                (referralStage === 'insufficient'
-                                    ? 'border-slate-300/70 bg-slate-200/10 text-slate-200'
-                                    : referralStage === 'pending'
-                                        ? 'border-amber-400/60 bg-amber-800/30 text-amber-100'
-                                        : 'border-amber-300 bg-amber-300/20 text-amber-100 shadow-sm shadow-amber-400/20');
-                            badge.textContent = isNonEligibleReferral
-                                ? 'REFERRAL NON ELIGIBLE'
-                                : referralStage === 'insufficient'
-                                    ? 'REFERRAL INSUFFICIENT'
-                                    : referralStage === 'pending' ? 'REFERRAL PENDING' : 'REFERRAL DRINK';
-                            badge.title = (isNonEligibleReferral
-                                ? 'This member is not eligible for a referral drink. '
-                                : '') + referralStageCopy;
-                            titleLine.appendChild(badge);
-                        }
-
                         if (charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued &&
                             (upgradeCanBeSelected || charge.upgradeSelected)) {
                             const upgradeButton = document.createElement('button');
