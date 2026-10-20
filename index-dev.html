@@ -686,8 +686,9 @@
                                 <p class="text-[10px] uppercase tracking-wider text-gray-300 mb-2">Extra drinks estimate</p>
                                 <div id="extraDrinkAdminControls" class="hidden flex flex-wrap gap-2" role="group" aria-label="Extra drink policy">
                                     <button type="button" class="sort-option" data-extra-drink-mode="none" aria-pressed="false" onclick="setExtraDrinkMode('none')">None</button>
-                                    <button type="button" class="sort-option" data-extra-drink-mode="without_welcome" aria-pressed="false" onclick="setExtraDrinkMode('without_welcome')">Guests without Welcome drink</button>
-                                    <button type="button" class="sort-option" data-extra-drink-mode="everyone" aria-pressed="false" onclick="setExtraDrinkMode('everyone')">All guests</button>
+                                    <button type="button" class="sort-option" data-extra-drink-mode="2" aria-pressed="false" onclick="setExtraDrinkMode('2')">2 per guest</button>
+                                    <button type="button" class="sort-option" data-extra-drink-mode="3" aria-pressed="false" onclick="setExtraDrinkMode('3')">3 per guest</button>
+                                    <button type="button" class="sort-option" data-extra-drink-mode="4" aria-pressed="false" onclick="setExtraDrinkMode('4')">4 per guest</button>
                                 </div>
                                 <p id="extraDrinkPolicyDescription" class="hidden text-[10px] text-gray-400 mt-2"></p>
                             </div>
@@ -710,6 +711,7 @@
                                     <div class="mt-3 pt-3 border-t border-gold/10">
                                         <p id="potentialExtraDrinkCount" class="text-3xl font-semibold text-gold tabular-nums">0</p>
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Drinks estimate</p>
+                                        <p id="potentialExtraDrinkTotalCount" class="text-[10px] text-gray-400 mt-1">0 extra drinks total</p>
                                         <p class="text-[10px] text-gray-400 mt-1">Reference price: €10 per drink.</p>
                                     </div>
                                 </div>
@@ -933,7 +935,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.20.05</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.20.06</p>
         </div>
     </footer>
 
@@ -1292,7 +1294,7 @@
                 };
             };
             return {
-                extraDrinkMode: ['none', 'without_welcome', 'everyone'].includes(raw.extraDrinkMode) ? raw.extraDrinkMode : DEFAULT_PRICING.extraDrinkMode,
+                extraDrinkMode: ['none', '2', '3', '4'].includes(String(raw.extraDrinkMode)) ? String(raw.extraDrinkMode) : DEFAULT_PRICING.extraDrinkMode,
                 basePrices: {
                     basics: amount(raw.basePrices && raw.basePrices.basics, 15),
                     paidMembers: amount(raw.basePrices && raw.basePrices.paidMembers, 5),
@@ -1413,9 +1415,11 @@
 
         function updateExtraDrinkForecastDisplay() {
             const output = document.getElementById('potentialExtraDrinkCount');
+            const totalCountOutput = document.getElementById('potentialExtraDrinkTotalCount');
             const description = document.getElementById('extraDrinkPolicyDescription');
             if (!output) return;
-            const mode = pricingSettings.extraDrinkMode || 'none';
+            const mode = String(pricingSettings.extraDrinkMode || 'none');
+            const multiplier = ['2', '3', '4'].includes(mode) ? Number(mode) : 0;
             const docs = Array.isArray(cachedGuestDocs) ? cachedGuestDocs : [];
             const guests = new Map();
             docs.forEach(doc => {
@@ -1430,15 +1434,22 @@
                 const rule = pricingSettings.drinkRules[getGuestTier(data)] || { mode: 'not_allowed' };
                 if (rule.mode === 'included' || Boolean(data.welcomeDrinkUpgradeSelected)) withWelcome.add(key);
             });
-            let count = 0;
-            if (mode === 'everyone') count = guests.size;
-            if (mode === 'without_welcome') count = [...guests.keys()].filter(key => !withWelcome.has(key)).length;
+            const welcomeDrinkCount = [...guests.values()].reduce((total, data) => {
+                const key = normalizeGuestName(data.name);
+                return total + (key && withWelcome.has(key) ? 1 : 0);
+            }, 0);
+            const count = Math.max(0, guests.size * multiplier - welcomeDrinkCount);
             output.dataset.fullAttendanceValue = String(count);
-            output.textContent = '€' + Math.round(count * attendanceForecastRate * 10).toLocaleString('de-DE');
+            output.textContent = Math.round(count * attendanceForecastRate * 10).toLocaleString('de-DE');
+            if (totalCountOutput) {
+                totalCountOutput.dataset.fullAttendanceValue = String(count);
+                totalCountOutput.textContent = Math.round(count * attendanceForecastRate).toLocaleString('de-DE') + ' extra drinks total';
+            }
             if (description) description.textContent = ({
-                none: 'No extra drinks selected.',
-                without_welcome: 'One extra drink per guest without a welcome drink.',
-                everyone: 'One extra drink per registered guest, including guests with a welcome drink.'
+                none: 'No extra drinks estimated.',
+                '2': '2 drinks per guest, minus estimated welcome drinks.',
+                '3': '3 drinks per guest, minus estimated welcome drinks.',
+                '4': '4 drinks per guest, minus estimated welcome drinks.'
             })[mode] || '';
         }
 
@@ -1466,7 +1477,12 @@
             const countEl = document.getElementById('potentialExtraDrinkCount');
             if (countEl) {
                 if (countEl.dataset.fullAttendanceValue === undefined) countEl.dataset.fullAttendanceValue = '0';
-                countEl.textContent = '€' + Math.round(parseStatAmount(countEl.dataset.fullAttendanceValue) * attendanceForecastRate * 10).toLocaleString('de-DE');
+                countEl.textContent = Math.round(parseStatAmount(countEl.dataset.fullAttendanceValue) * attendanceForecastRate * 10).toLocaleString('de-DE');
+            }
+            const totalCountEl = document.getElementById('potentialExtraDrinkTotalCount');
+            if (totalCountEl) {
+                if (totalCountEl.dataset.fullAttendanceValue === undefined) totalCountEl.dataset.fullAttendanceValue = '0';
+                totalCountEl.textContent = Math.round(parseStatAmount(totalCountEl.dataset.fullAttendanceValue) * attendanceForecastRate).toLocaleString('de-DE') + ' extra drinks total';
             }
             const button = document.getElementById('attendance66Button');
             if (button) button.textContent = attendanceForecastRate === 1 ? '100% attendance' : '66% attendance';
@@ -1496,7 +1512,7 @@
             });
         }
         function setExtraDrinkMode(mode) {
-            if (currentStaffRole !== 'admin' || !['none', 'without_welcome', 'everyone'].includes(mode)) return;
+            if (currentStaffRole !== 'admin' || !['none', '2', '3', '4'].includes(String(mode))) return;
             pricingSettings.extraDrinkMode = mode;
             document.querySelectorAll('[data-extra-drink-mode]').forEach(button => {
                 const selected = button.dataset.extraDrinkMode === mode;
