@@ -405,12 +405,10 @@
         /* Page modes keep the public landing content out of staff and RSVP-confirmation views. */
         body.staff-mode main > header,
         body.staff-mode main > section,
-        body.staff-mode footer { display: none !important; }
         body.staff-mode main { width: 100%; max-width: 96rem; padding-top: 1rem; padding-bottom: 1rem; }
         body.staff-mode #hostessPortal { margin-top: 0; margin-bottom: 0; }
         body.confirmation-mode main > header,
         body.confirmation-mode main > section:not(#rsvp-section),
-        body.confirmation-mode footer { display: none !important; }
         body.confirmation-mode main { padding-top: 1rem; padding-bottom: 1rem; }
         body.confirmation-mode #rsvpIntro { display: none !important; }
         body.confirmation-mode #rsvp-section { margin-bottom: 1rem; }
@@ -548,7 +546,6 @@
                             <span id="staffIdentity" class="hidden text-xs text-gray-300 break-all">Signed in as <span id="staffIdentityUsername" class="text-gold font-semibold"></span></span>
                         </div>
                         <p id="adminPortalDescription" class="text-xs text-gray-400 mt-1">Guest list, check-in, payment and event administration</p>
-                         <p id="adminPortalBuildVersion" class="hidden text-[9px] text-gray-500 mt-1 tracking-wide" aria-label="Application build version">Development build 2026.10.20.15</p>
                     </div>
                     <button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white shrink-0"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
@@ -618,7 +615,7 @@
                         <div class="mt-3 pt-3 border-t border-gold/10 flex flex-wrap items-center gap-2">
                             <span class="inline-flex items-center gap-1.5 rounded-full border border-sky-400/30 bg-sky-950/30 px-3 py-1 text-[10px] text-sky-200">
                                 <span id="hotelGuestCountryCount" class="font-semibold text-sky-100 tabular-nums">0</span>
-                                <span>Countries represented</span>
+                                <span>Countries</span>
                             </span>
                         </div>
                     </div>
@@ -658,7 +655,7 @@
                                 </span>
                                 <span class="inline-flex items-center gap-1.5 rounded-full border border-sky-400/30 bg-sky-950/30 px-3 py-1 text-[10px] text-sky-200">
                                     <span id="guestCountryCount" class="font-semibold text-sky-100 tabular-nums">0</span>
-                                    <span>Countries represented</span>
+                                    <span>Countries</span>
                                 </span>
                             </div>
                         </div>
@@ -689,12 +686,12 @@
                             </div>
                             <div id="extraDrinkEstimateSection" class="hidden mt-3 pt-3 border-t border-gold/10">
                                 <div class="flex items-baseline justify-between gap-2 mb-2">
-                                    <h6 class="m-0 text-[10px] font-semibold uppercase tracking-wider text-gold-light">Extra drinks (Welcome Drinks excluded)</h6>
+                                    <h6 class="m-0 text-[10px] font-semibold uppercase tracking-wider text-gold-light">Extra drinks</h6>
                                     <p id="potentialExtraDrinkCount" class="text-sm font-semibold text-gold tabular-nums whitespace-nowrap">0</p>
                                 </div>
                                 <div id="extraDrinkAdminControls" class="hidden flex items-center gap-2" role="group" aria-label="Extra drinks per guest">
                                     <button type="button" class="sort-option" aria-label="Decrease extra drinks per guest" title="Decrease" onclick="adjustExtraDrinkMode(-1)">−</button>
-                                    <span class="text-xs text-gray-200 whitespace-nowrap"><span id="extraDrinkPerGuestValue">1</span> per guest</span>
+                                    <span class="text-xs text-gray-200 whitespace-nowrap"><span id="extraDrinkPerGuestValue">1</span> drinks per guest</span>
                                     <button type="button" class="sort-option" aria-label="Increase extra drinks per guest" title="Increase" onclick="adjustExtraDrinkMode(1)">+</button>
                                 </div>
                             </div>
@@ -927,7 +924,6 @@
 
                 </div>
             </div>
-            <p id="adminPortalFooterBuildVersion" class="hidden text-[9px] text-gray-600 mt-2 tracking-wide text-center" aria-label="Application build version">Development build 2026.10.20.15</p>
         </div>
     </main>
 
@@ -941,7 +937,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.20.15</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.04</p>
         </div>
     </footer>
 
@@ -2451,8 +2447,6 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             show('hotelSummaryStats', role === 'hotel');
             show('adminNewGuestMetric', role === 'admin');
             show('adminStatsViewToggle', canToggleAdminStatsView(role));
-            show('adminPortalBuildVersion', role === 'admin');
-            show('adminPortalFooterBuildVersion', role === 'admin');
             // Sign-up history and import timestamps are administrative details, not operational check-in data.
             show('hotelSignupSortButton', role === 'admin');
             show('signupAlertArea', role === 'admin');
