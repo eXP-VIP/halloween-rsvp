@@ -543,7 +543,10 @@
             <div class="glass-panel rounded-2xl p-5 sm:p-8 max-w-none w-full mx-auto gold-border-glow">
                 <div class="flex justify-between items-center gap-4 mb-5 border-b border-gold/20 pb-4">
                     <div class="min-w-0">
-                        <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Management Portal</h3>
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Management Portal</h3>
+                            <span id="staffIdentity" class="hidden text-xs text-gray-300 break-all"></span>
+                        </div>
                         <p id="adminPortalDescription" class="text-xs text-gray-400 mt-1">Guest list, check-in, payment and event administration</p>
                          <p id="adminPortalBuildVersion" class="hidden text-[9px] text-gray-500 mt-1 tracking-wide" aria-label="Application build version">Live build 2026.10.20.15</p>
                     </div>
@@ -570,11 +573,7 @@
                     <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">Firebase Authentication or Firestore is unavailable. Check the project configuration and security rules.</p>
                 </div>
                 <div id="guestlistSection" class="hidden">
-                    <h4 class="staff-subheading mb-2">Signed in</h4>
-                    <div id="staffIdentityBar" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gold/20 bg-black/30 px-3 py-2 mb-4">
-                        <p id="staffIdentity" class="text-[10px] text-gray-300 break-all">Signed in</p>
-                        <span class="text-[9px] text-emerald-200 uppercase tracking-wider">SIGNED IN</span>
-                    </div>
+
                     <div id="eventCheckInModeBanner" class="rounded-lg border border-amber-400/40 bg-amber-950/30 px-3 py-2 mb-4" role="status" aria-live="polite">
                         <p id="eventCheckInModeTitle" class="text-xs font-semibold uppercase tracking-wider text-amber-100">EVENT CHECK-IN INACTIVE · TEST MODE</p>
                         <p id="eventCheckInModeMessage" class="text-xs text-gray-200 mt-1">Check-ins, payments, drink upgrades and chip actions are temporary in this browser tab. Real guest registrations remain saved.</p>
@@ -2580,7 +2579,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 applyStaffRole(profile.role);
                 activeStaffUid = user.uid;
                 beginSignupAlertSession(user.uid);
-                document.getElementById('staffIdentity').textContent = 'Signed in as ' + username;
+                const staffIdentity = document.getElementById('staffIdentity');
+                staffIdentity.textContent = username;
+                staffIdentity.classList.remove('hidden');
                 document.getElementById('staffLoginSection').classList.add('hidden');
                 document.getElementById('guestlistSection').classList.remove('hidden');
                 document.getElementById('staffLoginError').classList.add('hidden');
