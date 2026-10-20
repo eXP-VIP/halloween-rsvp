@@ -545,7 +545,7 @@
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                             <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Management Portal</h3>
-                            <span id="staffIdentity" class="hidden text-xs text-gray-300 break-all"></span>
+                            <span id="staffIdentity" class="hidden text-xs text-gray-300 break-all">Signed in as <span id="staffIdentityUsername" class="text-gold font-semibold"></span></span>
                         </div>
                         <p id="adminPortalDescription" class="text-xs text-gray-400 mt-1">Guest list, check-in, payment and event administration</p>
                          <p id="adminPortalBuildVersion" class="hidden text-[9px] text-gray-500 mt-1 tracking-wide" aria-label="Application build version">Development build 2026.10.20.15</p>
@@ -689,7 +689,7 @@
                             </div>
                             <div id="extraDrinkEstimateSection" class="hidden mt-3 pt-3 border-t border-gold/10">
                                 <div class="flex items-baseline justify-between gap-2 mb-2">
-                                    <h6 class="m-0 text-[10px] font-semibold uppercase tracking-wider text-gold-light">Extra drinks estimate</h6>
+                                    <h6 class="m-0 text-[10px] font-semibold uppercase tracking-wider text-gold-light">Extra drinks (Welcome Drinks excluded)</h6>
                                     <p id="potentialExtraDrinkCount" class="text-sm font-semibold text-gold tabular-nums whitespace-nowrap">0</p>
                                 </div>
                                 <div id="extraDrinkAdminControls" class="hidden flex items-center gap-2" role="group" aria-label="Extra drinks per guest">
@@ -697,7 +697,6 @@
                                     <span class="text-xs text-gray-200 whitespace-nowrap"><span id="extraDrinkPerGuestValue">1</span> per guest</span>
                                     <button type="button" class="sort-option" aria-label="Increase extra drinks per guest" title="Increase" onclick="adjustExtraDrinkMode(1)">+</button>
                                 </div>
-                                <p id="extraDrinkEstimateExplanation" class="hidden text-[10px] text-gray-400 mt-2">Estimate = Total Drinks − Welcome Drinks.</p>
                             </div>
                         </div>
                         <div id="collectedMetric" class="staff-metric-card">
@@ -707,7 +706,7 @@
                                     <div class="flex items-center gap-2">
                                         <div class="min-w-0">
                                             <p id="fullAttendanceAmount" class="text-3xl font-semibold text-gold tabular-nums">0</p>
-                                            <p class="text-[10px] uppercase tracking-wider text-gray-400">Tickets estimate</p>
+                                            <p class="text-[10px] uppercase tracking-wider text-gray-400">Tickets</p>
                                         </div>
                                         <span class="text-2xl text-gray-500">/</span>
                                         <div class="min-w-0">
@@ -717,8 +716,7 @@
                                     </div>
                                     <div class="mt-3 pt-3 border-t border-gold/10">
                                         <p id="potentialExtraDrinkRevenue" class="text-3xl font-semibold text-gold tabular-nums">0</p>
-                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Drinks estimate</p>
-                                        <p class="text-[10px] text-gray-400 mt-1">Reference price: €10 per drink.</p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Drinks (at €10 avg.)</p>
                                     </div>
                                 </div>
                                 <div class="min-w-0 flex items-start justify-end">
@@ -2468,7 +2466,6 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             show('adminToolsHeading', role === 'admin');
             show('adminPricingPanel', role === 'admin');
             show('extraDrinkEstimateSection', role === 'admin');
-            show('extraDrinkEstimateExplanation', role === 'admin');
             show('extraDrinkAdminControls', role === 'admin');
             show('internationsImportPanel', role === 'admin');
             show('databaseBackupPanel', role === 'admin');
@@ -2539,7 +2536,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             updateSignupAlertsUI();
             document.getElementById('staffLoginSection').classList.remove('hidden');
             document.getElementById('guestlistSection').classList.add('hidden');
-            document.getElementById('staffIdentity').textContent = '';
+            document.getElementById('staffIdentity').classList.add('hidden');
+            document.getElementById('staffIdentityUsername').textContent = '';
             document.getElementById('staffPassword').value = '';
         }
 
@@ -2572,7 +2570,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 activeStaffUid = user.uid;
                 beginSignupAlertSession(user.uid);
                 const staffIdentity = document.getElementById('staffIdentity');
-                staffIdentity.textContent = username;
+                document.getElementById('staffIdentityUsername').textContent = username;
                 staffIdentity.classList.remove('hidden');
                 document.getElementById('staffLoginSection').classList.add('hidden');
                 document.getElementById('guestlistSection').classList.remove('hidden');
