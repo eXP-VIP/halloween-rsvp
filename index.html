@@ -431,7 +431,8 @@
             <p class="hero-meta font-medium text-xs sm:text-sm tracking-[0.12em] sm:tracking-[0.18em] uppercase leading-relaxed">Halloween Soirée <span class="text-gold px-1">•</span> Saturday, 31 October 2026</p>
             <p class="hero-time text-sm mt-2">From 18:00 <span class="text-gold">·</span> Open end</p>
             <p class="hero-host text-xs font-serif tracking-wider uppercase mt-3">Hosted by Ari</p>
-            <p class="hero-venue text-xs sm:text-sm mt-2">The Dean Munich, Autograph Collection by Marriott <span class="text-amber-200">·</span> Westend</p>
+            <p class="hero-venue text-xs sm:text-sm mt-2">The Dean Munich, Autograph Collection by Marriott</p>
+            <p class="text-xs sm:text-sm text-gray-300 mt-1"><a href="https://www.google.com/maps/search/?api=1&amp;query=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" target="_blank" rel="noopener noreferrer" class="underline decoration-gold/50 underline-offset-4 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Open The Dean Munich address in Google Maps">Landsberger Straße 68, 80339 München · Westend <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1" aria-hidden="true"></i></a></p>
             <div class="flex items-center justify-center mt-6">
                 <a href="#rsvp-section" class="gold-btn inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg uppercase font-serif text-xs tracking-[0.14em]">Join the Guest List <i class="fa-solid fa-arrow-down-long"></i></a>
             </div>
@@ -544,6 +545,7 @@
                     <div class="min-w-0">
                         <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Management Portal</h3>
                         <p class="text-xs text-gray-400 mt-1">Guest list, check-in, payment and event administration</p>
+                         <p id="adminPortalBuildVersion" class="hidden text-[9px] text-gray-500 mt-1 tracking-wide" aria-label="Application build version">Live build 2026.10.20.14</p>
                     </div>
                     <button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white shrink-0"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
@@ -697,7 +699,7 @@
                                     <button type="button" class="sort-option" data-extra-drink-mode="3" aria-pressed="false" onclick="setExtraDrinkMode('3')">3 per guest</button>
                                     <button type="button" class="sort-option" data-extra-drink-mode="4" aria-pressed="false" onclick="setExtraDrinkMode('4')">4 per guest</button>
                                 </div>
-                                <p id="extraDrinkEstimateExplanation" class="hidden text-[10px] text-gray-400 mt-2">Counts account for a welcome drink already included.</p>
+                                <p id="extraDrinkEstimateExplanation" class="hidden text-[10px] text-gray-400 mt-2">Estimate = guests × selected drinks per guest, minus welcome drinks already included.</p>
                             </div>
                         </div>
                         <div id="collectedMetric" class="staff-metric-card">
@@ -937,11 +939,12 @@
             <a href="https://wa.me/4917681117359" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn"><i class="fa-brands fa-whatsapp"></i> Questions? Chat with Ari on WhatsApp</a>
         </div>
         <p class="font-serif tracking-wider">THE DEAN AFTER DARK</p>
-        <p class="mt-1">The Dean Munich, Autograph Collection by Marriott <span class="text-gold">·</span> <a href="https://www.google.com/maps/search/?api=1&amp;query=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" target="_blank" rel="noopener noreferrer" class="underline decoration-gold/50 underline-offset-4 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Open The Dean Munich address in Google Maps">Landsberger Straße 68, Munich <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1" aria-hidden="true"></i></a></p>
+        <p class="mt-1">The Dean Munich, Autograph Collection by Marriott</p>
+        <p class="mt-1 text-gray-400"><a href="https://www.google.com/maps/search/?api=1&amp;query=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" target="_blank" rel="noopener noreferrer" class="underline decoration-gold/50 underline-offset-4 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Open The Dean Munich address in Google Maps">Landsberger Straße 68, 80339 München <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1" aria-hidden="true"></i></a></p>
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 · Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.20.13</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.20.14</p>
         </div>
     </footer>
 
@@ -1388,19 +1391,21 @@
             return isReferralDrinkEligible(data) && drink.mode !== 'included' && Number(registeredReferralCount || 0) >= rule.threshold;
         }
         /** Derive one mutually exclusive referral badge state from eligibility, pending and earned conditions. */
-        function getReferralBadgeState(data, registeredReferralCount, qualifiedReferralCount) {
+        function getReferralBadgeState(data, registeredReferralCount, qualifiedReferralCount, isMemberRecord = false) {
             const tier = getGuestTier(data);
             const rule = pricingSettings.referralRules[tier] || { eligible: false, threshold: 2 };
             const drink = pricingSettings.drinkRules[tier] || { mode: 'not_allowed', price: 0 };
             const threshold = Math.max(1, Number(rule.threshold) || 2);
             const registered = Number(registeredReferralCount || 0);
             const qualified = Number(qualifiedReferralCount || 0);
-            // Referral badges apply only when a category can earn an additional referral drink.
-            // Included drinks are already covered and must not show a second referral entitlement.
-            if (!rule.eligible || drink.mode === 'included') return '';
-            if (registered < threshold) return 'insufficient';
-            if (qualified < threshold) return 'pending';
-            return 'earned';
+            const stage = registered < threshold ? 'insufficient'
+                : qualified < threshold ? 'pending' : 'earned';
+            // Members outside the referral reward programme still get the matching stage color,
+            // but the label makes clear that the status is informational, not a reward entitlement.
+            if (!rule.eligible || drink.mode === 'included') {
+                return isMemberRecord ? 'noneligible-' + stage : '';
+            }
+            return stage;
         }
 
         /** Read the persisted welcome-drink chip state, including supported legacy field shapes. */
@@ -2450,6 +2455,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             show('hotelSummaryStats', role === 'hotel');
             show('adminNewGuestMetric', role === 'admin');
             show('adminStatsViewToggle', canToggleAdminStatsView(role));
+            show('adminPortalBuildVersion', role === 'admin');
             // Sign-up history and import timestamps are administrative details, not operational check-in data.
             show('hotelSignupSortButton', role === 'admin');
             show('signupAlertArea', role === 'admin');
@@ -3144,10 +3150,10 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     const qualifiedCount = referralTracking.qualifiedGuestIds.size;
                     const inviterIdentity = guestByNameKey.get(inviterKey)?.data || data;
                     const welcomeDrinkEarned = hasEarnedReferralDrink(inviterIdentity, qualifiedCount);
-                    const referralBadgeState = getReferralBadgeState(inviterIdentity, invitedCount, qualifiedCount);
                     const matchedMemberData = findImportedMemberData(data);
                     const memberDetails = isImportedMemberRecord(data) ? data : (matchedMemberData || data);
                     const isMemberRecord = isImportedMemberRecord(data) || Boolean(matchedMemberData);
+                    const referralBadgeState = getReferralBadgeState(inviterIdentity, invitedCount, qualifiedCount, isMemberRecord);
                     const isPaymentCard = mode === 'payment' || mode === 'combined';
                     const isPaid = Boolean(data.paid);
                     const paymentComplete = isPaymentCard && isPaymentWorkflowComplete(item);
@@ -3296,20 +3302,27 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     if (isPaymentCard) {
                         if (referralBadgeState) {
                             const badge = document.createElement('span');
+                            const isNonEligibleReferral = referralBadgeState.startsWith('noneligible-');
+                            const referralStage = isNonEligibleReferral ? referralBadgeState.slice('noneligible-'.length) : referralBadgeState;
+                            const referralStageCopy = referralStage === 'insufficient'
+                                ? 'The required number of referrals has not yet registered.'
+                                : referralStage === 'pending'
+                                    ? 'Enough referrals are registered, but the required number have not all checked in and paid yet.'
+                                    : 'Enough referrals have checked in and paid.';
                             badge.className = 'inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-bold tracking-wider ' +
-                                (referralBadgeState === 'insufficient'
+                                (referralStage === 'insufficient'
                                     ? 'border-slate-300/70 bg-slate-200/10 text-slate-200'
-                                    : referralBadgeState === 'pending'
+                                    : referralStage === 'pending'
                                         ? 'border-amber-400/60 bg-amber-800/30 text-amber-100'
                                         : 'border-amber-300 bg-amber-300/20 text-amber-100 shadow-sm shadow-amber-400/20');
-                            badge.textContent = referralBadgeState === 'insufficient'
-                                ? 'REFERRAL INSUFFICIENT'
-                                : referralBadgeState === 'pending' ? 'REFERRAL PENDING' : 'REFERRAL DRINK';
-                            badge.title = referralBadgeState === 'insufficient'
-                                ? 'Some invited RSVPs are registered, but the required number have not yet checked in and paid.'
-                                : referralBadgeState === 'pending'
-                                    ? 'Enough referrals are registered, but the minimum number have not all checked in and paid yet.'
-                                    : 'Enough referred guests have checked in and paid. This guest can be issued a referral drink.';
+                            badge.textContent = isNonEligibleReferral
+                                ? 'REFERRAL NON ELIGIBLE'
+                                : referralStage === 'insufficient'
+                                    ? 'REFERRAL INSUFFICIENT'
+                                    : referralStage === 'pending' ? 'REFERRAL PENDING' : 'REFERRAL DRINK';
+                            badge.title = (isNonEligibleReferral
+                                ? 'This member is not eligible for a referral drink. '
+                                : '') + referralStageCopy;
                             titleLine.appendChild(badge);
                         }
 
