@@ -1054,7 +1054,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.36</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.37</p>
         </div>
     </footer>
 
@@ -2952,9 +2952,50 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 return;
             }
 
+            // Suggest likely registered referrers using conservative spelling similarity.
+            const levenshteinDistance = (a, b) => {
+                const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+                for (let i = 1; i <= a.length; i++) {
+                    let diagonal = previous[0];
+                    previous[0] = i;
+                    for (let j = 1; j <= b.length; j++) {
+                        const above = previous[j];
+                        previous[j] = Math.min(previous[j] + 1, previous[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1));
+                        diagonal = above;
+                    }
+                }
+                return previous[b.length];
+            };
+            const candidateMap = new Map();
+            rows.forEach(item => {
+                const data = item.data;
+                const key = normalizeGuestName(data.name);
+                if (!key || !data.name) return;
+                if (!candidateMap.has(key)) candidateMap.set(key, { name: sanitizeGuestDisplayName(data.name), key });
+            });
+            const candidates = Array.from(candidateMap.values());
             entries.forEach(entry => {
+                const entryKey = normalizeGuestName(entry.name);
+                const sourceWords = entryKey.split(/\s+/).filter(Boolean);
+                const suggestions = candidates
+                    .filter(candidate => candidate.key !== entryKey)
+                    .map(candidate => {
+                        const distance = levenshteinDistance(entryKey, candidate.key);
+                        const maxLength = Math.max(entryKey.length, candidate.key.length, 1);
+                        const similarity = 1 - distance / maxLength;
+                        const candidateWords = candidate.key.split(/\s+/).filter(Boolean);
+                        const sharedWord = sourceWords.some(word => candidateWords.includes(word));
+                        const plausible = similarity >= 0.68 || (sharedWord && similarity >= 0.48);
+                        return { ...candidate, similarity, plausible };
+                    })
+                    .filter(candidate => candidate.plausible)
+                    .sort((a, b) => b.similarity - a.similarity || a.name.localeCompare(b.name))
+                    .slice(0, 3);
+
                 const row = document.createElement('div');
-                row.className = 'flex items-center justify-between gap-3 rounded-lg border border-gold/30 bg-black/25 px-3 py-2';
+                row.className = 'rounded-lg border border-gold/30 bg-black/25 px-3 py-3 space-y-2';
+                const top = document.createElement('div');
+                top.className = 'flex items-start justify-between gap-3';
                 const details = document.createElement('div');
                 details.className = 'min-w-0';
                 const name = document.createElement('p');
@@ -2962,13 +3003,78 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 name.textContent = sanitizeGuestDisplayName(entry.name) || '(No name provided)';
                 const meta = document.createElement('p');
                 meta.className = 'text-[10px] text-gray-400 mt-1';
-                meta.textContent = entry.checkedIn + ' checked in · ' + entry.checkedInPaid + ' checked in and paid';
+                meta.textContent = entry.total + ' referral' + (entry.total === 1 ? '' : 's') + ' · ' + entry.checkedIn + ' checked in · ' + entry.checkedInPaid + ' checked in and paid';
                 details.append(name, meta);
                 const count = document.createElement('span');
                 count.className = 'shrink-0 rounded border border-amber-400/40 bg-amber-950/40 px-3 py-1 text-sm font-semibold text-amber-100 tabular-nums';
                 count.textContent = String(entry.total);
                 count.title = entry.total + ' RSVPs entered this unrecognized inviter name';
-                row.append(details, count);
+                top.append(details, count);
+                row.appendChild(top);
+
+                if (suggestions.length) {
+                    const hint = document.createElement('p');
+                    hint.className = 'text-[10px] uppercase tracking-wider text-amber-200/80';
+                    hint.textContent = 'Possible spelling matches — confirm only if you are sure';
+                    row.appendChild(hint);
+                    const actions = document.createElement('div');
+                    actions.className = 'flex flex-col gap-2';
+                    suggestions.forEach(candidate => {
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'w-full text-left rounded-md border border-emerald-400/30 bg-emerald-950/30 hover:bg-emerald-900/40 px-3 py-2 text-xs text-emerald-100';
+                        button.textContent = 'Match to ' + candidate.name + ' (' + Math.round(candidate.similarity * 100) + '% similar)';
+                        button.addEventListener('click', async () => {
+                            if (currentStaffRole !== 'admin' || !db) return;
+                            const confirmText = 'Correct "' + entry.name + '" to "' + candidate.name + '" for all referrals currently using that inviter name? This will update existing RSVP records and preserve the original spelling in the correction audit fields.';
+                            if (!window.confirm(confirmText)) return;
+                            const affectedDocs = cachedGuestDocs.filter(doc => {
+                                const data = doc.data() || {};
+                                return !isImportedMemberRecord(data) && normalizeGuestName(data.invitedBy) === entryKey;
+                            });
+                            if (!affectedDocs.length) {
+                                alert('No matching RSVP records remain. Refresh the guest list and try again.');
+                                return;
+                            }
+                            if (affectedDocs.length > 450) {
+                                alert('Too many records to correct in one operation. Please contact support before proceeding.');
+                                return;
+                            }
+                            button.disabled = true;
+                            button.textContent = 'Saving correction…';
+                            try {
+                                const batch = db.batch();
+                                affectedDocs.forEach(doc => {
+                                    const data = doc.data() || {};
+                                    batch.update(db.collection('halloween_guests').doc(doc.id), {
+                                        invitedBy: candidate.name,
+                                        invitedByCorrection: {
+                                            originalName: String(data.invitedBy || ''),
+                                            correctedTo: candidate.name,
+                                            correctedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                            correctedBy: activeStaffUid || null
+                                        }
+                                    });
+                                });
+                                await batch.commit();
+                                alert('Referral name corrected to ' + candidate.name + '. The referral counts will refresh automatically.');
+                                renderUnrecognizedWelcomeDrinkList();
+                            } catch (error) {
+                                console.error('Referral name correction failed:', error);
+                                alert('Could not save this correction. Please check your connection and admin permissions, then try again.');
+                                button.disabled = false;
+                                button.textContent = 'Match to ' + candidate.name + ' (' + Math.round(candidate.similarity * 100) + '% similar)';
+                            }
+                        });
+                        actions.appendChild(button);
+                    });
+                    row.appendChild(actions);
+                } else {
+                    const noMatch = document.createElement('p');
+                    noMatch.className = 'text-[10px] text-gray-400';
+                    noMatch.textContent = 'No likely spelling match found. Leave this entry unaccounted unless you can identify the referrer.';
+                    row.appendChild(noMatch);
+                }
                 list.appendChild(row);
             });
         }
