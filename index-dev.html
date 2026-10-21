@@ -455,6 +455,49 @@
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
         }
+    
+        /* MOBILE MANAGEMENT READABILITY
+           Scope these adjustments to the staff portal on phones; leave public RSVP and desktop styling alone. */
+        @media (max-width: 640px) {
+            body.staff-mode { font-size: 15px; }
+            body.staff-mode main { padding: 0.35rem 0.5rem 0.75rem; }
+            body.staff-mode #hostessPortal { padding-left: 0; padding-right: 0; }
+            body.staff-mode #hostessPortal > .glass-panel,
+            body.staff-mode #hostessPortal .glass-panel { padding: 0.85rem; }
+            body.staff-mode #hostessPortal .staff-panel { margin-bottom: 0.65rem; padding: 0.8rem; border-radius: 0.7rem; }
+            body.staff-mode #hostessPortal .staff-panel__header { gap: 0.35rem 0.6rem; margin-bottom: 0.65rem; padding-bottom: 0.55rem; }
+            body.staff-mode #hostessPortal .staff-panel__title { font-size: 1rem; letter-spacing: 0.045em; line-height: 1.4; }
+            body.staff-mode #hostessPortal .staff-panel__meta { font-size: 0.7rem; }
+            body.staff-mode #hostessPortal .staff-tools-heading { margin: 1rem 0 0.55rem; padding-bottom: 0.45rem; gap: 0.35rem 0.6rem; }
+            body.staff-mode #hostessPortal .staff-tools-heading h4,
+            body.staff-mode #hostessPortal .staff-subheading { font-size: 0.85rem; letter-spacing: 0.055em; }
+            body.staff-mode #hostessPortal .staff-tools-heading p { font-size: 0.78rem; line-height: 1.45; }
+            body.staff-mode #hostessPortal .staff-metric-card { padding: 0.7rem; }
+            body.staff-mode #hostessPortal .staff-metric-card > p:first-child,
+            body.staff-mode #hostessPortal .staff-metric-card > h5:first-child { min-height: 0; margin-bottom: 0.35rem; font-size: 0.78rem; letter-spacing: 0.035em; line-height: 1.4; }
+            body.staff-mode #hostessPortal .staff-summary-stats-grid { grid-template-columns: minmax(0, 1fr); gap: 0.55rem; }
+            body.staff-mode #adminPageNavigation { gap: 0.45rem; padding: 0.55rem; margin-bottom: 0.75rem; }
+            body.staff-mode #adminPageNavigation .sort-option,
+            body.staff-mode .sort-option { min-height: 42px; padding: 0.6rem 0.75rem; font-size: 0.78rem; line-height: 1.25; letter-spacing: 0.015em; }
+            body.staff-mode #adminPageNavigation .sort-option { flex: 1 1 100%; text-align: left; }
+            body.staff-mode #hostessPortal .form-label { margin-bottom: 0.4rem; font-size: 0.8rem; letter-spacing: 0.06em; }
+            body.staff-mode #hostessPortal .form-field { min-height: 46px; padding: 0.7rem 0.8rem; font-size: 16px; }
+            body.staff-mode #hostessPortal button:not(.sort-option):not(.guest-action-btn) { min-height: 42px; }
+            body.staff-mode #hostessPortal .guest-action-btn { min-height: 42px; padding: 0.65rem 0.75rem; font-size: 0.75rem; letter-spacing: 0.015em; white-space: normal; }
+            body.staff-mode #hostessPortal .text-\[9px\] { font-size: 0.7rem; }
+            body.staff-mode #hostessPortal .text-\[10px\] { font-size: 0.75rem; }
+            body.staff-mode #hostessPortal .text-xs { font-size: 0.82rem; line-height: 1.45; }
+            body.staff-mode #hostessPortal .text-sm { font-size: 0.92rem; line-height: 1.5; }
+            body.staff-mode #hostessPortal .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.8rem; }
+            body.staff-mode #hostessPortal .mb-5 { margin-bottom: 0.8rem; }
+            body.staff-mode #hostessPortal .mb-4 { margin-bottom: 0.7rem; }
+            body.staff-mode #hostessPortal .mt-6 { margin-top: 0.9rem; }
+            body.staff-mode #hostessPortal .p-4 { padding: 0.8rem; }
+            body.staff-mode #hostessPortal .gap-4 { gap: 0.7rem; }
+            body.staff-mode #hostessPortal #adminPricingGrid { gap: 0.55rem; }
+            body.staff-mode #hostessPortal #adminPricingGrid > div { padding: 0.8rem; }
+        }
+
     </style>
 </head>
 <body class="halloween-bg min-h-screen relative flex flex-col selection:bg-gold selection:text-black admin-stats-compact">
@@ -974,7 +1017,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.31</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.32</p>
         </div>
     </footer>
 
