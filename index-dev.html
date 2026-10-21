@@ -424,9 +424,11 @@
         }
 
         /* Page modes keep the public landing content out of staff and RSVP-confirmation views. */
-        body.staff-mode main > header,
-        body.staff-mode main > section,
         body.staff-mode main { width: 100%; max-width: 96rem; padding-top: 1rem; padding-bottom: 1rem; }
+        /* The public landing/RSVP content is separate from Management; only the footer is shared. */
+        body.staff-mode main > .hero-copy,
+        body.staff-mode main > section:not(.staff-panel),
+        body.staff-mode main > #postRegistrationActions { display: none !important; }
         body.staff-mode #hostessPortal { margin-top: 0; margin-bottom: 0; }
         body.confirmation-mode main > header,
         body.confirmation-mode main > section:not(#rsvp-section),
@@ -958,7 +960,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.10</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.11</p>
         </div>
     </footer>
 
