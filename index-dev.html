@@ -498,6 +498,42 @@
             body.staff-mode #hostessPortal #adminPricingGrid > div { padding: 0.8rem; }
         }
 
+
+        /* Responsive layout baseline: use available width on phones, balanced reading widths on desktop. */
+        @media (max-width: 640px) {
+            html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+            body:not(.staff-mode) main { width: 100%; padding-left: 0.75rem; padding-right: 0.75rem; }
+            body:not(.staff-mode) main > header,
+            body:not(.staff-mode) main > section,
+            body:not(.staff-mode) #rsvp-section { min-width: 0; }
+            body:not(.staff-mode) .glass-panel { min-width: 0; }
+            body:not(.staff-mode) input:not([type="checkbox"]):not([type="radio"]),
+            body:not(.staff-mode) select,
+            body:not(.staff-mode) textarea { max-width: 100%; min-height: 46px; font-size: 16px; }
+            body:not(.staff-mode) button { touch-action: manipulation; }
+            body:not(.staff-mode) .venue-gallery { grid-template-columns: minmax(0, 1fr); }
+            body:not(.staff-mode) .venue-shot,
+            body:not(.staff-mode) .venue-shot.concept { height: auto; min-height: 190px; }
+            body:not(.staff-mode) h1 { font-size: clamp(2rem, 9vw, 3rem); line-height: 1.12; overflow-wrap: anywhere; }
+            body:not(.staff-mode) h2 { line-height: 1.2; }
+            body:not(.staff-mode) p { overflow-wrap: anywhere; }
+            body.staff-mode main { max-width: none; }
+            body.staff-mode #hostessPortal .glass-panel { width: 100%; }
+            body.staff-mode #adminPageNavigation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            body.staff-mode #adminPageNavigation .sort-option { min-width: 0; width: 100%; text-align: center; overflow-wrap: anywhere; }
+            body.staff-mode #hostessPortal .grid { min-width: 0; }
+            body.staff-mode #hostessPortal .overflow-x-auto { max-width: 100%; }
+            body.staff-mode #hostessPortal .stat-pair-grid { gap: 0.25rem; }
+            body.staff-mode #hostessPortal .stat-pair-value { font-size: clamp(1.35rem, 6vw, 2rem); }
+            body.staff-mode #hostessPortal .staff-panel__header { width: 100%; }
+            body.staff-mode #hostessPortal .staff-panel__title { overflow-wrap: anywhere; }
+            body.staff-mode #adminViewportMode { font-size: 0.68rem; }
+        }
+        @media (min-width: 641px) {
+            body.staff-mode main { padding-left: clamp(1rem, 2vw, 2rem); padding-right: clamp(1rem, 2vw, 2rem); }
+            body.staff-mode #hostessPortal .staff-panel { padding: clamp(1rem, 1.5vw, 1.5rem); }
+        }
+
     </style>
 </head>
 <body class="halloween-bg min-h-screen relative flex flex-col selection:bg-gold selection:text-black admin-stats-compact">
@@ -625,6 +661,7 @@
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                             <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Management Portal</h3>
+                            <span id="adminViewportMode" class="hidden inline-flex items-center gap-1.5 rounded-full border border-sky-300/30 bg-sky-950/40 px-2.5 py-1 text-[10px] font-bold tracking-wider text-sky-100" aria-live="polite"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i><span id="adminViewportModeLabel">MOBILE VIEW</span></span>
                             <span id="staffIdentity" class="hidden text-xs text-gray-300 break-all">Signed in as <span id="staffIdentityUsername" class="text-gold font-semibold"></span></span>
                         </div>
                         <p id="adminPortalDescription" class="text-xs text-gray-400 mt-1">Guest list, check-in, payment and event administration</p>
@@ -1017,7 +1054,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.32</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.33</p>
         </div>
     </footer>
 
@@ -1595,6 +1632,20 @@
                 function canToggleAdminStatsView(role = currentStaffRole) {
             return role === 'admin' || role === 'internations';
         }
+        function updateAdminViewportMode() {
+            const indicator = document.getElementById('adminViewportMode');
+            const label = document.getElementById('adminViewportModeLabel');
+            if (!indicator || !label) return;
+            const mobile = window.matchMedia('(max-width: 640px)').matches;
+            label.textContent = mobile ? 'MOBILE VIEW' : 'DESKTOP VIEW';
+            indicator.setAttribute('aria-label', mobile ? 'Currently showing the mobile layout' : 'Currently showing the desktop layout');
+            const icon = indicator.querySelector('i');
+            if (icon) icon.className = mobile ? 'fa-solid fa-mobile-screen-button' : 'fa-solid fa-desktop';
+        }
+        window.addEventListener('resize', updateAdminViewportMode, { passive: true });
+        window.addEventListener('orientationchange', updateAdminViewportMode);
+        updateAdminViewportMode();
+
         function toggleAdminStatsView() {
             if (!canToggleAdminStatsView()) return;
             const compact = document.body.classList.toggle('admin-stats-compact');
@@ -2631,6 +2682,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 statsGrid.classList.toggle('xl:grid-cols-2', role !== 'admin');
             }
             show('adminPageNavigation', role === 'admin');
+            show('adminViewportMode', role === 'admin');
+            updateAdminViewportMode();
             show('adminPricingPanel', role === 'admin');
             show('extraDrinkEstimateSection', role === 'admin');
             show('extraDrinkAdminControls', role === 'admin');
