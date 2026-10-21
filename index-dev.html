@@ -2879,6 +2879,10 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
             if (!pricingUnsubscribe) {
                 pricingUnsubscribe = db.collection('event_settings').doc('pricing').onSnapshot((doc) => {
+                    // Do not let an older/in-flight Firestore snapshot overwrite fields while
+                    // the admin is saving pricing. savePricingSettings applies the committed
+                    // values to pricingSettings after the write succeeds.
+                    if (pricingSaveInProgress) return;
                     if (doc.exists) {
                         const nextPricingSettings = normalizePricingSettings(doc.data());
                         const chargeRulesChanged = JSON.stringify({
