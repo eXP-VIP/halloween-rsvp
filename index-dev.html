@@ -257,21 +257,31 @@
         body.staff-mode .stat-pair-grid {
             container-type: inline-size;
             display: grid;
-            grid-template-columns: minmax(0, auto) auto minmax(0, auto);
+            grid-template-columns: max-content max-content max-content;
             justify-content: start;
             align-items: start;
-            gap: .5rem;
-            width: 100%;
+            gap: .35rem;
+            width: fit-content;
+            max-width: 100%;
         }
-        body.staff-mode .stat-pair-grid > div { min-width: 0; }
+        body.staff-mode .stat-pair-grid > div { min-width: max-content; }
         body.staff-mode .stat-pair-value {
-            min-width: 0;
-            max-width: 42cqi;
-            overflow: hidden;
+            min-width: max-content;
+            max-width: none;
+            overflow: visible;
             white-space: nowrap;
-            font-size: clamp(1.5rem, 8cqi, 1.875rem);
+            font-size: clamp(1.15rem, 7cqi, 1.875rem);
             line-height: 2.25rem;
             font-variant-numeric: tabular-nums;
+        }
+        /* Keep all three admission categories in one row until the viewport is genuinely narrow. */
+        body.staff-mode #adminPricingGrid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .75rem;
+        }
+        @media (max-width: 640px) {
+            body.staff-mode #adminPricingGrid { grid-template-columns: minmax(0, 1fr); }
         }
         /* Guest-card actions share sizing. Green means the operation is complete and clicking will undo it. */
         .guest-action-btn {
@@ -855,9 +865,9 @@
                             <label class="flex items-start gap-3 text-sm text-gray-100"><input id="twoStepCheckInEnabled" type="checkbox" class="mt-1 accent-amber-300" checked><span><strong>Two-step check-in</strong><span class="block text-xs text-gray-400 mt-1">Enabled: Hotel staff verify arrivals; InterNations staff handle payment and final admission. Disabled: InterNations sees one guest list with check-in and admission actions.</span></span></label>
                             <p id="workflowSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-300 mt-2">Two-step check-in is enabled by default.</p>
                         </div>
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                        <div id="adminPricingGrid">
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
-                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
+                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Albatross</h5>
                                 <label for="basePriceBasics" class="form-label">Admission price (€)</label>
                                 <input id="basePriceBasics" type="number" min="0" step="1" class="form-field mb-3" value="15">
                                 <label for="drinkModeBasics" class="form-label">Welcome-drink rule</label>
@@ -875,7 +885,7 @@
                                 </div>
                             </div>
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
-                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Albatross</h5>
+                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
                                 <label for="basePricePaidMembers" class="form-label">Admission price (€)</label>
                                 <input id="basePricePaidMembers" type="number" min="0" step="1" class="form-field mb-3" value="5">
                                 <label for="drinkModePaidMembers" class="form-label">Welcome-drink rule</label>
@@ -960,7 +970,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.11</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.12</p>
         </div>
     </footer>
 
