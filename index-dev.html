@@ -973,7 +973,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.25</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.26</p>
         </div>
     </footer>
 
@@ -1668,14 +1668,46 @@
                     }
                     status.textContent = 'Saving pricing settings…';
                     try {
-                        await db.collection('event_settings').doc('pricing').set({
+                        const pricingRef = db.collection('event_settings').doc('pricing');
+                        const intendedSettings = normalizePricingSettings(next);
+                        await pricingRef.set({
                             ...next, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                         }, { merge: true });
-                        pricingSettings = normalizePricingSettings(next);
-                        status.textContent = 'Pricing saved automatically.';
+
+                        // A resolved write promise alone is not enough: read the committed
+                        // server document back before telling the admin the change was saved.
+                        let verifiedSnapshot;
+                        try {
+                            verifiedSnapshot = await pricingRef.get({ source: 'server' });
+                        } catch (verificationError) {
+                            verificationError.code = 'pricing/verification-failed';
+                            throw verificationError;
+                        }
+                        if (!verifiedSnapshot.exists) {
+                            const error = new Error('The pricing document is missing from the server after the write.');
+                            error.code = 'pricing/verification-failed';
+                            throw error;
+                        }
+                        const verifiedSettings = normalizePricingSettings(verifiedSnapshot.data());
+                        if (JSON.stringify(verifiedSettings) !== JSON.stringify(intendedSettings)) {
+                            pricingSettings = verifiedSettings;
+                            renderPricingForm();
+                            updateExtraDrinkForecastDisplay();
+                            const error = new Error('The server returned different pricing values after saving. The form has been reset to the server values.');
+                            error.code = 'pricing/verification-mismatch';
+                            throw error;
+                        }
+                        pricingSettings = verifiedSettings;
+                        renderPricingForm();
+                        updateExtraDrinkForecastDisplay();
+                        status.textContent = 'Pricing saved and verified on the server.';
                     } catch (error) {
-                        console.error('Pricing settings save failed:', error);
-                        status.textContent = 'Could not save pricing. Check database permissions and try again.';
+                        console.error('Pricing settings save/verification failed:', error);
+                        status.textContent = error && error.code === 'pricing/verification-mismatch'
+                            ? error.message
+                            : error && error.code === 'pricing/verification-failed'
+                                ? 'The save could not be verified against the server. Do not rely on this change yet; check the connection and retry.'
+                                : 'Could not save pricing. Check database permissions and try again.';
                     }
                 }
             } finally {
@@ -1693,8 +1725,7 @@
                             pricingSettings = nextPricingSettings;
                             renderPricingForm();
                             updateExtraDrinkForecastDisplay();
-                            const status = document.getElementById('pricingSaveStatus');
-                            if (status) status.textContent = 'Pricing saved automatically.';
+                            // Do not overwrite a save/verification error with a success message here.
                         }
                     } catch (error) {
                         console.error('Could not reconcile pricing settings after save:', error);
@@ -2601,6 +2632,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         function stopStaffRealtimeListeners() {
             if (guestlistUnsubscribe) { guestlistUnsubscribe(); guestlistUnsubscribe = null; }
             if (pricingUnsubscribe) { pricingUnsubscribe(); pricingUnsubscribe = null; }
+            if (workflowSettingsUnsubscribe) { workflowSettingsUnsubscribe(); workflowSettingsUnsubscribe = null; }
             cachedGuestSnapshot = null;
             cachedGuestDocs = [];
             cachedUnaccountedReferrals = [];
