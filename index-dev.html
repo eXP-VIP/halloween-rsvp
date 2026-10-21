@@ -973,7 +973,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.21</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.22</p>
         </div>
     </footer>
 
@@ -1612,6 +1612,7 @@
 
         let pricingSaveInProgress = false;
         let pricingSaveRequested = false;
+        let pricingSnapshotPending = false;
         /** Validate and persist admin-managed admission, drink and referral pricing rules. */
         async function savePricingSettings() {
             pricingSaveRequested = true;
@@ -1680,7 +1681,26 @@
                 }
             } finally {
                 pricingSaveInProgress = false;
-                if (pricingSaveRequested) void savePricingSettings();
+                if (pricingSaveRequested) {
+                    void savePricingSettings();
+                } else if (pricingSnapshotPending) {
+                    // Reconcile snapshots skipped during a save against the server's
+                    // committed document, rather than leaving the form on stale values.
+                    pricingSnapshotPending = false;
+                    try {
+                        const latest = await db.collection('event_settings').doc('pricing').get({ source: 'server' });
+                        if (latest.exists) {
+                            const nextPricingSettings = normalizePricingSettings(latest.data());
+                            pricingSettings = nextPricingSettings;
+                            renderPricingForm();
+                            updateExtraDrinkForecastDisplay();
+                            const status = document.getElementById('pricingSaveStatus');
+                            if (status) status.textContent = 'Pricing saved automatically.';
+                        }
+                    } catch (error) {
+                        console.error('Could not reconcile pricing settings after save:', error);
+                    }
+                }
             }
         }
         ['basePriceBasics','basePricePaidMembers','basePriceFriends',
@@ -2882,7 +2902,10 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     // Do not let an older/in-flight Firestore snapshot overwrite fields while
                     // the admin is saving pricing. savePricingSettings applies the committed
                     // values to pricingSettings after the write succeeds.
-                    if (pricingSaveInProgress) return;
+                    if (pricingSaveInProgress) {
+                        pricingSnapshotPending = true;
+                        return;
+                    }
                     if (doc.exists) {
                         const nextPricingSettings = normalizePricingSettings(doc.data());
                         const chargeRulesChanged = JSON.stringify({
