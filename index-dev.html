@@ -973,7 +973,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.24</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.25</p>
         </div>
     </footer>
 
@@ -1673,7 +1673,6 @@
                         }, { merge: true });
                         pricingSettings = normalizePricingSettings(next);
                         status.textContent = 'Pricing saved automatically.';
-                        if (document.getElementById('guestlistSection') && !document.getElementById('guestlistSection').classList.contains('hidden')) loadLiveGuestlist();
                     } catch (error) {
                         console.error('Pricing settings save failed:', error);
                         status.textContent = 'Could not save pricing. Check database permissions and try again.';
@@ -1700,6 +1699,13 @@
                     } catch (error) {
                         console.error('Could not reconcile pricing settings after save:', error);
                     }
+                }
+                // Refresh dependent guest-list calculations only after pricing writes and any
+                // server reconciliation have finished; otherwise a render can race stale snapshots.
+                if (!pricingSaveRequested && currentStaffRole === 'admin' &&
+                    document.getElementById('guestlistSection') &&
+                    !document.getElementById('guestlistSection').classList.contains('hidden')) {
+                    loadLiveGuestlist();
                 }
             }
         }
