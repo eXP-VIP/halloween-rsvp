@@ -402,6 +402,11 @@
             font-size: 0.65rem;
             letter-spacing: 0.04em;
         }
+        .staff-summary-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+            gap: 0.75rem;
+        }
         .staff-metric-card {
             min-width: 0;
             padding: 0.85rem;
@@ -660,7 +665,7 @@
                         </div>
                     </div>
                     <div class="flex justify-end mb-2"><button type="button" id="adminStatsViewToggle" class="sort-option hidden" onclick="toggleAdminStatsView()">Full view</button></div>
-                    <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    <div id="staffSummaryStats" class="staff-summary-stats-grid mb-4">
                         <div id="guestSummaryMetric" class="staff-metric-card">
                             <h5 class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</h5>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
@@ -898,9 +903,6 @@
                         </div>
                     </div>
                     <div id="eventSettingsPage" class="hidden">
-                        <div class="mb-4">
-                            <button type="button" class="sort-option" onclick="showStaffPage('guest-management')"><i class="fa-solid fa-arrow-left mr-2" aria-hidden="true"></i>Back to Guest List Management</button>
-                        </div>
                         <section id="adminPricingPanel" class="staff-panel">
                         <div class="staff-panel__header">
                             <h4 class="staff-panel__title">Event Settings</h4>
