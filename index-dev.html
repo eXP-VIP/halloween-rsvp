@@ -866,27 +866,8 @@
                             <label class="flex items-start gap-3 text-sm text-gray-100"><input id="twoStepCheckInEnabled" type="checkbox" class="mt-1 accent-amber-300" checked><span><strong>Two-step check-in</strong><span class="block text-xs text-gray-400 mt-1">Enabled: Hotel staff verify arrivals; InterNations staff handle payment and final admission. Disabled: InterNations sees one guest list with check-in and admission actions.</span></span></label>
                             <p id="workflowSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-300 mt-2">Two-step check-in is enabled by default.</p>
                         </div>
-                        <div id="adminPricingGrid">
-                            <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
+                        <div id="adminPricingGrid"><div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Albatross</h5>
-                                <label for="basePriceBasics" class="form-label">Admission price (€)</label>
-                                <input id="basePriceBasics" type="number" min="0" step="1" class="form-field mb-3" value="15">
-                                <label for="drinkModeBasics" class="form-label">Welcome-drink rule</label>
-                                <select id="drinkModeBasics" class="form-field mb-3">
-                                    <option value="included">Included</option>
-                                    <option value="upgrade">Paid upgrade</option>
-                                    <option value="not_allowed" selected>Unavailable</option>
-                                </select>
-                                <label for="drinkPriceBasics" class="form-label">Upgrade price (€)</label>
-                                <input id="drinkPriceBasics" type="number" min="0" step="1" class="form-field" value="0" disabled>
-                                <div class="mt-4 border-t border-gold/20 pt-3">
-                                    <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligibleBasics" type="checkbox" class="mt-0.5 accent-amber-300" checked> Eligible for referral welcome drink</label>
-                                    <label for="referralThresholdBasics" class="form-label">Required referrals who checked in and paid</label>
-                                    <input id="referralThresholdBasics" type="number" min="1" step="1" class="form-field" value="2">
-                                </div>
-                            </div>
-                            <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
-                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
                                 <label for="basePricePaidMembers" class="form-label">Admission price (€)</label>
                                 <input id="basePricePaidMembers" type="number" min="0" step="1" class="form-field mb-3" value="5">
                                 <label for="drinkModePaidMembers" class="form-label">Welcome-drink rule</label>
@@ -901,6 +882,24 @@
                                     <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligiblePaidMembers" type="checkbox" class="mt-0.5 accent-amber-300" checked> Eligible for referral welcome drink</label>
                                     <label for="referralThresholdPaidMembers" class="form-label">Required referrals who checked in and paid</label>
                                     <input id="referralThresholdPaidMembers" type="number" min="1" step="1" class="form-field" value="2">
+                                </div>
+                            </div>
+                            <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
+                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
+                                <label for="basePriceBasics" class="form-label">Admission price (€)</label>
+                                <input id="basePriceBasics" type="number" min="0" step="1" class="form-field mb-3" value="15">
+                                <label for="drinkModeBasics" class="form-label">Welcome-drink rule</label>
+                                <select id="drinkModeBasics" class="form-field mb-3">
+                                    <option value="included">Included</option>
+                                    <option value="upgrade">Paid upgrade</option>
+                                    <option value="not_allowed" selected>Unavailable</option>
+                                </select>
+                                <label for="drinkPriceBasics" class="form-label">Upgrade price (€)</label>
+                                <input id="drinkPriceBasics" type="number" min="0" step="1" class="form-field" value="0" disabled>
+                                <div class="mt-4 border-t border-gold/20 pt-3">
+                                    <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligibleBasics" type="checkbox" class="mt-0.5 accent-amber-300" checked> Eligible for referral welcome drink</label>
+                                    <label for="referralThresholdBasics" class="form-label">Required referrals who checked in and paid</label>
+                                    <input id="referralThresholdBasics" type="number" min="1" step="1" class="form-field" value="2">
                                 </div>
                             </div>
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
@@ -919,6 +918,9 @@
                                     <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligibleFriends" type="checkbox" class="mt-0.5 accent-amber-300"> Eligible for referral welcome drink</label>
                                     <label for="referralThresholdFriends" class="form-label">Required referrals who checked in and paid</label>
                                     <input id="referralThresholdFriends" type="number" min="1" step="1" class="form-field" value="2">
+                                </div>
+                            </div>
+                        </div>d" value="2">
                                 </div>
                             </div>
                         </div>
@@ -971,7 +973,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.14</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.15</p>
         </div>
     </footer>
 
