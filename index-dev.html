@@ -892,6 +892,7 @@
                     <div id="eventSettingsPage" class="hidden">
                         <section id="adminPricingPanel" class="staff-panel">
                         <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules, referral eligibility and the admission workflow. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid.</p>
+                        <p id="pricingSaveStatus" class="text-xs text-gray-300 mb-3 min-h-[1rem]" role="status" aria-live="polite"></p>
                         <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
                             <label class="flex items-start gap-3 text-sm text-gray-100"><input id="eventCheckInActive" type="checkbox" class="mt-1 accent-amber-300"><span><strong>Event check-in active (live mode)</strong><span class="block text-xs text-gray-400 mt-1">Inactive: check-in, payment, drink-upgrade and chip actions are temporary in this tab and cleared on sign-out, reload or mode switch. The first live activation clears legacy operational test statuses but preserves every guest registration, member detail and date. Public registrations are always permanent.</span></span></label>
                             <p id="eventCheckInActiveStatus" role="status" aria-live="polite" class="text-xs text-amber-100 mt-2">Event check-in is inactive. Testing changes are session-only.</p>
@@ -973,7 +974,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.27</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.28</p>
         </div>
     </footer>
 
@@ -1621,7 +1622,7 @@
             const status = document.getElementById('pricingSaveStatus');
             if (!db) {
                 pricingSaveRequested = false;
-                status.textContent = 'The database is not connected.';
+                if (status) status.textContent = 'The database is not connected.';
                 pricingSaveInProgress = false;
                 return;
             }
@@ -1659,14 +1660,14 @@
                             }
                         };
                     } catch (error) {
-                        status.textContent = error.message;
+                        if (status) status.textContent = error.message;
                         continue;
                     }
                     if (Object.values(next.drinkRules).some(rule => !['included', 'upgrade', 'not_allowed'].includes(rule.mode))) {
-                        status.textContent = 'Select a valid welcome-drink rule for each category.';
+                        if (status) status.textContent = 'Select a valid welcome-drink rule for each category.';
                         continue;
                     }
-                    status.textContent = 'Saving pricing settings…';
+                    if (status) status.textContent = 'Saving pricing settings…';
                     try {
                         const pricingRef = db.collection('event_settings').doc('pricing');
                         const intendedSettings = normalizePricingSettings(next);
@@ -1701,10 +1702,10 @@
                         // while this write was in flight and must be picked up by the queued save.
                         pricingSettings = verifiedSettings;
                         updateExtraDrinkForecastDisplay();
-                        status.textContent = 'Pricing saved and verified on the server.';
+                        if (status) status.textContent = 'Pricing saved and verified on the server.';
                     } catch (error) {
                         console.error('Pricing settings save/verification failed:', error);
-                        status.textContent = error && error.code === 'pricing/verification-mismatch'
+                        if (status) status.textContent = error && error.code === 'pricing/verification-mismatch'
                             ? error.message
                             : error && error.code === 'pricing/verification-failed'
                                 ? 'The save could not be verified against the server. Do not rely on this change yet; check the connection and retry.'
