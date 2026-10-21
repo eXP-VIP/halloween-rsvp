@@ -2851,7 +2851,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 return;
             }
 
-            // Suggest likely registered referrers using conservative spelling similarity.
+            // Suggest likely registered referrers; admins can also search manually.
             const levenshteinDistance = (a, b) => {
                 const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
                 for (let i = 1; i <= a.length; i++) {
@@ -2872,7 +2872,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 if (!key || !data.name) return;
                 if (!candidateMap.has(key)) candidateMap.set(key, { name: sanitizeGuestDisplayName(data.name), key });
             });
-            const candidates = Array.from(candidateMap.values());
+            const candidates = Array.from(candidateMap.values()).sort((a, b) => a.name.localeCompare(b.name));
             entries.forEach(entry => {
                 const entryKey = normalizeGuestName(entry.name);
                 const sourceWords = entryKey.split(/\s+/).filter(Boolean);
@@ -2884,8 +2884,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         const similarity = 1 - distance / maxLength;
                         const candidateWords = candidate.key.split(/\s+/).filter(Boolean);
                         const sharedWord = sourceWords.some(word => candidateWords.includes(word));
-                        const plausible = similarity >= 0.68 || (sharedWord && similarity >= 0.48);
-                        return { ...candidate, similarity, plausible };
+                        return { ...candidate, similarity, plausible: similarity >= 0.68 || (sharedWord && similarity >= 0.48) };
                     })
                     .filter(candidate => candidate.plausible)
                     .sort((a, b) => b.similarity - a.similarity || a.name.localeCompare(b.name))
@@ -2911,10 +2910,95 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 top.append(details, count);
                 row.appendChild(top);
 
+                const confirmation = document.createElement('div');
+                confirmation.className = 'hidden rounded-lg border border-amber-300/40 bg-amber-950/30 p-3 space-y-2';
+                const confirmationText = document.createElement('p');
+                confirmationText.className = 'text-sm text-amber-100';
+                const confirmationDetail = document.createElement('p');
+                confirmationDetail.className = 'text-xs text-gray-300';
+                const confirmationActions = document.createElement('div');
+                confirmationActions.className = 'flex gap-2';
+                const saveButton = document.createElement('button');
+                saveButton.type = 'button';
+                saveButton.className = 'flex-1 rounded-md bg-amber-300 px-3 py-2 text-sm font-semibold text-black';
+                saveButton.textContent = 'Confirm and save';
+                const cancelButton = document.createElement('button');
+                cancelButton.type = 'button';
+                cancelButton.className = 'rounded-md border border-gray-500 px-3 py-2 text-sm text-gray-100';
+                cancelButton.textContent = 'Cancel';
+                confirmationActions.append(saveButton, cancelButton);
+                confirmation.append(confirmationText, confirmationDetail, confirmationActions);
+                row.appendChild(confirmation);
+
+                let selectedCandidate = null;
+                const showConfirmation = candidate => {
+                    selectedCandidate = candidate;
+                    confirmationText.textContent = 'Change "' + entry.name + '" to "' + candidate.name + '"?';
+                    confirmationDetail.textContent = 'This will update the inviter name on ' + entry.total + ' existing referral(s). No guest records or registrations will be merged or deleted.';
+                    confirmation.classList.remove('hidden');
+                    saveButton.disabled = false;
+                    cancelButton.disabled = false;
+                    saveButton.textContent = 'Confirm and save';
+                };
+                cancelButton.addEventListener('click', () => {
+                    selectedCandidate = null;
+                    confirmation.classList.add('hidden');
+                });
+                saveButton.addEventListener('click', async () => {
+                    if (currentStaffRole !== 'admin' || !db || !selectedCandidate) return;
+                    const candidate = selectedCandidate;
+                    const affectedDocs = cachedGuestDocs.filter(doc => {
+                        const data = doc.data() || {};
+                        return !isImportedMemberRecord(data) && normalizeGuestName(data.invitedBy) === entryKey;
+                    });
+                    if (!affectedDocs.length) {
+                        confirmationDetail.textContent = 'No matching RSVP records remain. Refresh the guest list and try again.';
+                        return;
+                    }
+                    if (affectedDocs.length > 450) {
+                        confirmationDetail.textContent = 'Too many records to correct in one operation. Please contact support before proceeding.';
+                        return;
+                    }
+                    saveButton.disabled = true;
+                    cancelButton.disabled = true;
+                    saveButton.textContent = 'Saving…';
+                    try {
+                        const batch = db.batch();
+                        affectedDocs.forEach(doc => {
+                            const data = doc.data() || {};
+                            batch.update(db.collection('halloween_guests').doc(doc.id), {
+                                invitedBy: candidate.name,
+                                invitedByCorrection: {
+                                    originalName: String(data.invitedBy || ''),
+                                    correctedTo: candidate.name,
+                                    correctedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                    correctedBy: activeStaffUid || null
+                                }
+                            });
+                        });
+                        await batch.commit();
+                        confirmationText.textContent = 'Correction saved.';
+                        confirmationDetail.textContent = affectedDocs.length + ' existing referral(s) now point to ' + candidate.name + '.';
+                        confirmationActions.replaceChildren();
+                        const done = document.createElement('button');
+                        done.type = 'button';
+                        done.className = 'rounded-md border border-gray-500 px-3 py-2 text-sm text-gray-100';
+                        done.textContent = 'Done';
+                        done.addEventListener('click', () => renderUnrecognizedWelcomeDrinkList());
+                        confirmationActions.appendChild(done);
+                    } catch (error) {
+                        console.error('Referral name correction failed:', error);
+                        confirmationDetail.textContent = 'Could not save this correction. Check the connection and admin permissions, then try again.';
+                        saveButton.disabled = false;
+                        cancelButton.disabled = false;
+                        saveButton.textContent = 'Confirm and save';
+                    }
+                });
+
                 if (suggestions.length) {
                     const hint = document.createElement('p');
                     hint.className = 'text-[10px] uppercase tracking-wider text-amber-200/80';
-                    hint.textContent = 'Possible spelling matches — confirm only if you are sure';
+                    hint.textContent = 'Possible spelling matches';
                     row.appendChild(hint);
                     const actions = document.createElement('div');
                     actions.className = 'flex flex-col gap-2';
@@ -2922,62 +3006,53 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         const button = document.createElement('button');
                         button.type = 'button';
                         button.className = 'w-full text-left rounded-md border border-emerald-400/30 bg-emerald-950/30 hover:bg-emerald-900/40 px-3 py-2 text-xs text-emerald-100';
-                        button.textContent = 'Match to ' + candidate.name + ' (' + Math.round(candidate.similarity * 100) + '% similar)';
-                        button.addEventListener('click', async () => {
-                            if (currentStaffRole !== 'admin' || !db) return;
-                            const confirmText = 'Correct "' + entry.name + '" to "' + candidate.name + '" for all referrals currently using that inviter name? This will update existing RSVP records and preserve the original spelling in the correction audit fields.';
-                            if (!window.confirm(confirmText)) return;
-                            const affectedDocs = cachedGuestDocs.filter(doc => {
-                                const data = doc.data() || {};
-                                return !isImportedMemberRecord(data) && normalizeGuestName(data.invitedBy) === entryKey;
-                            });
-                            if (!affectedDocs.length) {
-                                alert('No matching RSVP records remain. Refresh the guest list and try again.');
-                                return;
-                            }
-                            if (affectedDocs.length > 450) {
-                                alert('Too many records to correct in one operation. Please contact support before proceeding.');
-                                return;
-                            }
-                            button.disabled = true;
-                            button.textContent = 'Saving correction…';
-                            try {
-                                const batch = db.batch();
-                                affectedDocs.forEach(doc => {
-                                    const data = doc.data() || {};
-                                    batch.update(db.collection('halloween_guests').doc(doc.id), {
-                                        invitedBy: candidate.name,
-                                        invitedByCorrection: {
-                                            originalName: String(data.invitedBy || ''),
-                                            correctedTo: candidate.name,
-                                            correctedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                                            correctedBy: activeStaffUid || null
-                                        }
-                                    });
-                                });
-                                await batch.commit();
-                                alert('Referral name corrected to ' + candidate.name + '. The referral counts will refresh automatically.');
-                                renderUnrecognizedWelcomeDrinkList();
-                            } catch (error) {
-                                console.error('Referral name correction failed:', error);
-                                alert('Could not save this correction. Please check your connection and admin permissions, then try again.');
-                                button.disabled = false;
-                                button.textContent = 'Match to ' + candidate.name + ' (' + Math.round(candidate.similarity * 100) + '% similar)';
-                            }
-                        });
+                        button.textContent = candidate.name + ' · ' + Math.round(candidate.similarity * 100) + '% similar';
+                        button.addEventListener('click', () => showConfirmation(candidate));
                         actions.appendChild(button);
                     });
                     row.appendChild(actions);
-                } else {
-                    const noMatch = document.createElement('p');
-                    noMatch.className = 'text-[10px] text-gray-400';
-                    noMatch.textContent = 'No likely spelling match found. Leave this entry unaccounted unless you can identify the referrer.';
-                    row.appendChild(noMatch);
                 }
+
+                const manual = document.createElement('details');
+                manual.className = 'rounded-md border border-gray-600/70 p-2';
+                const manualSummary = document.createElement('summary');
+                manualSummary.className = 'cursor-pointer text-xs font-medium text-gray-200';
+                manualSummary.textContent = 'Match manually to any registered person';
+                const manualContent = document.createElement('div');
+                manualContent.className = 'mt-2 space-y-2';
+                const search = document.createElement('input');
+                search.type = 'search';
+                search.placeholder = 'Search names…';
+                search.setAttribute('aria-label', 'Search registered guests and members');
+                search.className = 'w-full rounded-md border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white';
+                const results = document.createElement('div');
+                results.className = 'flex max-h-48 flex-col gap-1 overflow-y-auto';
+                const renderCandidates = () => {
+                    results.replaceChildren();
+                    const query = normalizeGuestName(search.value);
+                    const matches = candidates.filter(candidate => candidate.key !== entryKey && (!query || candidate.key.includes(query))).slice(0, 30);
+                    if (!matches.length) {
+                        const empty = document.createElement('p');
+                        empty.className = 'text-xs text-gray-400 py-2';
+                        empty.textContent = query ? 'No registered names match that search yet. Leave this referral unaccounted and try again when the person registers.' : 'No other registered names available.';
+                        results.appendChild(empty);
+                        return;
+                    }
+                    matches.forEach(candidate => {
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'w-full rounded-md border border-gray-600 px-3 py-2 text-left text-sm text-gray-100 hover:bg-white/10';
+                        button.textContent = candidate.name;
+                        button.addEventListener('click', () => showConfirmation(candidate));
+                        results.appendChild(button);
+                    });
+                };
+                search.addEventListener('input', renderCandidates);
+                manualContent.append(search, results);
+                manual.append(manualSummary, manualContent);
+                row.appendChild(manual);
                 list.appendChild(row);
             });
-        }
-
         /** Apply or remove the configured paid drink upgrade for a guest and refresh the displayed charge. */
         async function toggleGuestDrinkUpgrade(id, data, welcomeDrinkEarned) {
             if (!db || !id) return;
