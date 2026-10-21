@@ -252,6 +252,38 @@
         }
 
 
+        /* Keep Total / Live stat pairs side by side and scale values to the available card width. */
+        /* Management-only stats styling. The public sign-up page shares only the footer. */
+        body.staff-mode .stat-pair-grid {
+            container-type: inline-size;
+            display: grid;
+            grid-template-columns: max-content max-content max-content;
+            justify-content: start;
+            align-items: start;
+            gap: .35rem;
+            width: fit-content;
+            max-width: 100%;
+        }
+        body.staff-mode .stat-pair-grid > div { min-width: max-content; }
+        body.staff-mode .stat-pair-value {
+            min-width: max-content;
+            max-width: none;
+            overflow: visible;
+            white-space: nowrap;
+            /* One viewport-based scale keeps every large stat identical across cards. */
+            font-size: clamp(1.25rem, 4.5vw, 1.875rem);
+            line-height: 1.2;
+            font-variant-numeric: tabular-nums;
+        }
+        /* Keep all three admission categories in one row until the viewport is genuinely narrow. */
+        body.staff-mode #adminPricingGrid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .75rem;
+        }
+        @media (max-width: 640px) {
+            body.staff-mode #adminPricingGrid { grid-template-columns: minmax(0, 1fr); }
+        }
         /* Guest-card actions share sizing. Green means the operation is complete and clicking will undo it. */
         .guest-action-btn {
             display: inline-flex;
@@ -370,6 +402,11 @@
             font-size: 0.65rem;
             letter-spacing: 0.04em;
         }
+        .staff-summary-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+            gap: 0.75rem;
+        }
         .staff-metric-card {
             min-width: 0;
             padding: 0.85rem;
@@ -403,14 +440,14 @@
         }
 
         /* Page modes keep the public landing content out of staff and RSVP-confirmation views. */
-        body.staff-mode main > header,
-        body.staff-mode main > section,
-        body.staff-mode footer { display: none !important; }
         body.staff-mode main { width: 100%; max-width: 96rem; padding-top: 1rem; padding-bottom: 1rem; }
+        /* The public landing/RSVP content is separate from Management; only the footer is shared. */
+        body.staff-mode main > .hero-copy,
+        body.staff-mode main > section:not(.staff-panel),
+        body.staff-mode main > #postRegistrationActions { display: none !important; }
         body.staff-mode #hostessPortal { margin-top: 0; margin-bottom: 0; }
         body.confirmation-mode main > header,
         body.confirmation-mode main > section:not(#rsvp-section),
-        body.confirmation-mode footer { display: none !important; }
         body.confirmation-mode main { padding-top: 1rem; padding-bottom: 1rem; }
         body.confirmation-mode #rsvpIntro { display: none !important; }
         body.confirmation-mode #rsvp-section { margin-bottom: 1rem; }
@@ -432,7 +469,7 @@
             <p class="hero-time text-sm mt-2">From 18:00 <span class="text-gold">·</span> Open end</p>
             <p class="hero-host text-xs font-serif tracking-wider uppercase mt-3">Hosted by Ari</p>
             <p class="hero-venue text-xs sm:text-sm mt-2">The Dean Munich, Autograph Collection by Marriott</p>
-            <p class="text-xs sm:text-sm text-gray-300 mt-1"><a href="https://www.google.com/maps/search/?api=1&amp;query=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" target="_blank" rel="noopener noreferrer" class="underline decoration-gold/50 underline-offset-4 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Open The Dean Munich address in Google Maps">Landsberger Straße 68, 80339 München · Westend <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1" aria-hidden="true"></i></a></p>
+            <p class="text-xs sm:text-sm text-gray-300 mt-1"><a href="https://www.google.com/maps/search/?api=1&amp;query=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" target="_blank" rel="noopener noreferrer" class="underline decoration-gold/50 underline-offset-4 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Open The Dean Munich address in Google Maps">Landsberger Straße 68, 80339 München <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1" aria-hidden="true"></i></a></p>
             <div class="flex items-center justify-center mt-6">
                 <a href="#rsvp-section" class="gold-btn inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg uppercase font-serif text-xs tracking-[0.14em]">Join the Guest List <i class="fa-solid fa-arrow-down-long"></i></a>
             </div>
@@ -537,15 +574,17 @@
             <div id="errorMessage" role="alert" aria-live="assertive" class="hidden mt-6 p-5 rounded-lg bg-red-950/60 border border-red-400/40 text-center text-red-200 text-sm leading-relaxed"></div>
         </section>
 
-        <!-- Staff-only interface. Access is Firebase Authentication backed; keep authorization enforced by Firestore rules and Cloud Functions. -->
+        <!-- Staff-only interface. The DEV login is Firebase Authentication backed; keep authorization enforced by Firestore rules and Cloud Functions. -->
         <!-- Staff console: reveal operational tools only after Firebase Authentication and an active role profile have been verified. -->
         <div id="hostessPortal" class="hidden relative z-20 w-full mt-8 mb-8">
             <div class="glass-panel rounded-2xl p-5 sm:p-8 max-w-none w-full mx-auto gold-border-glow">
                 <div class="flex justify-between items-center gap-4 mb-5 border-b border-gold/20 pb-4">
                     <div class="min-w-0">
-                        <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Management Portal</h3>
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Management Portal</h3>
+                            <span id="staffIdentity" class="hidden text-xs text-gray-300 break-all">Signed in as <span id="staffIdentityUsername" class="text-gold font-semibold"></span></span>
+                        </div>
                         <p id="adminPortalDescription" class="text-xs text-gray-400 mt-1">Guest list, check-in, payment and event administration</p>
-                         <p id="adminPortalBuildVersion" class="hidden text-[9px] text-gray-500 mt-1 tracking-wide" aria-label="Application build version">Live build 2026.10.20.15</p>
                     </div>
                     <button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white shrink-0"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
@@ -570,11 +609,12 @@
                     <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">Firebase Authentication or Firestore is unavailable. Check the project configuration and security rules.</p>
                 </div>
                 <div id="guestlistSection" class="hidden">
-                    <h4 class="staff-subheading mb-2">Signed in</h4>
-                    <div id="staffIdentityBar" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gold/20 bg-black/30 px-3 py-2 mb-4">
-                        <p id="staffIdentity" class="text-[10px] text-gray-300 break-all">Signed in</p>
-                        <span class="text-[9px] text-emerald-200 uppercase tracking-wider">SIGNED IN</span>
-                    </div>
+                    <nav id="adminPageNavigation" class="hidden mb-5 flex flex-wrap gap-2 rounded-xl border border-gold/20 bg-black/25 p-3" aria-label="Management pages">
+                        <button type="button" class="sort-option" data-staff-page="overview" aria-pressed="true" onclick="showStaffPage('overview')">Live Event Overview</button>
+                        <button type="button" class="sort-option" data-staff-page="guest-management" aria-pressed="false" onclick="showStaffPage('guest-management')">Guest List Management</button>
+                        <button type="button" class="sort-option" data-staff-page="event-settings" aria-pressed="false" onclick="showStaffPage('event-settings')">Event Settings</button>
+                    </nav>
+                    <div id="staffOperationsPage">
 
                     <div id="eventCheckInModeBanner" class="rounded-lg border border-amber-400/40 bg-amber-950/30 px-3 py-2 mb-4" role="status" aria-live="polite">
                         <p id="eventCheckInModeTitle" class="text-xs font-semibold uppercase tracking-wider text-amber-100">EVENT CHECK-IN INACTIVE · TEST MODE</p>
@@ -583,7 +623,6 @@
                     <div id="hotelSingleStepNotice" class="hidden rounded-lg border border-gold/20 bg-black/20 px-3 py-3 mb-4 text-xs text-gray-300" role="status">
                         Hotel check-in is available only when two-step check-in is enabled. Ask the event Admin to enable two-step mode for this role.
                     </div>
-                    <h4 class="staff-subheading mb-2">Live event overview</h4>
                     <!-- Registration alerts distinguish the previous-login catch-up from genuinely new sign-ups during this session. -->
                     <div id="signupAlertArea" class="space-y-2 mb-4 hidden" aria-live="polite" aria-atomic="true">
                         <div id="signupSinceLastLoginAlert" class="hidden rounded-lg border border-amber-400/40 bg-amber-950/30 px-3 py-2">
@@ -606,37 +645,37 @@
                     <!-- Hotel receives only the operational guest total, its own check-in count, and country diversity. -->
                     <div id="hotelSummaryStats" class="staff-metric-card hidden mb-4">
                         <p class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</p>
-                        <div class="flex items-start gap-3 mt-2">
+                        <div class="stat-pair-grid mt-2">
                             <div class="min-w-0">
-                                <p id="hotelGuestTotalCount" class="text-3xl font-semibold text-gold tabular-nums">0</p>
+                                <p id="hotelGuestTotalCount" class="stat-pair-value font-semibold tabular-nums text-gold">0</p>
                                 <p class="text-[10px] uppercase tracking-wider text-gray-400">Total</p>
                             </div>
-                            <span class="text-2xl text-gray-500">/</span>
+                            <span class="text-2xl leading-9 text-gray-500">/</span>
                             <div class="min-w-0">
-                                <p id="hotelGuestCheckedInCount" class="text-3xl font-semibold text-emerald-200 tabular-nums">0</p>
+                                <p id="hotelGuestCheckedInCount" class="stat-pair-value font-semibold tabular-nums text-emerald-200">0</p>
                                 <p class="text-[10px] uppercase tracking-wider text-gray-400">Check-in</p>
                             </div>
                         </div>
                         <div class="mt-3 pt-3 border-t border-gold/10 flex flex-wrap items-center gap-2">
                             <span class="inline-flex items-center gap-1.5 rounded-full border border-sky-400/30 bg-sky-950/30 px-3 py-1 text-[10px] text-sky-200">
                                 <span id="hotelGuestCountryCount" class="font-semibold text-sky-100 tabular-nums">0</span>
-                                <span>Countries represented</span>
+                                <span>Countries</span>
                             </span>
                         </div>
                     </div>
                     <div class="flex justify-end mb-2"><button type="button" id="adminStatsViewToggle" class="sort-option hidden" onclick="toggleAdminStatsView()">Full view</button></div>
-                    <div id="staffSummaryStats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    <div id="staffSummaryStats" class="staff-summary-stats-grid mb-4">
                         <div id="guestSummaryMetric" class="staff-metric-card">
                             <h5 class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Guests</h5>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                                <div class="flex items-start gap-2">
+                                <div class="stat-pair-grid">
                                     <div class="min-w-0">
-                                        <p id="guestTotalCount" class="text-3xl font-semibold text-gold tabular-nums">0</p>
+                                        <p id="guestTotalCount" class="stat-pair-value font-semibold tabular-nums text-gold">0</p>
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Total</p>
                                     </div>
-                                    <span class="text-2xl text-gray-500">/</span>
+                                    <span class="text-2xl leading-9 text-gray-500">/</span>
                                     <div class="min-w-0">
-                                        <p id="guestPaidCount" class="text-3xl font-semibold text-emerald-200 tabular-nums">0</p>
+                                        <p id="guestPaidCount" class="stat-pair-value font-semibold tabular-nums text-emerald-200">0</p>
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Paid</p>
                                     </div>
                                 </div>
@@ -660,21 +699,21 @@
                                 </span>
                                 <span class="inline-flex items-center gap-1.5 rounded-full border border-sky-400/30 bg-sky-950/30 px-3 py-1 text-[10px] text-sky-200">
                                     <span id="guestCountryCount" class="font-semibold text-sky-100 tabular-nums">0</span>
-                                    <span>Countries represented</span>
+                                    <span>Countries</span>
                                 </span>
                             </div>
                         </div>
                         <div id="welcomeDrinkMetric" class="staff-metric-card">
                             <h5 class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Welcome drinks</h5>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                                <div class="flex items-center gap-2">
+                                <div class="stat-pair-grid">
                                     <div class="min-w-0">
-                                        <p id="drinkEstimateTotal" class="text-3xl font-semibold text-gold tabular-nums">0</p>
+                                        <p id="drinkEstimateTotal" class="stat-pair-value font-semibold tabular-nums text-gold">0</p>
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Total</p>
                                     </div>
-                                    <span class="text-2xl text-gray-500">/</span>
+                                    <span class="text-2xl leading-9 text-gray-500">/</span>
                                     <div class="min-w-0">
-                                        <p id="welcomeDrinkChipCount" class="text-3xl font-semibold text-emerald-200 tabular-nums">0</p>
+                                        <p id="welcomeDrinkChipCount" class="stat-pair-value font-semibold tabular-nums text-emerald-200">0</p>
                                         <p class="text-[10px] uppercase tracking-wider text-gray-400">Issued</p>
                                     </div>
                                 </div>
@@ -691,37 +730,34 @@
                             </div>
                             <div id="extraDrinkEstimateSection" class="hidden mt-3 pt-3 border-t border-gold/10">
                                 <div class="flex items-baseline justify-between gap-2 mb-2">
-                                    <h6 class="m-0 text-[10px] font-semibold uppercase tracking-wider text-gold-light">Extra drinks estimate</h6>
+                                    <h6 class="m-0 text-[10px] font-semibold uppercase tracking-wider text-gold-light">Extra drinks</h6>
                                     <p id="potentialExtraDrinkCount" class="text-sm font-semibold text-gold tabular-nums whitespace-nowrap">0</p>
                                 </div>
-                                <div id="extraDrinkAdminControls" class="hidden flex flex-wrap gap-2" role="group" aria-label="Extra drink policy">
-                                    <button type="button" class="sort-option" data-extra-drink-mode="none" aria-pressed="false" onclick="setExtraDrinkMode('none')">None</button>
-                                    <button type="button" class="sort-option" data-extra-drink-mode="2" aria-pressed="false" onclick="setExtraDrinkMode('2')">2 per guest</button>
-                                    <button type="button" class="sort-option" data-extra-drink-mode="3" aria-pressed="false" onclick="setExtraDrinkMode('3')">3 per guest</button>
-                                    <button type="button" class="sort-option" data-extra-drink-mode="4" aria-pressed="false" onclick="setExtraDrinkMode('4')">4 per guest</button>
+                                <div id="extraDrinkAdminControls" class="hidden flex items-center gap-2" role="group" aria-label="Extra drinks per guest">
+                                    <button type="button" class="sort-option" aria-label="Decrease extra drinks per guest" title="Decrease" onclick="adjustExtraDrinkMode(-1)">−</button>
+                                    <span class="text-xs text-gray-200 whitespace-nowrap"><span id="extraDrinkPerGuestValue">1</span> drinks per guest</span>
+                                    <button type="button" class="sort-option" aria-label="Increase extra drinks per guest" title="Increase" onclick="adjustExtraDrinkMode(1)">+</button>
                                 </div>
-                                <p id="extraDrinkEstimateExplanation" class="hidden text-[10px] text-gray-400 mt-2">Estimate = guests × selected drinks per guest, minus welcome drinks already included.</p>
                             </div>
                         </div>
                         <div id="collectedMetric" class="staff-metric-card">
                             <div class="flex flex-wrap items-center justify-between gap-2"><h5 class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Revenue (€)</h5><button type="button" id="attendance66Button" class="sort-option" onclick="toggleAttendanceForecast()">100% attendance</button></div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 items-start">
                                 <div class="min-w-0">
-                                    <div class="flex items-center gap-2">
+                                    <div class="stat-pair-grid">
                                         <div class="min-w-0">
-                                            <p id="fullAttendanceAmount" class="text-3xl font-semibold text-gold tabular-nums">0</p>
-                                            <p class="text-[10px] uppercase tracking-wider text-gray-400">Tickets estimate</p>
+                                            <p id="fullAttendanceAmount" class="stat-pair-value font-semibold tabular-nums text-gold">0</p>
+                                            <p class="text-[10px] uppercase tracking-wider text-gray-400">Tickets</p>
                                         </div>
-                                        <span class="text-2xl text-gray-500">/</span>
+                                        <span class="text-2xl leading-9 text-gray-500">/</span>
                                         <div class="min-w-0">
-                                            <p id="collectedAmount" class="text-3xl font-semibold text-emerald-200 tabular-nums">0</p>
+                                            <p id="collectedAmount" class="stat-pair-value font-semibold tabular-nums text-emerald-200">0</p>
                                             <p class="text-[10px] uppercase tracking-wider text-gray-400">Paid</p>
                                         </div>
                                     </div>
                                     <div class="mt-3 pt-3 border-t border-gold/10">
-                                        <p id="potentialExtraDrinkRevenue" class="text-3xl font-semibold text-gold tabular-nums">0</p>
-                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Drinks estimate</p>
-                                        <p class="text-[10px] text-gray-400 mt-1">Reference price: €10 per drink.</p>
+                                        <p id="potentialExtraDrinkRevenue" class="stat-pair-value font-semibold text-gold tabular-nums">0</p>
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400">Drinks (€10 avg.)</p>
                                     </div>
                                 </div>
                                 <div class="min-w-0 flex items-start justify-end">
@@ -820,17 +856,41 @@
                         </div>
                     </section>
                     </section>
-                    <!-- Admin-only configuration follows the staff's day-to-day check-in and payment workflow. -->
-                    <div id="adminToolsHeading" class="hidden staff-tools-heading" aria-label="Admin configuration">
-                        <h4>Administration &amp; configuration</h4>
-                        <p>Admin only · changes affect event operations</p>
-                    </div>
+                    </div><!-- /staffOperationsPage -->
 
-                    <section id="adminPricingPanel" class="staff-panel">
+
+                    <div id="guestManagementPage" class="hidden">
+                        <section id="internationsImportPanel" class="staff-panel">
                         <div class="staff-panel__header">
-                            <h4 class="staff-panel__title">Event Settings</h4>
-                            <span class="staff-panel__meta">Pricing, welcome drinks and admission workflow</span>
+                            <h4 class="staff-panel__title">Import InterNations guest list</h4>
+                            <span class="staff-panel__meta">CSV / Excel · repeatable import</span>
                         </div>
+                        <p class="text-xs text-gray-300 mb-3">Choose the full current InterNations Members-List export. Missing names are removed from the imported member list; matched guests keep their check-in, payment and chip status. An RSVP guest who is also a member remains a member for calculations.</p>
+                        <label for="internationsFileInput" class="form-label">Guest-list spreadsheet</label>
+                        <input id="internationsFileInput" type="file" accept=".xlsx,.xls,.csv,.ods" class="form-field text-sm mb-3">
+                        <div id="internationsImportOptions" class="hidden space-y-3">
+                            <p class="text-xs text-sky-100">Names are combined automatically from First Name + Last Name. Membership Type (or Status) sets the member category and badges; Country is retained and shown as a flag.</p>
+                            <div id="internationsImportPreview" class="rounded-lg border border-sky-400/20 bg-black/30 p-3 text-xs text-gray-200"></div>
+                            <button type="button" id="confirmInternationsImport" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Synchronize full InterNations Members-List</button>
+                        </div>
+                        <p id="internationsImportStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-3"></p>
+                    </section>
+                        <section id="databaseBackupPanel" class="staff-panel hidden" aria-labelledby="databaseBackupHeading">
+                        <div class="staff-panel__header">
+                            <h4 id="databaseBackupHeading" class="staff-panel__title">Database Backup & Restore</h4>
+                        </div>
+                        <p class="text-xs text-gray-300 mb-3">Export and restore work directly through Firestore under your signed-in Admin permissions; no Cloud Functions or billing plan upgrade is required. The JSON file includes guest records and event settings only. Staff accounts, roles and passwords are not included. Restore replaces all current guest records and event settings, so download a fresh backup first and review the selected file before confirming.</p>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <button id="createDatabaseBackupBtn" type="button" class="sort-option">Download backup (.json)</button>
+                            <label for="restoreDatabaseFileInput" class="sort-option cursor-pointer">Choose backup to restore</label>
+                            <input id="restoreDatabaseFileInput" type="file" accept=".json,application/json" class="hidden">
+                            <button id="restoreDatabaseBackupBtn" type="button" disabled class="sort-option opacity-40 cursor-not-allowed">Restore selected backup</button>
+                        </div>
+                        <p id="databaseBackupStatus" class="text-xs text-gray-300 mt-3" role="status" aria-live="polite">Create a backup before making bulk changes.</p>
+                    </section>
+                    </div>
+                    <div id="eventSettingsPage" class="hidden">
+                        <section id="adminPricingPanel" class="staff-panel">
                         <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules, referral eligibility and the admission workflow. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid.</p>
                         <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
                             <label class="flex items-start gap-3 text-sm text-gray-100"><input id="eventCheckInActive" type="checkbox" class="mt-1 accent-amber-300"><span><strong>Event check-in active (live mode)</strong><span class="block text-xs text-gray-400 mt-1">Inactive: check-in, payment, drink-upgrade and chip actions are temporary in this tab and cleared on sign-out, reload or mode switch. The first live activation clears legacy operational test statuses but preserves every guest registration, member detail and date. Public registrations are always permanent.</span></span></label>
@@ -840,7 +900,24 @@
                             <label class="flex items-start gap-3 text-sm text-gray-100"><input id="twoStepCheckInEnabled" type="checkbox" class="mt-1 accent-amber-300" checked><span><strong>Two-step check-in</strong><span class="block text-xs text-gray-400 mt-1">Enabled: Hotel staff verify arrivals; InterNations staff handle payment and final admission. Disabled: InterNations sees one guest list with check-in and admission actions.</span></span></label>
                             <p id="workflowSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-300 mt-2">Two-step check-in is enabled by default.</p>
                         </div>
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                        <div id="adminPricingGrid"><div class="rounded-lg border border-gold/20 bg-black/30 p-3">
+                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Albatross</h5>
+                                <label for="basePricePaidMembers" class="form-label">Admission price (€)</label>
+                                <input id="basePricePaidMembers" type="number" min="0" step="1" class="form-field mb-3" value="5">
+                                <label for="drinkModePaidMembers" class="form-label">Welcome-drink rule</label>
+                                <select id="drinkModePaidMembers" class="form-field mb-3">
+                                    <option value="included">Included</option>
+                                    <option value="upgrade">Paid upgrade</option>
+                                    <option value="not_allowed" selected>Unavailable</option>
+                                </select>
+                                <label for="drinkPricePaidMembers" class="form-label">Upgrade price (€)</label>
+                                <input id="drinkPricePaidMembers" type="number" min="0" step="1" class="form-field" value="0" disabled>
+                                <div class="mt-4 border-t border-gold/20 pt-3">
+                                    <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligiblePaidMembers" type="checkbox" class="mt-0.5 accent-amber-300" checked> Eligible for referral welcome drink</label>
+                                    <label for="referralThresholdPaidMembers" class="form-label">Required referrals who checked in and paid</label>
+                                    <input id="referralThresholdPaidMembers" type="number" min="1" step="1" class="form-field" value="2">
+                                </div>
+                            </div>
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Basics</h5>
                                 <label for="basePriceBasics" class="form-label">Admission price (€)</label>
@@ -860,24 +937,6 @@
                                 </div>
                             </div>
                             <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
-                                <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">Albatross</h5>
-                                <label for="basePricePaidMembers" class="form-label">Admission price (€)</label>
-                                <input id="basePricePaidMembers" type="number" min="0" step="1" class="form-field mb-3" value="5">
-                                <label for="drinkModePaidMembers" class="form-label">Welcome-drink rule</label>
-                                <select id="drinkModePaidMembers" class="form-field mb-3">
-                                    <option value="included">Included</option>
-                                    <option value="upgrade">Paid upgrade</option>
-                                    <option value="not_allowed" selected>Unavailable</option>
-                                </select>
-                                <label for="drinkPricePaidMembers" class="form-label">Upgrade price (€)</label>
-                                <input id="drinkPricePaidMembers" type="number" min="0" step="1" class="form-field" value="0" disabled>
-                                <div class="mt-4 border-t border-gold/20 pt-3">
-                                    <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligiblePaidMembers" type="checkbox" class="mt-0.5 accent-amber-300" checked> Eligible for referral welcome drink</label>
-                                    <label for="referralThresholdPaidMembers" class="form-label">Required referrals who checked in and paid</label>
-                                    <input id="referralThresholdPaidMembers" type="number" min="1" step="1" class="form-field" value="2">
-                                </div>
-                            </div>
-                            <div class="rounded-lg border border-gold/20 bg-black/30 p-3">
                                 <h5 class="font-serif text-amber-100 text-xs uppercase tracking-wider mb-3">RSVPs</h5>
                                 <label for="basePriceFriends" class="form-label">Admission price (€)</label>
                                 <input id="basePriceFriends" type="number" min="0" step="1" class="form-field mb-3" value="20">
@@ -888,7 +947,7 @@
                                     <option value="not_allowed">Unavailable</option>
                                 </select>
                                 <label for="drinkPriceFriends" class="form-label">Upgrade price (€)</label>
-                                <input id="drinkPriceFriends" type="number" min="0" step="1" class="form-field" value="0" disabled>
+                                <input id="drinkPriceFriends" type="number" min="0" step="1" class="form-field" value="0">
                                 <div class="mt-4 border-t border-gold/20 pt-3">
                                     <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligibleFriends" type="checkbox" class="mt-0.5 accent-amber-300"> Eligible for referral welcome drink</label>
                                     <label for="referralThresholdFriends" class="form-label">Required referrals who checked in and paid</label>
@@ -896,43 +955,11 @@
                                 </div>
                             </div>
                         </div>
-                        <p id="pricingSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-4">Pricing changes save automatically.</p>
                     </section>
-
-                    <section id="internationsImportPanel" class="staff-panel">
-                        <div class="staff-panel__header">
-                            <h4 class="staff-panel__title">Import InterNations guest list</h4>
-                            <span class="staff-panel__meta">CSV / Excel · repeatable import</span>
-                        </div>
-                        <p class="text-xs text-gray-300 mb-3">Choose the full current InterNations Members-List export. Missing names are removed from the imported member list; matched guests keep their check-in, payment and chip status. An RSVP guest who is also a member remains a member for calculations.</p>
-                        <label for="internationsFileInput" class="form-label">Guest-list spreadsheet</label>
-                        <input id="internationsFileInput" type="file" accept=".xlsx,.xls,.csv,.ods" class="form-field text-sm mb-3">
-                        <div id="internationsImportOptions" class="hidden space-y-3">
-                            <p class="text-xs text-sky-100">Names are combined automatically from First Name + Last Name. Membership Type (or Status) sets the member category and badges; Country is retained and shown as a flag.</p>
-                            <div id="internationsImportPreview" class="rounded-lg border border-sky-400/20 bg-black/30 p-3 text-xs text-gray-200"></div>
-                            <button type="button" id="confirmInternationsImport" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Synchronize full InterNations Members-List</button>
-                        </div>
-                        <p id="internationsImportStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-3"></p>
-                    </section>
-
-                    <section id="databaseBackupPanel" class="staff-panel hidden" aria-labelledby="databaseBackupHeading">
-                        <div class="staff-panel__header">
-                            <h4 id="databaseBackupHeading" class="staff-panel__title">Database Backup & Restore</h4>
-                            <span class="staff-panel__meta">Admin only</span>
-                        </div>
-                        <p class="text-xs text-gray-300 mb-3">Export and restore work directly through Firestore under your signed-in Admin permissions; no Cloud Functions or billing plan upgrade is required. The JSON file includes guest records and event settings only. Staff accounts, roles and passwords are not included. Restore replaces all current guest records and event settings, so download a fresh backup first and review the selected file before confirming.</p>
-                        <div class="flex flex-wrap gap-2 items-center">
-                            <button id="createDatabaseBackupBtn" type="button" class="sort-option">Download backup (.json)</button>
-                            <label for="restoreDatabaseFileInput" class="sort-option cursor-pointer">Choose backup to restore</label>
-                            <input id="restoreDatabaseFileInput" type="file" accept=".json,application/json" class="hidden">
-                            <button id="restoreDatabaseBackupBtn" type="button" disabled class="sort-option opacity-40 cursor-not-allowed">Restore selected backup</button>
-                        </div>
-                        <p id="databaseBackupStatus" class="text-xs text-gray-300 mt-3" role="status" aria-live="polite">Create a backup before making bulk changes.</p>
-                    </section>
+                    </div>
 
                 </div>
             </div>
-            <p id="adminPortalFooterBuildVersion" class="hidden text-[9px] text-gray-600 mt-2 tracking-wide text-center" aria-label="Application build version">Live build 2026.10.20.15</p>
         </div>
     </main>
 
@@ -942,11 +969,11 @@
         </div>
         <p class="font-serif tracking-wider">THE DEAN AFTER DARK</p>
         <p class="mt-1">The Dean Munich, Autograph Collection by Marriott</p>
-        <p class="mt-1 text-gray-400"><a href="https://www.google.com/maps/search/?api=1&amp;query=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" target="_blank" rel="noopener noreferrer" class="underline decoration-gold/50 underline-offset-4 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Open The Dean Munich address in Google Maps">Landsberger Straße 68, 80339 München · Westend <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1" aria-hidden="true"></i></a></p>
+        <p class="mt-1 text-gray-400"><a href="https://www.google.com/maps/search/?api=1&amp;query=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" target="_blank" rel="noopener noreferrer" class="underline decoration-gold/50 underline-offset-4 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Open The Dean Munich address in Google Maps">Landsberger Straße 68, 80339 München <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1" aria-hidden="true"></i></a></p>
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.20.15</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.21.20</p>
         </div>
     </footer>
 
@@ -966,10 +993,11 @@
         // Staff access uses Firebase Authentication plus a server-enforced event_users/{uid} role record.
         const WHATSAPP_GROUP_INVITE_URL = "https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58";
         const STAFF_ROLES = ['admin', 'hotel', 'internations'];
-        // DEV reads independent workflow settings; LIVE uses production settings and Admin-controlled event mode.
+        // DEV reads independent workflow settings and is always locked to session-only operational testing.
         const IS_DEVELOPMENT_BUILD = document.querySelector('meta[name="app-build-target"]')?.content === 'dev';
         const WORKFLOW_SETTINGS_DOC_ID = IS_DEVELOPMENT_BUILD ? 'workflow_dev' : 'workflow';
         let currentStaffRole = null;
+        let activeStaffPage = 'overview';
         let currentAuthUser = null;
         let activeStaffUid = null;
         let staffActivationPromise = null;
@@ -1280,7 +1308,7 @@
         // Defaults for admission tiers, drink treatment and referral rewards; event_settings/pricing can override them.
         const DEFAULT_PRICING = {
             basePrices: { basics: 15, paidMembers: 5, friends: 20 },
-            extraDrinkMode: 'none',
+            extraDrinkMode: '1',
             drinkRules: {
                 basics: { mode: 'not_allowed', price: 0 },
                 paidMembers: { mode: 'not_allowed', price: 0 },
@@ -1320,7 +1348,9 @@
                 };
             };
             return {
-                extraDrinkMode: ['none', '2', '3', '4'].includes(String(raw.extraDrinkMode)) ? String(raw.extraDrinkMode) : DEFAULT_PRICING.extraDrinkMode,
+                extraDrinkMode: Number.isInteger(Number(raw.extraDrinkMode)) && Number(raw.extraDrinkMode) >= 0 && Number(raw.extraDrinkMode) <= 10
+                    ? String(raw.extraDrinkMode)
+                    : (String(raw.extraDrinkMode) === 'none' ? '1' : DEFAULT_PRICING.extraDrinkMode),
                 basePrices: {
                     basics: amount(raw.basePrices && raw.basePrices.basics, 15),
                     paidMembers: amount(raw.basePrices && raw.basePrices.paidMembers, 5),
@@ -1445,8 +1475,8 @@
             const output = document.getElementById('potentialExtraDrinkCount');
             const revenueOutput = document.getElementById('potentialExtraDrinkRevenue');
             if (!output) return;
-            const mode = String(pricingSettings.extraDrinkMode || 'none');
-            const multiplier = ['2', '3', '4'].includes(mode) ? Number(mode) : 0;
+            const mode = String(pricingSettings.extraDrinkMode || '1');
+            const multiplier = Number.isInteger(Number(mode)) && Number(mode) >= 0 && Number(mode) <= 10 ? Number(mode) : 1;
             const docs = Array.isArray(cachedGuestDocs) ? cachedGuestDocs : [];
             const guests = new Map();
             docs.forEach(doc => {
@@ -1526,7 +1556,7 @@
             if (!db) return;
             const status = document.getElementById('pricingSaveStatus');
             db.collection('event_settings').doc('pricing').set({
-                extraDrinkMode: pricingSettings.extraDrinkMode || 'none',
+                extraDrinkMode: pricingSettings.extraDrinkMode || '1',
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true }).then(() => {
                 if (status) status.textContent = 'Extra-drink policy saved.';
@@ -1535,29 +1565,20 @@
                 if (status) status.textContent = 'Could not save extra-drink policy.';
             });
         }
-        function setExtraDrinkMode(mode) {
-            if (currentStaffRole !== 'admin' || !['none', '2', '3', '4'].includes(String(mode))) return;
-            pricingSettings.extraDrinkMode = mode;
-            document.querySelectorAll('[data-extra-drink-mode]').forEach(button => {
-                const selected = button.dataset.extraDrinkMode === mode;
-                button.setAttribute('aria-pressed', selected ? 'true' : 'false');
-                button.classList.toggle('bg-gold/20', selected);
-                button.classList.toggle('border-gold', selected);
-                button.classList.toggle('text-gold', selected);
-            });
+        function adjustExtraDrinkMode(delta) {
+            if (currentStaffRole !== 'admin' || !Number.isInteger(delta)) return;
+            const current = Number(pricingSettings.extraDrinkMode || '1');
+            pricingSettings.extraDrinkMode = String(Math.max(0, Math.min(10, current + delta)));
+            const value = document.getElementById('extraDrinkPerGuestValue');
+            if (value) value.textContent = pricingSettings.extraDrinkMode;
             updateExtraDrinkForecastDisplay();
             saveExtraDrinkModeOnly();
         }
 
         /** Populate the admin pricing controls from the normalized settings document. */
         function renderPricingForm() {
-            document.querySelectorAll('[data-extra-drink-mode]').forEach(button => {
-                const selected = button.dataset.extraDrinkMode === (pricingSettings.extraDrinkMode || 'none');
-                button.setAttribute('aria-pressed', selected ? 'true' : 'false');
-                button.classList.toggle('bg-gold/20', selected);
-                button.classList.toggle('border-gold', selected);
-                button.classList.toggle('text-gold', selected);
-            });
+            const extraDrinkValue = document.getElementById('extraDrinkPerGuestValue');
+            if (extraDrinkValue) extraDrinkValue.textContent = pricingSettings.extraDrinkMode || '1';
             const fields = {
                 basePriceBasics: pricingSettings.basePrices.basics,
                 basePricePaidMembers: pricingSettings.basePrices.paidMembers,
@@ -1585,7 +1606,7 @@
             ['Basics', 'PaidMembers', 'Friends'].forEach((tier) => {
                 const mode = document.getElementById('drinkMode' + tier);
                 const price = document.getElementById('drinkPrice' + tier);
-                if (mode && price) price.disabled = mode.value !== 'upgrade';
+                if (mode && price) price.disabled = tier !== 'Friends' && mode.value !== 'upgrade';
             });
         }
 
@@ -1629,7 +1650,7 @@
                                 paidMembers: { mode: document.getElementById('drinkModePaidMembers').value, price: amount('drinkPricePaidMembers', 'Albatross drink upgrade') },
                                 friends: { mode: document.getElementById('drinkModeFriends').value, price: amount('drinkPriceFriends', 'RSVPs drink upgrade') }
                             },
-                            extraDrinkMode: pricingSettings.extraDrinkMode || 'none',
+                            extraDrinkMode: pricingSettings.extraDrinkMode || '1',
                             referralRules: {
                                 basics: { eligible: document.getElementById('referralEligibleBasics').checked, threshold: whole('referralThresholdBasics', 'Basics referral threshold') },
                                 paidMembers: { eligible: document.getElementById('referralEligiblePaidMembers').checked, threshold: whole('referralThresholdPaidMembers', 'Albatross referral threshold') },
@@ -1674,7 +1695,7 @@
                 if (id.startsWith('drinkMode')) {
                     const tier = id.slice('drinkMode'.length);
                     const price = document.getElementById('drinkPrice' + tier);
-                    if (price) price.disabled = input.value !== 'upgrade';
+                    if (price) price.disabled = tier !== 'Friends' && input.value !== 'upgrade';
                 }
                 void savePricingSettings();
             });
@@ -2437,6 +2458,29 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     : 'Check-in, payment and welcome-drink actions are available together in one list.');
         }
 
+        /** Switch between the operational overview, guest-list tools, and event settings pages. */
+        function showStaffPage(page) {
+            const requested = ['overview', 'guest-management', 'event-settings'].includes(page) ? page : 'overview';
+            const nextPage = currentStaffRole === 'admin' ? requested : 'overview';
+            activeStaffPage = nextPage;
+            const pageIds = {
+                'overview': 'staffOperationsPage',
+                'guest-management': 'guestManagementPage',
+                'event-settings': 'eventSettingsPage'
+            };
+            Object.entries(pageIds).forEach(([key, id]) => {
+                const element = document.getElementById(id);
+                if (!element) return;
+                const visible = key === activeStaffPage;
+                element.classList.toggle('hidden', !visible);
+                element.setAttribute('aria-hidden', String(!visible));
+            });
+            document.querySelectorAll('[data-staff-page]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.staffPage === activeStaffPage));
+            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         /** Set the staff interface and available actions for the authenticated role returned by Firestore. */
         function applyStaffRole(role) {
             if (!STAFF_ROLES.includes(role)) throw new Error('The account does not have a valid staff role.');
@@ -2445,7 +2489,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if (portalDescription) portalDescription.textContent = role === 'admin'
                 ? 'Guest list, check-in, payment and event administration'
                 : role === 'internations'
-                    ? 'Guest list, check-in and payment'
+                    ? 'Guest list, check-in, payment and drinks'
                     : 'Guest list and check-in';
             guestSortBy = role === 'admin' ? 'signupNewest' : 'firstName';
             // Admin defaults to newest sign-up; Hotel defaults to first name.
@@ -2463,8 +2507,6 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             show('hotelSummaryStats', role === 'hotel');
             show('adminNewGuestMetric', role === 'admin');
             show('adminStatsViewToggle', canToggleAdminStatsView(role));
-            show('adminPortalBuildVersion', role === 'admin');
-            show('adminPortalFooterBuildVersion', role === 'admin');
             // Sign-up history and import timestamps are administrative details, not operational check-in data.
             show('hotelSignupSortButton', role === 'admin');
             show('signupAlertArea', role === 'admin');
@@ -2475,15 +2517,15 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 statsGrid.classList.toggle('xl:grid-cols-3', role === 'admin');
                 statsGrid.classList.toggle('xl:grid-cols-2', role !== 'admin');
             }
-            show('adminToolsHeading', role === 'admin');
+            show('adminPageNavigation', role === 'admin');
             show('adminPricingPanel', role === 'admin');
             show('extraDrinkEstimateSection', role === 'admin');
-            show('extraDrinkEstimateExplanation', role === 'admin');
             show('extraDrinkAdminControls', role === 'admin');
             show('internationsImportPanel', role === 'admin');
             show('databaseBackupPanel', role === 'admin');
             applyWorkflowRoleVisibility();
             updateEventCheckInModeUI();
+            showStaffPage('overview');
         }
 
         /** Display a staff sign-in or access-denied message in the dedicated feedback area. */
@@ -2536,6 +2578,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         function showStaffLogin() {
             activeStaffUid = null;
             currentStaffRole = null;
+            activeStaffPage = 'overview';
             // Discard all simulated check-in/payment/drink changes when the staff session ends.
             clearSessionGuestOverrides();
             stopStaffRealtimeListeners();
@@ -2549,7 +2592,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             updateSignupAlertsUI();
             document.getElementById('staffLoginSection').classList.remove('hidden');
             document.getElementById('guestlistSection').classList.add('hidden');
-            document.getElementById('staffIdentity').textContent = '';
+            document.getElementById('staffIdentity').classList.add('hidden');
+            document.getElementById('staffIdentityUsername').textContent = '';
             document.getElementById('staffPassword').value = '';
         }
 
@@ -2581,7 +2625,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 applyStaffRole(profile.role);
                 activeStaffUid = user.uid;
                 beginSignupAlertSession(user.uid);
-                document.getElementById('staffIdentity').textContent = 'Signed in as ' + username;
+                const staffIdentity = document.getElementById('staffIdentity');
+                document.getElementById('staffIdentityUsername').textContent = username;
+                staffIdentity.classList.remove('hidden');
                 document.getElementById('staffLoginSection').classList.add('hidden');
                 document.getElementById('guestlistSection').classList.remove('hidden');
                 document.getElementById('staffLoginError').classList.add('hidden');
@@ -3235,29 +3281,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     if (isMemberRecord && /ambassador/.test(memberStatusKey)) appendMemberBadge('AMBASSADOR', 'InterNations Ambassador', 'member');
                     if (isMemberRecord && /buddy/.test(memberStatusKey)) appendMemberBadge('BUDDY', 'Newcomers’ Buddy', 'member');
                     if (isMemberRecord && /(?:\b1st\b|\bfirst\b)\s*[-–—]?\s*event\b/.test(memberStatusKey)) appendMemberBadge('NEW', 'First InterNations event', 'new');
-                    if (currentStaffRole !== 'hotel' && (mode === 'combined' || mode === 'payment')) {
-                        // Show completed status badges on combined and payment lists; pending states are clear from available actions.
-                        if (checkedIn) {
-                            const checkInStateBadge = document.createElement('span');
-                            checkInStateBadge.className = 'inline-flex items-center rounded-full border border-emerald-400/50 bg-emerald-950/50 px-2 py-1 text-[9px] font-semibold tracking-wider text-emerald-100';
-                            checkInStateBadge.textContent = 'CHECKED IN';
-                            titleLine.appendChild(checkInStateBadge);
-                        }
-
-                        if (isPaid) {
-                            const paymentStateBadge = document.createElement('span');
-                            paymentStateBadge.className = 'inline-flex items-center rounded-full border border-emerald-400/50 bg-emerald-950/50 px-2 py-1 text-[9px] font-semibold tracking-wider text-emerald-100';
-                            paymentStateBadge.textContent = 'PAID';
-                            titleLine.appendChild(paymentStateBadge);
-                        }
-                        if (isPaid && drinkEntitled) {
-                            const welcomeDrinkStateBadge = document.createElement('span');
-                            welcomeDrinkStateBadge.className = 'inline-flex items-center rounded-full border border-amber-300/60 bg-amber-900/30 px-2 py-1 text-[9px] font-semibold tracking-wider text-amber-100';
-                            welcomeDrinkStateBadge.textContent = 'WELCOME DRINK';
-                            welcomeDrinkStateBadge.title = chipAlreadyIssued ? 'Welcome-drink chip has been issued.' : 'Welcome drink is included or earned for this guest.';
-                            titleLine.appendChild(welcomeDrinkStateBadge);
-                        }
-                    }
+                    // Referral badges below are the only welcome-drink status badges.
+                    // Payment, check-in and chip issuance are already represented by their action buttons.
 
                     const guestMeta = document.createElement('p');
                     guestMeta.className = 'text-xs text-gray-300 break-words mt-1';
@@ -3276,7 +3301,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
                     // Show member referral status on every Admin/InterNations guest list,
                     // including not-yet-checked-in members. RSVP referral badges remain in payment views.
-                    if (referralBadgeState && currentStaffRole !== 'hotel' && (isPaymentCard || isMemberRecord)) {
+                    if (referralBadgeState && currentStaffRole !== 'hotel' && (isPaymentCard || isMemberRecord) && (invitedCount > 0 || referralBadgeState.startsWith('noneligible-'))) {
                         const badge = document.createElement('span');
                         const isNonEligibleReferral = referralBadgeState.startsWith('noneligible-');
                         const referralStage = isNonEligibleReferral ? referralBadgeState.slice('noneligible-'.length) : referralBadgeState;
@@ -4276,7 +4301,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
         }
 
-        // Production mode is Admin-controlled; DEV remains permanently test-only.
+        // Production mode is Admin-controlled; the DEV preview is permanently test-only.
         const eventCheckInActiveCheckbox = document.getElementById('eventCheckInActive');
         if (eventCheckInActiveCheckbox) eventCheckInActiveCheckbox.addEventListener('change', async () => {
             const status = document.getElementById('eventCheckInActiveStatus');
