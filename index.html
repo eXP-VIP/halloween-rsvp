@@ -455,6 +455,85 @@
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
         }
+    
+        /* MOBILE MANAGEMENT READABILITY
+           Scope these adjustments to the staff portal on phones; leave public RSVP and desktop styling alone. */
+        @media (max-width: 640px) {
+            body.staff-mode { font-size: 15px; }
+            body.staff-mode main { padding: 0.35rem 0.5rem 0.75rem; }
+            body.staff-mode #hostessPortal { padding-left: 0; padding-right: 0; }
+            body.staff-mode #hostessPortal > .glass-panel,
+            body.staff-mode #hostessPortal .glass-panel { padding: 0.85rem; }
+            body.staff-mode #hostessPortal .staff-panel { margin-bottom: 0.65rem; padding: 0.8rem; border-radius: 0.7rem; }
+            body.staff-mode #hostessPortal .staff-panel__header { gap: 0.35rem 0.6rem; margin-bottom: 0.65rem; padding-bottom: 0.55rem; }
+            body.staff-mode #hostessPortal .staff-panel__title { font-size: 1rem; letter-spacing: 0.045em; line-height: 1.4; }
+            body.staff-mode #hostessPortal .staff-panel__meta { font-size: 0.7rem; }
+            body.staff-mode #hostessPortal .staff-tools-heading { margin: 1rem 0 0.55rem; padding-bottom: 0.45rem; gap: 0.35rem 0.6rem; }
+            body.staff-mode #hostessPortal .staff-tools-heading h4,
+            body.staff-mode #hostessPortal .staff-subheading { font-size: 0.85rem; letter-spacing: 0.055em; }
+            body.staff-mode #hostessPortal .staff-tools-heading p { font-size: 0.78rem; line-height: 1.45; }
+            body.staff-mode #hostessPortal .staff-metric-card { padding: 0.7rem; }
+            body.staff-mode #hostessPortal .staff-metric-card > p:first-child,
+            body.staff-mode #hostessPortal .staff-metric-card > h5:first-child { min-height: 0; margin-bottom: 0.35rem; font-size: 0.78rem; letter-spacing: 0.035em; line-height: 1.4; }
+            body.staff-mode #hostessPortal .staff-summary-stats-grid { grid-template-columns: minmax(0, 1fr); gap: 0.55rem; }
+            body.staff-mode #adminPageNavigation { gap: 0.45rem; padding: 0.55rem; margin-bottom: 0.75rem; }
+            body.staff-mode #adminPageNavigation .sort-option,
+            body.staff-mode .sort-option { min-height: 42px; padding: 0.6rem 0.75rem; font-size: 0.78rem; line-height: 1.25; letter-spacing: 0.015em; }
+            body.staff-mode #adminPageNavigation .sort-option { flex: 1 1 100%; text-align: left; }
+            body.staff-mode #hostessPortal .form-label { margin-bottom: 0.4rem; font-size: 0.8rem; letter-spacing: 0.06em; }
+            body.staff-mode #hostessPortal .form-field { min-height: 46px; padding: 0.7rem 0.8rem; font-size: 16px; }
+            body.staff-mode #hostessPortal button:not(.sort-option):not(.guest-action-btn) { min-height: 42px; }
+            body.staff-mode #hostessPortal .guest-action-btn { min-height: 42px; padding: 0.65rem 0.75rem; font-size: 0.75rem; letter-spacing: 0.015em; white-space: normal; }
+            body.staff-mode #hostessPortal .text-\[9px\] { font-size: 0.7rem; }
+            body.staff-mode #hostessPortal .text-\[10px\] { font-size: 0.75rem; }
+            body.staff-mode #hostessPortal .text-xs { font-size: 0.82rem; line-height: 1.45; }
+            body.staff-mode #hostessPortal .text-sm { font-size: 0.92rem; line-height: 1.5; }
+            body.staff-mode #hostessPortal .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.8rem; }
+            body.staff-mode #hostessPortal .mb-5 { margin-bottom: 0.8rem; }
+            body.staff-mode #hostessPortal .mb-4 { margin-bottom: 0.7rem; }
+            body.staff-mode #hostessPortal .mt-6 { margin-top: 0.9rem; }
+            body.staff-mode #hostessPortal .p-4 { padding: 0.8rem; }
+            body.staff-mode #hostessPortal .gap-4 { gap: 0.7rem; }
+            body.staff-mode #hostessPortal #adminPricingGrid { gap: 0.55rem; }
+            body.staff-mode #hostessPortal #adminPricingGrid > div { padding: 0.8rem; }
+        }
+
+
+        /* Responsive layout baseline: use available width on phones, balanced reading widths on desktop. */
+        @media (max-width: 640px) {
+            html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+            body:not(.staff-mode) main { width: 100%; padding-left: 0.75rem; padding-right: 0.75rem; }
+            body:not(.staff-mode) main > header,
+            body:not(.staff-mode) main > section,
+            body:not(.staff-mode) #rsvp-section { min-width: 0; }
+            body:not(.staff-mode) .glass-panel { min-width: 0; }
+            body:not(.staff-mode) input:not([type="checkbox"]):not([type="radio"]),
+            body:not(.staff-mode) select,
+            body:not(.staff-mode) textarea { max-width: 100%; min-height: 46px; font-size: 16px; }
+            body:not(.staff-mode) button { touch-action: manipulation; }
+            body:not(.staff-mode) .venue-gallery { grid-template-columns: minmax(0, 1fr); }
+            body:not(.staff-mode) .venue-shot,
+            body:not(.staff-mode) .venue-shot.concept { height: auto; min-height: 190px; }
+            body:not(.staff-mode) h1 { font-size: clamp(2rem, 9vw, 3rem); line-height: 1.12; overflow-wrap: anywhere; }
+            body:not(.staff-mode) h2 { line-height: 1.2; }
+            body:not(.staff-mode) p { overflow-wrap: anywhere; }
+            body.staff-mode main { max-width: none; }
+            body.staff-mode #hostessPortal .glass-panel { width: 100%; }
+            body.staff-mode #adminPageNavigation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            body.staff-mode #adminPageNavigation .sort-option { min-width: 0; width: 100%; text-align: center; overflow-wrap: anywhere; }
+            body.staff-mode #hostessPortal .grid { min-width: 0; }
+            body.staff-mode #hostessPortal .overflow-x-auto { max-width: 100%; }
+            body.staff-mode #hostessPortal .stat-pair-grid { gap: 0.25rem; }
+            body.staff-mode #hostessPortal .stat-pair-value { font-size: clamp(1.35rem, 6vw, 2rem); }
+            body.staff-mode #hostessPortal .staff-panel__header { width: 100%; }
+            body.staff-mode #hostessPortal .staff-panel__title { overflow-wrap: anywhere; }
+            body.staff-mode #adminViewportMode { font-size: 0.68rem; }
+        }
+        @media (min-width: 641px) {
+            body.staff-mode main { padding-left: clamp(1rem, 2vw, 2rem); padding-right: clamp(1rem, 2vw, 2rem); }
+            body.staff-mode #hostessPortal .staff-panel { padding: clamp(1rem, 1.5vw, 1.5rem); }
+        }
+
     </style>
 </head>
 <body class="halloween-bg min-h-screen relative flex flex-col selection:bg-gold selection:text-black admin-stats-compact">
@@ -582,6 +661,7 @@
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                             <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Management Portal</h3>
+                            <span id="adminViewportMode" class="hidden inline-flex items-center gap-1.5 rounded-full border border-sky-300/30 bg-sky-950/40 px-2.5 py-1 text-[10px] font-bold tracking-wider text-sky-100" aria-live="polite"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i><span id="adminViewportModeLabel">MOBILE VIEW</span></span>
                             <span id="staffIdentity" class="hidden text-xs text-gray-300 break-all">Signed in as <span id="staffIdentityUsername" class="text-gold font-semibold"></span></span>
                         </div>
                         <p id="adminPortalDescription" class="text-xs text-gray-400 mt-1">Guest list, check-in, payment and event administration</p>
@@ -800,23 +880,23 @@
                     </div>
                     <div id="notCheckedInListSection" class="mb-4">
                         <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Not checked in <span id="hotelOpenCount" class="text-amber-100">(0)</span></p>
-                        <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestNotCheckedInContainer"></div>
+                        <div class="space-y-2 max-h-[60vh] overflow-y-auto pr-1" id="guestNotCheckedInContainer"></div>
                         <p id="noUncheckGuests" class="text-xs text-gray-500 py-2 hidden">Everyone is checked in.</p>
                     </div>
                     <div id="checkedInListSection" class="mb-6">
                         <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Checked in <span id="hotelCheckedCount" class="text-emerald-200">(0)</span></p>
-                        <div class="space-y-2 max-h-96 overflow-y-auto pr-1" id="guestCheckedInContainer"></div>
+                        <div class="space-y-2 max-h-64 overflow-y-auto pr-1" id="guestCheckedInContainer"></div>
                         <p id="noCheckedGuests" class="text-xs text-gray-500 py-2 hidden">No guests checked in yet.</p>
                     </div>
                     <div id="combinedGuestListSection" class="mb-6 hidden">
                         <div class="mb-5">
                             <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">All guests <span id="combinedGuestCount" class="text-amber-100">(0)</span></p>
-                            <div class="space-y-2 max-h-[32rem] overflow-y-auto pr-1" id="combinedGuestContainer"></div>
+                            <div class="space-y-2 max-h-[60vh] overflow-y-auto pr-1" id="combinedGuestContainer"></div>
                             <p id="noCombinedGuests" class="text-xs text-gray-500 py-2 hidden">No guests need further processing.</p>
                         </div>
                         <div>
                             <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Paid <span id="combinedPaidCount" class="text-emerald-200">(0)</span></p>
-                            <div class="space-y-2 max-h-[32rem] overflow-y-auto pr-1" id="combinedPaidContainer"></div>
+                            <div class="space-y-2 max-h-64 overflow-y-auto pr-1" id="combinedPaidContainer"></div>
                             <p id="noCombinedPaidGuests" class="text-xs text-gray-500 py-2 hidden">No guests have completed all required steps yet.</p>
                         </div>
                     </div>
@@ -837,12 +917,12 @@
                         </div>
                         <div class="mb-4">
                             <p class="text-[10px] uppercase tracking-widest text-amber-100 mb-2">Awaiting payment <span id="internationsUnpaidCount" class="text-amber-200">(0)</span></p>
-                            <div class="space-y-2 max-h-80 overflow-y-auto pr-1" id="internationsUnpaidContainer"></div>
+                            <div class="space-y-2 max-h-[60vh] overflow-y-auto pr-1" id="internationsUnpaidContainer"></div>
                             <p id="noInternationsUnpaid" class="text-xs text-gray-500 py-2 hidden">No checked-in guests are awaiting payment.</p>
                         </div>
                         <div>
                             <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Paid <span id="internationsPaidCount" class="text-emerald-200">(0)</span></p>
-                            <div class="space-y-2 max-h-80 overflow-y-auto pr-1" id="internationsPaidContainer"></div>
+                            <div class="space-y-2 max-h-64 overflow-y-auto pr-1" id="internationsPaidContainer"></div>
                             <p id="noInternationsPaid" class="text-xs text-gray-500 py-2 hidden">No checked-in guests have been marked paid yet.</p>
                         </div>
                     
@@ -966,7 +1046,7 @@
 
     <footer class="relative z-10 text-center px-4 py-7 border-t border-gold/20 bg-black/45 text-xs text-gray-300">
         <div id="whatsapp-contact" class="text-center mb-6 px-2">
-            <a href="https://wa.me/4917681117359" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn"><i class="fa-brands fa-whatsapp"></i> Questions? Contact Ari on WhatsApp</a>
+            <a href="https://wa.me/4917681117359" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn"><i class="fa-brands fa-whatsapp"></i> Questions? Chat with Ari on WhatsApp</a>
         </div>
         <p class="font-serif tracking-wider">THE DEAN AFTER DARK</p>
         <p class="mt-1">The Dean Munich, Autograph Collection by Marriott</p>
@@ -974,7 +1054,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.21.30</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.21.39</p>
         </div>
     </footer>
 
@@ -1507,6 +1587,11 @@
 
         let attendanceForecastRate = 1;
         const attendanceScaledStatIds = [
+            'guestTotalCount',
+            'hotelGuestTotalCount',
+            'guestAlbatrossTotal',
+            'guestBasicsTotal',
+            'guestFriendsTotal',
             'fullAttendanceAmount',
             'paymentAlbatrossPotential',
             'paymentBasicsPotential',
@@ -1547,6 +1632,20 @@
                 function canToggleAdminStatsView(role = currentStaffRole) {
             return role === 'admin' || role === 'internations';
         }
+        function updateAdminViewportMode() {
+            const indicator = document.getElementById('adminViewportMode');
+            const label = document.getElementById('adminViewportModeLabel');
+            if (!indicator || !label) return;
+            const mobile = window.matchMedia('(max-width: 640px)').matches;
+            label.textContent = mobile ? 'MOBILE VIEW' : 'DESKTOP VIEW';
+            indicator.setAttribute('aria-label', mobile ? 'Currently showing the mobile layout' : 'Currently showing the desktop layout');
+            const icon = indicator.querySelector('i');
+            if (icon) icon.className = mobile ? 'fa-solid fa-mobile-screen-button' : 'fa-solid fa-desktop';
+        }
+        window.addEventListener('resize', updateAdminViewportMode, { passive: true });
+        window.addEventListener('orientationchange', updateAdminViewportMode);
+        updateAdminViewportMode();
+
         function toggleAdminStatsView() {
             if (!canToggleAdminStatsView()) return;
             const compact = document.body.classList.toggle('admin-stats-compact');
@@ -2583,6 +2682,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 statsGrid.classList.toggle('xl:grid-cols-2', role !== 'admin');
             }
             show('adminPageNavigation', role === 'admin');
+            show('adminViewportMode', role === 'admin');
+            updateAdminViewportMode();
             show('adminPricingPanel', role === 'admin');
             show('extraDrinkEstimateSection', role === 'admin');
             show('extraDrinkAdminControls', role === 'admin');
