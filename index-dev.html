@@ -282,7 +282,7 @@
             gap: .75rem;
         }
         @media (max-width: 640px) {
-            body.staff-mode #adminPricingGrid { grid-template-columns: minmax(0, 1fr); }
+            body.staff-mode:not(.staff-layout-desktop) #adminPricingGrid { grid-template-columns: minmax(0, 1fr); }
         }
         /* Guest-card actions share sizing. Green means the operation is complete and clicking will undo it. */
         .guest-action-btn {
@@ -434,9 +434,9 @@
             text-transform: uppercase;
         }
         @media (max-width: 640px) {
-            .staff-panel { padding: 0.85rem; }
-            .staff-panel__header { align-items: flex-start; }
-            .staff-tools-heading { margin-top: 1.1rem; }
+            body:not(.staff-layout-desktop) .staff-panel { padding: 0.85rem; }
+            body:not(.staff-layout-desktop) .staff-panel__header { align-items: flex-start; }
+            body:not(.staff-layout-desktop) .staff-tools-heading { margin-top: 1.1rem; }
         }
 
         /* Page modes keep the public landing content out of staff and RSVP-confirmation views. */
@@ -459,43 +459,43 @@
         /* MOBILE MANAGEMENT READABILITY
            Scope these adjustments to the staff portal on phones; leave public RSVP and desktop styling alone. */
         @media (max-width: 640px) {
-            body.staff-mode { font-size: 15px; }
-            body.staff-mode main { padding: 0.35rem 0.5rem 0.75rem; }
-            body.staff-mode #hostessPortal { padding-left: 0; padding-right: 0; }
-            body.staff-mode #hostessPortal > .glass-panel,
-            body.staff-mode #hostessPortal .glass-panel { padding: 0.85rem; }
-            body.staff-mode #hostessPortal .staff-panel { margin-bottom: 0.65rem; padding: 0.8rem; border-radius: 0.7rem; }
-            body.staff-mode #hostessPortal .staff-panel__header { gap: 0.35rem 0.6rem; margin-bottom: 0.65rem; padding-bottom: 0.55rem; }
-            body.staff-mode #hostessPortal .staff-panel__title { font-size: 1rem; letter-spacing: 0.045em; line-height: 1.4; }
-            body.staff-mode #hostessPortal .staff-panel__meta { font-size: 0.7rem; }
-            body.staff-mode #hostessPortal .staff-tools-heading { margin: 1rem 0 0.55rem; padding-bottom: 0.45rem; gap: 0.35rem 0.6rem; }
-            body.staff-mode #hostessPortal .staff-tools-heading h4,
-            body.staff-mode #hostessPortal .staff-subheading { font-size: 0.85rem; letter-spacing: 0.055em; }
-            body.staff-mode #hostessPortal .staff-tools-heading p { font-size: 0.78rem; line-height: 1.45; }
-            body.staff-mode #hostessPortal .staff-metric-card { padding: 0.7rem; }
-            body.staff-mode #hostessPortal .staff-metric-card > p:first-child,
-            body.staff-mode #hostessPortal .staff-metric-card > h5:first-child { min-height: 0; margin-bottom: 0.35rem; font-size: 0.78rem; letter-spacing: 0.035em; line-height: 1.4; }
-            body.staff-mode #hostessPortal .staff-summary-stats-grid { grid-template-columns: minmax(0, 1fr); gap: 0.55rem; }
-            body.staff-mode #adminPageNavigation { gap: 0.45rem; padding: 0.55rem; margin-bottom: 0.75rem; }
-            body.staff-mode #adminPageNavigation .sort-option,
-            body.staff-mode .sort-option { min-height: 42px; padding: 0.6rem 0.75rem; font-size: 0.78rem; line-height: 1.25; letter-spacing: 0.015em; }
-            body.staff-mode #adminPageNavigation .sort-option { flex: 1 1 100%; text-align: left; }
-            body.staff-mode #hostessPortal .form-label { margin-bottom: 0.4rem; font-size: 0.8rem; letter-spacing: 0.06em; }
-            body.staff-mode #hostessPortal .form-field { min-height: 46px; padding: 0.7rem 0.8rem; font-size: 16px; }
-            body.staff-mode #hostessPortal button:not(.sort-option):not(.guest-action-btn) { min-height: 42px; }
-            body.staff-mode #hostessPortal .guest-action-btn { min-height: 42px; padding: 0.65rem 0.75rem; font-size: 0.75rem; letter-spacing: 0.015em; white-space: normal; }
-            body.staff-mode #hostessPortal .text-\[9px\] { font-size: 0.7rem; }
-            body.staff-mode #hostessPortal .text-\[10px\] { font-size: 0.75rem; }
-            body.staff-mode #hostessPortal .text-xs { font-size: 0.82rem; line-height: 1.45; }
-            body.staff-mode #hostessPortal .text-sm { font-size: 0.92rem; line-height: 1.5; }
-            body.staff-mode #hostessPortal .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.8rem; }
-            body.staff-mode #hostessPortal .mb-5 { margin-bottom: 0.8rem; }
-            body.staff-mode #hostessPortal .mb-4 { margin-bottom: 0.7rem; }
-            body.staff-mode #hostessPortal .mt-6 { margin-top: 0.9rem; }
-            body.staff-mode #hostessPortal .p-4 { padding: 0.8rem; }
-            body.staff-mode #hostessPortal .gap-4 { gap: 0.7rem; }
-            body.staff-mode #hostessPortal #adminPricingGrid { gap: 0.55rem; }
-            body.staff-mode #hostessPortal #adminPricingGrid > div { padding: 0.8rem; }
+            body.staff-mode:not(.staff-layout-desktop) { font-size: 15px; }
+            body.staff-mode:not(.staff-layout-desktop) main { padding: 0.35rem 0.5rem 0.75rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal { padding-left: 0; padding-right: 0; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal > .glass-panel,
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .glass-panel { padding: 0.85rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .staff-panel { margin-bottom: 0.65rem; padding: 0.8rem; border-radius: 0.7rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .staff-panel__header { gap: 0.35rem 0.6rem; margin-bottom: 0.65rem; padding-bottom: 0.55rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .staff-panel__title { font-size: 1rem; letter-spacing: 0.045em; line-height: 1.4; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .staff-panel__meta { font-size: 0.7rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .staff-tools-heading { margin: 1rem 0 0.55rem; padding-bottom: 0.45rem; gap: 0.35rem 0.6rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .staff-tools-heading h4,
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .staff-subheading { font-size: 0.85rem; letter-spacing: 0.055em; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .staff-tools-heading p { font-size: 0.78rem; line-height: 1.45; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .staff-metric-card { padding: 0.7rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .staff-metric-card > p:first-child,
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .staff-metric-card > h5:first-child { min-height: 0; margin-bottom: 0.35rem; font-size: 0.78rem; letter-spacing: 0.035em; line-height: 1.4; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .staff-summary-stats-grid { grid-template-columns: minmax(0, 1fr); gap: 0.55rem; }
+            body.staff-mode:not(.staff-layout-desktop) #adminPageNavigation { gap: 0.45rem; padding: 0.55rem; margin-bottom: 0.75rem; }
+            body.staff-mode:not(.staff-layout-desktop) #adminPageNavigation .sort-option,
+            body.staff-mode:not(.staff-layout-desktop) .sort-option { min-height: 42px; padding: 0.6rem 0.75rem; font-size: 0.78rem; line-height: 1.25; letter-spacing: 0.015em; }
+            body.staff-mode:not(.staff-layout-desktop) #adminPageNavigation .sort-option { flex: 1 1 100%; text-align: left; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .form-label { margin-bottom: 0.4rem; font-size: 0.8rem; letter-spacing: 0.06em; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .form-field { min-height: 46px; padding: 0.7rem 0.8rem; font-size: 16px; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal button:not(.sort-option):not(.guest-action-btn) { min-height: 42px; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .guest-action-btn { min-height: 42px; padding: 0.65rem 0.75rem; font-size: 0.75rem; letter-spacing: 0.015em; white-space: normal; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .text-\[9px\] { font-size: 0.7rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .text-\[10px\] { font-size: 0.75rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .text-xs { font-size: 0.82rem; line-height: 1.45; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .text-sm { font-size: 0.92rem; line-height: 1.5; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.8rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .mb-5 { margin-bottom: 0.8rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .mb-4 { margin-bottom: 0.7rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .mt-6 { margin-top: 0.9rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .p-4 { padding: 0.8rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .gap-4 { gap: 0.7rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal #adminPricingGrid { gap: 0.55rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal #adminPricingGrid > div { padding: 0.8rem; }
         }
 
 
@@ -517,24 +517,122 @@
             body:not(.staff-mode) h1 { font-size: clamp(2rem, 9vw, 3rem); line-height: 1.12; overflow-wrap: anywhere; }
             body:not(.staff-mode) h2 { line-height: 1.2; }
             body:not(.staff-mode) p { overflow-wrap: anywhere; }
-            body.staff-mode main { max-width: none; }
-            body.staff-mode #hostessPortal .glass-panel { width: 100%; }
-            body.staff-mode #adminPageNavigation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            body.staff-mode #adminPageNavigation .sort-option { min-width: 0; width: 100%; text-align: center; overflow-wrap: anywhere; }
-            body.staff-mode #hostessPortal .grid { min-width: 0; }
-            body.staff-mode #hostessPortal .overflow-x-auto { max-width: 100%; }
-            body.staff-mode #hostessPortal .stat-pair-grid { gap: 0.25rem; }
-            body.staff-mode #hostessPortal .stat-pair-value { font-size: clamp(1.35rem, 6vw, 2rem); }
-            body.staff-mode #hostessPortal .staff-panel__header { width: 100%; }
-            body.staff-mode #hostessPortal .staff-panel__title { overflow-wrap: anywhere; }
-            body.staff-mode #adminViewportMode { font-size: 0.68rem; }
+            body.staff-mode:not(.staff-layout-desktop) main { max-width: none; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .glass-panel { width: 100%; }
+            body.staff-mode:not(.staff-layout-desktop) #adminPageNavigation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            body.staff-mode:not(.staff-layout-desktop) #adminPageNavigation .sort-option { min-width: 0; width: 100%; text-align: center; overflow-wrap: anywhere; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .grid { min-width: 0; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .overflow-x-auto { max-width: 100%; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .stat-pair-grid { gap: 0.25rem; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .stat-pair-value { font-size: clamp(1.35rem, 6vw, 2rem); }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .staff-panel__header { width: 100%; }
+            body.staff-mode:not(.staff-layout-desktop) #hostessPortal .staff-panel__title { overflow-wrap: anywhere; }
+            body.staff-mode:not(.staff-layout-desktop) #adminViewportMode { font-size: 0.68rem; }
         }
         @media (min-width: 641px) {
             body.staff-mode main { padding-left: clamp(1rem, 2vw, 2rem); padding-right: clamp(1rem, 2vw, 2rem); }
             body.staff-mode #hostessPortal .staff-panel { padding: clamp(1rem, 1.5vw, 1.5rem); }
         }
 
-    </style>
+    
+        .staff-view-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem 0.6rem; }
+        .staff-view-select { min-height: 38px; max-width: 100%; padding: 0.4rem 0.6rem; border: 1px solid rgba(212,175,55,.42); border-radius: 7px; background: rgba(8,8,10,.92); color: #f3f4f6; font-family: 'Montserrat',sans-serif; font-size: 0.75rem; }
+        .staff-view-select:focus-visible { outline: 2px solid #d4af37; outline-offset: 2px; }
+        .staff-view-help { margin-top: 0.3rem; color: #a9a6a0; font-size: 0.68rem; line-height: 1.45; }
+
+        /* Forced phone layout, including when the browser window is wider than a phone. */
+
+            body.staff-mode.staff-layout-mobile { font-size: 15px; }
+            body.staff-mode.staff-layout-mobile main { padding: 0.35rem 0.5rem 0.75rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal { padding-left: 0; padding-right: 0; }
+            body.staff-mode.staff-layout-mobile #hostessPortal > .glass-panel,
+            body.staff-mode.staff-layout-mobile #hostessPortal .glass-panel { padding: 0.85rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .staff-panel { margin-bottom: 0.65rem; padding: 0.8rem; border-radius: 0.7rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .staff-panel__header { gap: 0.35rem 0.6rem; margin-bottom: 0.65rem; padding-bottom: 0.55rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .staff-panel__title { font-size: 1rem; letter-spacing: 0.045em; line-height: 1.4; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .staff-panel__meta { font-size: 0.7rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .staff-tools-heading { margin: 1rem 0 0.55rem; padding-bottom: 0.45rem; gap: 0.35rem 0.6rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .staff-tools-heading h4,
+            body.staff-mode.staff-layout-mobile #hostessPortal .staff-subheading { font-size: 0.85rem; letter-spacing: 0.055em; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .staff-tools-heading p { font-size: 0.78rem; line-height: 1.45; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .staff-metric-card { padding: 0.7rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .staff-metric-card > p:first-child,
+            body.staff-mode.staff-layout-mobile #hostessPortal .staff-metric-card > h5:first-child { min-height: 0; margin-bottom: 0.35rem; font-size: 0.78rem; letter-spacing: 0.035em; line-height: 1.4; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .staff-summary-stats-grid { grid-template-columns: minmax(0, 1fr); gap: 0.55rem; }
+            body.staff-mode.staff-layout-mobile #adminPageNavigation { gap: 0.45rem; padding: 0.55rem; margin-bottom: 0.75rem; }
+            body.staff-mode.staff-layout-mobile #adminPageNavigation .sort-option,
+            body.staff-mode.staff-layout-mobile .sort-option { min-height: 42px; padding: 0.6rem 0.75rem; font-size: 0.78rem; line-height: 1.25; letter-spacing: 0.015em; }
+            body.staff-mode.staff-layout-mobile #adminPageNavigation .sort-option { flex: 1 1 100%; text-align: left; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .form-label { margin-bottom: 0.4rem; font-size: 0.8rem; letter-spacing: 0.06em; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .form-field { min-height: 46px; padding: 0.7rem 0.8rem; font-size: 16px; }
+            body.staff-mode.staff-layout-mobile #hostessPortal button:not(.sort-option):not(.guest-action-btn) { min-height: 42px; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .guest-action-btn { min-height: 42px; padding: 0.65rem 0.75rem; font-size: 0.75rem; letter-spacing: 0.015em; white-space: normal; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .text-\[9px\] { font-size: 0.7rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .text-\[10px\] { font-size: 0.75rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .text-xs { font-size: 0.82rem; line-height: 1.45; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .text-sm { font-size: 0.92rem; line-height: 1.5; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.8rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .mb-5 { margin-bottom: 0.8rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .mb-4 { margin-bottom: 0.7rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .mt-6 { margin-top: 0.9rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .p-4 { padding: 0.8rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal .gap-4 { gap: 0.7rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal #adminPricingGrid { gap: 0.55rem; }
+            body.staff-mode.staff-layout-mobile #hostessPortal #adminPricingGrid > div { padding: 0.8rem; }
+        body.staff-mode.staff-layout-mobile main { width: 100% !important; max-width: 480px !important; margin-left: auto !important; margin-right: auto !important; padding: 0.35rem 0.5rem 0.75rem !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal { padding-left: 0 !important; padding-right: 0 !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal > .glass-panel,
+        body.staff-mode.staff-layout-mobile #hostessPortal .glass-panel { width: 100% !important; padding: 0.85rem !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .staff-panel { margin-bottom: 0.65rem !important; padding: 0.8rem !important; border-radius: 0.7rem !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .staff-panel__header { gap: 0.35rem 0.6rem !important; margin-bottom: 0.65rem !important; padding-bottom: 0.55rem !important; width: 100%; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .staff-panel__title { font-size: 1rem !important; letter-spacing: 0.045em !important; line-height: 1.4 !important; overflow-wrap: anywhere; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .staff-panel__meta { font-size: 0.7rem !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .staff-tools-heading { margin: 1rem 0 0.55rem !important; padding-bottom: 0.45rem !important; gap: 0.35rem 0.6rem !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .staff-tools-heading h4,
+        body.staff-mode.staff-layout-mobile #hostessPortal .staff-subheading { font-size: 0.85rem !important; letter-spacing: 0.055em !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .staff-tools-heading p { font-size: 0.78rem !important; line-height: 1.45 !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .staff-summary-stats-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 0.55rem !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal #adminPageNavigation { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0.45rem !important; padding: 0.55rem !important; margin-bottom: 0.75rem !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal #adminPageNavigation .sort-option,
+        body.staff-mode.staff-layout-mobile #hostessPortal .sort-option { min-width: 0; min-height: 42px !important; padding: 0.6rem 0.75rem !important; font-size: 0.78rem !important; line-height: 1.25 !important; letter-spacing: 0.015em !important; overflow-wrap: anywhere; }
+        body.staff-mode.staff-layout-mobile #hostessPortal #adminPageNavigation .sort-option { width: 100% !important; text-align: center !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .form-label { margin-bottom: 0.4rem !important; font-size: 0.8rem !important; letter-spacing: 0.06em !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .form-field { width: 100% !important; max-width: 100% !important; min-height: 46px !important; padding: 0.7rem 0.8rem !important; font-size: 16px !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal button:not(.sort-option):not(.guest-action-btn) { min-height: 42px !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .guest-action-btn { min-height: 42px !important; padding: 0.65rem 0.75rem !important; font-size: 0.75rem !important; letter-spacing: 0.015em !important; white-space: normal !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .grid { min-width: 0; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .overflow-x-auto { max-width: 100%; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .stat-pair-grid { gap: 0.25rem; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .stat-pair-value { font-size: clamp(1.35rem, 6vw, 2rem); }
+        body.staff-mode.staff-layout-mobile #hostessPortal #adminPricingGrid { grid-template-columns: minmax(0, 1fr) !important; gap: 0.55rem !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal #adminPricingGrid > div { padding: 0.8rem !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .sm\\:grid-cols-2 { grid-template-columns: minmax(0, 1fr) !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .sm\\:p-8 { padding: 0.85rem !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .sm\\:text-xl { font-size: 1.125rem !important; line-height: 1.75rem !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .sm\\:w-64,
+        body.staff-mode.staff-layout-mobile #hostessPortal .sm\\:w-auto { width: 100% !important; }
+        body.staff-mode.staff-layout-mobile #hostessPortal .sm\\:ml-auto { margin-left: 0 !important; }
+
+        /* Forced desktop layout: use a wide, scrollable canvas if the device is narrow. */
+        html.staff-layout-desktop-active { overflow-x: auto !important; }
+        body.staff-mode.staff-layout-desktop { overflow-x: auto !important; }
+        body.staff-mode.staff-layout-desktop main { width: 1024px !important; max-width: none !important; margin-left: 0 !important; margin-right: 0 !important; padding: 1rem 1.5rem !important; }
+        body.staff-mode.staff-layout-desktop #hostessPortal { width: 100%; }
+        body.staff-mode.staff-layout-desktop #hostessPortal > .glass-panel { width: 100% !important; padding: 2rem !important; }
+        body.staff-mode.staff-layout-desktop #hostessPortal .staff-panel { margin-bottom: 1rem; padding: clamp(1rem, 1.5vw, 1.5rem) !important; border-radius: 0.85rem; }
+        body.staff-mode.staff-layout-desktop #hostessPortal .staff-panel__header { align-items: center; gap: 0.5rem 1rem; margin-bottom: 0.85rem; padding-bottom: 0.75rem; }
+        body.staff-mode.staff-layout-desktop #hostessPortal .staff-tools-heading { margin: 1.5rem 0 0.75rem; padding-bottom: 0.6rem; gap: 0.5rem 1rem; }
+        body.staff-mode.staff-layout-desktop #hostessPortal .staff-summary-stats-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 0.75rem; }
+        body.staff-mode.staff-layout-desktop #hostessPortal .staff-metric-card { padding: 0.85rem; }
+        body.staff-mode.staff-layout-desktop #hostessPortal .stat-pair-value { font-size: clamp(1.5rem, 4.5vw, 2.1rem) !important; }
+        body.staff-mode.staff-layout-desktop #hostessPortal #adminPricingGrid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 0.75rem !important; }
+        body.staff-mode.staff-layout-desktop #hostessPortal .sm\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        body.staff-mode.staff-layout-desktop #hostessPortal .sm\\:p-8 { padding: 2rem !important; }
+        body.staff-mode.staff-layout-desktop #hostessPortal .sm\\:text-xl { font-size: 1.25rem !important; line-height: 1.75rem !important; }
+        body.staff-mode.staff-layout-desktop #hostessPortal .sm\\:w-64 { width: 16rem !important; }
+        body.staff-mode.staff-layout-desktop #hostessPortal .sm\\:w-auto { width: auto !important; }
+        body.staff-mode.staff-layout-desktop #hostessPortal .sm\\:ml-auto { margin-left: auto !important; }
+</style>
 </head>
 <body class="halloween-bg min-h-screen relative flex flex-col selection:bg-gold selection:text-black admin-stats-compact">
     <!-- Public RSVP page: staff and confirmation modes are toggled by the script below. -->
@@ -661,10 +759,20 @@
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                             <h3 class="font-serif text-lg sm:text-xl text-gold uppercase tracking-wider">Management Portal</h3>
-                            <span id="adminViewportMode" class="hidden inline-flex items-center gap-1.5 rounded-full border border-sky-300/30 bg-sky-950/40 px-2.5 py-1 text-[10px] font-bold tracking-wider text-sky-100" aria-live="polite"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i><span id="adminViewportModeLabel">MOBILE VIEW</span></span>
+                            
                             <span id="staffIdentity" class="hidden text-xs text-gray-300 break-all">Signed in as <span id="staffIdentityUsername" class="text-gold font-semibold"></span></span>
                         </div>
                         <p id="adminPortalDescription" class="text-xs text-gray-400 mt-1">Guest list, check-in, payment and event administration</p>
+                        <div class="staff-view-controls mt-2" id="staffViewportControl">
+                            <label for="staffViewportPreference" class="text-[10px] font-bold tracking-wider text-gray-400">LAYOUT</label>
+                            <select id="staffViewportPreference" class="staff-view-select" aria-describedby="staffViewportHelp">
+                                <option value="auto">Auto-detect</option>
+                                <option value="phone">Phone view</option>
+                                <option value="desktop">Desktop view</option>
+                            </select>
+                            <span id="adminViewportMode" class="inline-flex items-center gap-1.5 rounded-full border border-sky-300/30 bg-sky-950/40 px-2.5 py-1 text-[10px] font-bold tracking-wider text-sky-100" aria-live="polite"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i><span id="adminViewportModeLabel">DETECTING VIEW</span></span>
+                        </div>
+                        <p id="staffViewportHelp" class="staff-view-help">Auto follows your screen width. Choose Phone or Desktop to override detection; your choice is saved in this browser.</p>
                     </div>
                     <button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white shrink-0"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
@@ -1054,7 +1162,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.39</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.22.40</p>
         </div>
     </footer>
 
@@ -1635,15 +1743,46 @@
         function updateAdminViewportMode() {
             const indicator = document.getElementById('adminViewportMode');
             const label = document.getElementById('adminViewportModeLabel');
-            if (!indicator || !label) return;
-            const mobile = window.matchMedia('(max-width: 640px)').matches;
-            label.textContent = mobile ? 'MOBILE VIEW' : 'DESKTOP VIEW';
-            indicator.setAttribute('aria-label', mobile ? 'Currently showing the mobile layout' : 'Currently showing the desktop layout');
+            const select = document.getElementById('staffViewportPreference');
+            if (!indicator || !label || !select) return;
+            const preference = ['auto', 'phone', 'desktop'].includes(select.value) ? select.value : 'auto';
+            const detectedMobile = window.matchMedia('(max-width: 640px)').matches;
+            const mobile = preference === 'phone' || (preference === 'auto' && detectedMobile);
+            const staffViewActive = document.body.classList.contains('staff-mode');
+            document.body.classList.toggle('staff-layout-mobile', staffViewActive && preference === 'phone');
+            document.body.classList.toggle('staff-layout-desktop', staffViewActive && preference === 'desktop');
+            document.documentElement.classList.toggle('staff-layout-desktop-active', staffViewActive && preference === 'desktop');
+            label.textContent = preference === 'auto'
+                ? (mobile ? 'PHONE VIEW · AUTO' : 'DESKTOP VIEW · AUTO')
+                : (mobile ? 'PHONE VIEW · MANUAL' : 'DESKTOP VIEW · MANUAL');
+            indicator.setAttribute('aria-label', preference === 'auto'
+                ? `Automatically showing the ${mobile ? 'phone' : 'desktop'} layout`
+                : `Manually selected the ${mobile ? 'phone' : 'desktop'} layout`);
             const icon = indicator.querySelector('i');
             if (icon) icon.className = mobile ? 'fa-solid fa-mobile-screen-button' : 'fa-solid fa-desktop';
         }
+        function initializeStaffViewportPreference() {
+            const select = document.getElementById('staffViewportPreference');
+            if (!select || select.dataset.initialized === 'true') return;
+            try {
+                const saved = localStorage.getItem('halloween-staff-viewport-preference-v1');
+                if (['auto', 'phone', 'desktop'].includes(saved)) select.value = saved;
+            } catch (error) {
+                // The chooser still works for this session when browser storage is unavailable.
+            }
+            select.addEventListener('change', () => {
+                try {
+                    localStorage.setItem('halloween-staff-viewport-preference-v1', select.value);
+                } catch (error) {
+                    // Keep the selected layout for the current page even without browser storage.
+                }
+                updateAdminViewportMode();
+            });
+            select.dataset.initialized = 'true';
+        }
         window.addEventListener('resize', updateAdminViewportMode, { passive: true });
         window.addEventListener('orientationchange', updateAdminViewportMode);
+        initializeStaffViewportPreference();
         updateAdminViewportMode();
 
         function toggleAdminStatsView() {
@@ -2682,7 +2821,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 statsGrid.classList.toggle('xl:grid-cols-2', role !== 'admin');
             }
             show('adminPageNavigation', role === 'admin');
-            show('adminViewportMode', role === 'admin');
+            show('adminViewportMode', true);
             updateAdminViewportMode();
             show('adminPricingPanel', role === 'admin');
             show('extraDrinkEstimateSection', role === 'admin');
@@ -2818,6 +2957,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 if (auth && auth.currentUser) auth.signOut().catch((error) => console.warn('Sign-out failed:', error));
                 portal.classList.add('hidden');
                 document.body.classList.remove('staff-mode');
+                updateAdminViewportMode();
                 loginSection.classList.remove('hidden');
                 document.getElementById('guestlistSection').classList.add('hidden');
                 document.getElementById('staffPassword').value = '';
@@ -2827,6 +2967,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
             portal.classList.remove('hidden');
             document.body.classList.add('staff-mode');
+            updateAdminViewportMode();
             document.getElementById('staffLoginError').classList.add('hidden');
             document.getElementById('portalConfigWarning').classList.toggle('hidden', Boolean(db && auth));
             loginSection.classList.remove('hidden');
