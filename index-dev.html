@@ -878,7 +878,6 @@
                         <section id="databaseBackupPanel" class="staff-panel hidden" aria-labelledby="databaseBackupHeading">
                         <div class="staff-panel__header">
                             <h4 id="databaseBackupHeading" class="staff-panel__title">Database Backup & Restore</h4>
-                            <span class="staff-panel__meta">Admin only</span>
                         </div>
                         <p class="text-xs text-gray-300 mb-3">Export and restore work directly through Firestore under your signed-in Admin permissions; no Cloud Functions or billing plan upgrade is required. The JSON file includes guest records and event settings only. Staff accounts, roles and passwords are not included. Restore replaces all current guest records and event settings, so download a fresh backup first and review the selected file before confirming.</p>
                         <div class="flex flex-wrap gap-2 items-center">
@@ -948,7 +947,7 @@
                                     <option value="not_allowed">Unavailable</option>
                                 </select>
                                 <label for="drinkPriceFriends" class="form-label">Upgrade price (€)</label>
-                                <input id="drinkPriceFriends" type="number" min="0" step="1" class="form-field" value="0" disabled>
+                                <input id="drinkPriceFriends" type="number" min="0" step="1" class="form-field" value="0">
                                 <div class="mt-4 border-t border-gold/20 pt-3">
                                     <label class="flex items-start gap-2 text-xs text-gray-200 mb-3"><input id="referralEligibleFriends" type="checkbox" class="mt-0.5 accent-amber-300"> Eligible for referral welcome drink</label>
                                     <label for="referralThresholdFriends" class="form-label">Required referrals who checked in and paid</label>
@@ -956,7 +955,6 @@
                                 </div>
                             </div>
                         </div>
-                        <p id="pricingSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-4">Pricing changes save automatically.</p>
                     </section>
                     </div>
 
@@ -975,7 +973,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.18</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.19</p>
         </div>
     </footer>
 
@@ -1608,7 +1606,7 @@
             ['Basics', 'PaidMembers', 'Friends'].forEach((tier) => {
                 const mode = document.getElementById('drinkMode' + tier);
                 const price = document.getElementById('drinkPrice' + tier);
-                if (mode && price) price.disabled = mode.value !== 'upgrade';
+                if (mode && price) price.disabled = tier !== 'Friends' && mode.value !== 'upgrade';
             });
         }
 
@@ -1697,7 +1695,7 @@
                 if (id.startsWith('drinkMode')) {
                     const tier = id.slice('drinkMode'.length);
                     const price = document.getElementById('drinkPrice' + tier);
-                    if (price) price.disabled = input.value !== 'upgrade';
+                    if (price) price.disabled = tier !== 'Friends' && input.value !== 'upgrade';
                 }
                 void savePricingSettings();
             });
