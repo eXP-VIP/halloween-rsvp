@@ -604,6 +604,12 @@
                     <p id="portalConfigWarning" class="text-amber-200 text-xs leading-relaxed text-center hidden">Firebase Authentication or Firestore is unavailable. Check the project configuration and security rules.</p>
                 </div>
                 <div id="guestlistSection" class="hidden">
+                    <nav id="adminPageNavigation" class="hidden mb-5 flex flex-wrap gap-2 rounded-xl border border-gold/20 bg-black/25 p-3" aria-label="Management pages">
+                        <button type="button" class="sort-option" data-staff-page="overview" aria-pressed="true" onclick="showStaffPage('overview')">Live Event Overview</button>
+                        <button type="button" class="sort-option" data-staff-page="guest-management" aria-pressed="false" onclick="showStaffPage('guest-management')">Guest List Management</button>
+                        <button type="button" class="sort-option" data-staff-page="event-settings" aria-pressed="false" onclick="showStaffPage('event-settings')">Event Settings</button>
+                    </nav>
+                    <div id="staffOperationsPage">
 
                     <div id="eventCheckInModeBanner" class="rounded-lg border border-amber-400/40 bg-amber-950/30 px-3 py-2 mb-4" role="status" aria-live="polite">
                         <p id="eventCheckInModeTitle" class="text-xs font-semibold uppercase tracking-wider text-amber-100">EVENT CHECK-IN INACTIVE · TEST MODE</p>
@@ -846,13 +852,56 @@
                         </div>
                     </section>
                     </section>
-                    <!-- Admin-only configuration follows the staff's day-to-day check-in and payment workflow. -->
-                    <div id="adminToolsHeading" class="hidden staff-tools-heading" aria-label="Admin configuration">
-                        <h4>Administration &amp; configuration</h4>
-                        <p>Admin only · changes affect event operations</p>
-                    </div>
+                    </div><!-- /staffOperationsPage -->
 
-                    <section id="adminPricingPanel" class="staff-panel">
+
+                    <div id="guestManagementPage" class="hidden">
+                        <div class="staff-panel mb-4">
+                            <div class="staff-panel__header">
+                                <h4 class="staff-panel__title">Guest List Management</h4>
+                                <span class="staff-panel__meta">Import, maintain and back up guest records</span>
+                            </div>
+                            <p class="text-xs text-gray-300">Manage the imported InterNations guest list and protect guest/event data with a backup before bulk changes.</p>
+                        </div>
+                        <section id="internationsImportPanel" class="staff-panel">
+                        <div class="staff-panel__header">
+                            <h4 class="staff-panel__title">Import InterNations guest list</h4>
+                            <span class="staff-panel__meta">CSV / Excel · repeatable import</span>
+                        </div>
+                        <p class="text-xs text-gray-300 mb-3">Choose the full current InterNations Members-List export. Missing names are removed from the imported member list; matched guests keep their check-in, payment and chip status. An RSVP guest who is also a member remains a member for calculations.</p>
+                        <label for="internationsFileInput" class="form-label">Guest-list spreadsheet</label>
+                        <input id="internationsFileInput" type="file" accept=".xlsx,.xls,.csv,.ods" class="form-field text-sm mb-3">
+                        <div id="internationsImportOptions" class="hidden space-y-3">
+                            <p class="text-xs text-sky-100">Names are combined automatically from First Name + Last Name. Membership Type (or Status) sets the member category and badges; Country is retained and shown as a flag.</p>
+                            <div id="internationsImportPreview" class="rounded-lg border border-sky-400/20 bg-black/30 p-3 text-xs text-gray-200"></div>
+                            <button type="button" id="confirmInternationsImport" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Synchronize full InterNations Members-List</button>
+                        </div>
+                        <p id="internationsImportStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-3"></p>
+                    </section>
+                        <section id="databaseBackupPanel" class="staff-panel hidden" aria-labelledby="databaseBackupHeading">
+                        <div class="staff-panel__header">
+                            <h4 id="databaseBackupHeading" class="staff-panel__title">Database Backup & Restore</h4>
+                            <span class="staff-panel__meta">Admin only</span>
+                        </div>
+                        <p class="text-xs text-gray-300 mb-3">Export and restore work directly through Firestore under your signed-in Admin permissions; no Cloud Functions or billing plan upgrade is required. The JSON file includes guest records and event settings only. Staff accounts, roles and passwords are not included. Restore replaces all current guest records and event settings, so download a fresh backup first and review the selected file before confirming.</p>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <button id="createDatabaseBackupBtn" type="button" class="sort-option">Download backup (.json)</button>
+                            <label for="restoreDatabaseFileInput" class="sort-option cursor-pointer">Choose backup to restore</label>
+                            <input id="restoreDatabaseFileInput" type="file" accept=".json,application/json" class="hidden">
+                            <button id="restoreDatabaseBackupBtn" type="button" disabled class="sort-option opacity-40 cursor-not-allowed">Restore selected backup</button>
+                        </div>
+                        <p id="databaseBackupStatus" class="text-xs text-gray-300 mt-3" role="status" aria-live="polite">Create a backup before making bulk changes.</p>
+                    </section>
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <button type="button" class="sort-option" onclick="showStaffPage('overview')">Back to Live Event Overview</button>
+                            <button type="button" class="gold-btn px-4 py-2 rounded-lg text-xs uppercase tracking-wider" onclick="showStaffPage('event-settings')">Open Event Settings</button>
+                        </div>
+                    </div>
+                    <div id="eventSettingsPage" class="hidden">
+                        <div class="mb-4">
+                            <button type="button" class="sort-option" onclick="showStaffPage('guest-management')"><i class="fa-solid fa-arrow-left mr-2" aria-hidden="true"></i>Back to Guest List Management</button>
+                        </div>
+                        <section id="adminPricingPanel" class="staff-panel">
                         <div class="staff-panel__header">
                             <h4 class="staff-panel__title">Event Settings</h4>
                             <span class="staff-panel__meta">Pricing, welcome drinks and admission workflow</span>
@@ -926,37 +975,7 @@
                         </div>
                         <p id="pricingSaveStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-4">Pricing changes save automatically.</p>
                     </section>
-
-                    <section id="internationsImportPanel" class="staff-panel">
-                        <div class="staff-panel__header">
-                            <h4 class="staff-panel__title">Import InterNations guest list</h4>
-                            <span class="staff-panel__meta">CSV / Excel · repeatable import</span>
-                        </div>
-                        <p class="text-xs text-gray-300 mb-3">Choose the full current InterNations Members-List export. Missing names are removed from the imported member list; matched guests keep their check-in, payment and chip status. An RSVP guest who is also a member remains a member for calculations.</p>
-                        <label for="internationsFileInput" class="form-label">Guest-list spreadsheet</label>
-                        <input id="internationsFileInput" type="file" accept=".xlsx,.xls,.csv,.ods" class="form-field text-sm mb-3">
-                        <div id="internationsImportOptions" class="hidden space-y-3">
-                            <p class="text-xs text-sky-100">Names are combined automatically from First Name + Last Name. Membership Type (or Status) sets the member category and badges; Country is retained and shown as a flag.</p>
-                            <div id="internationsImportPreview" class="rounded-lg border border-sky-400/20 bg-black/30 p-3 text-xs text-gray-200"></div>
-                            <button type="button" id="confirmInternationsImport" class="gold-btn w-full py-3 rounded-lg text-xs uppercase tracking-widest">Synchronize full InterNations Members-List</button>
-                        </div>
-                        <p id="internationsImportStatus" role="status" aria-live="polite" class="text-xs text-gray-200 mt-3"></p>
-                    </section>
-
-                    <section id="databaseBackupPanel" class="staff-panel hidden" aria-labelledby="databaseBackupHeading">
-                        <div class="staff-panel__header">
-                            <h4 id="databaseBackupHeading" class="staff-panel__title">Database Backup & Restore</h4>
-                            <span class="staff-panel__meta">Admin only</span>
-                        </div>
-                        <p class="text-xs text-gray-300 mb-3">Export and restore work directly through Firestore under your signed-in Admin permissions; no Cloud Functions or billing plan upgrade is required. The JSON file includes guest records and event settings only. Staff accounts, roles and passwords are not included. Restore replaces all current guest records and event settings, so download a fresh backup first and review the selected file before confirming.</p>
-                        <div class="flex flex-wrap gap-2 items-center">
-                            <button id="createDatabaseBackupBtn" type="button" class="sort-option">Download backup (.json)</button>
-                            <label for="restoreDatabaseFileInput" class="sort-option cursor-pointer">Choose backup to restore</label>
-                            <input id="restoreDatabaseFileInput" type="file" accept=".json,application/json" class="hidden">
-                            <button id="restoreDatabaseBackupBtn" type="button" disabled class="sort-option opacity-40 cursor-not-allowed">Restore selected backup</button>
-                        </div>
-                        <p id="databaseBackupStatus" class="text-xs text-gray-300 mt-3" role="status" aria-live="polite">Create a backup before making bulk changes.</p>
-                    </section>
+                    </div>
 
                 </div>
             </div>
@@ -973,7 +992,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.15</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.21.16</p>
         </div>
     </footer>
 
@@ -997,6 +1016,7 @@
         const IS_DEVELOPMENT_BUILD = document.querySelector('meta[name="app-build-target"]')?.content === 'dev';
         const WORKFLOW_SETTINGS_DOC_ID = IS_DEVELOPMENT_BUILD ? 'workflow_dev' : 'workflow';
         let currentStaffRole = null;
+        let activeStaffPage = 'overview';
         let currentAuthUser = null;
         let activeStaffUid = null;
         let staffActivationPromise = null;
@@ -2457,6 +2477,29 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     : 'Check-in, payment and welcome-drink actions are available together in one list.');
         }
 
+        /** Switch between the operational overview, guest-list tools, and event settings pages. */
+        function showStaffPage(page) {
+            const requested = ['overview', 'guest-management', 'event-settings'].includes(page) ? page : 'overview';
+            const nextPage = currentStaffRole === 'admin' ? requested : 'overview';
+            activeStaffPage = nextPage;
+            const pageIds = {
+                'overview': 'staffOperationsPage',
+                'guest-management': 'guestManagementPage',
+                'event-settings': 'eventSettingsPage'
+            };
+            Object.entries(pageIds).forEach(([key, id]) => {
+                const element = document.getElementById(id);
+                if (!element) return;
+                const visible = key === activeStaffPage;
+                element.classList.toggle('hidden', !visible);
+                element.setAttribute('aria-hidden', String(!visible));
+            });
+            document.querySelectorAll('[data-staff-page]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.staffPage === activeStaffPage));
+            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         /** Set the staff interface and available actions for the authenticated role returned by Firestore. */
         function applyStaffRole(role) {
             if (!STAFF_ROLES.includes(role)) throw new Error('The account does not have a valid staff role.');
@@ -2493,7 +2536,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 statsGrid.classList.toggle('xl:grid-cols-3', role === 'admin');
                 statsGrid.classList.toggle('xl:grid-cols-2', role !== 'admin');
             }
-            show('adminToolsHeading', role === 'admin');
+            show('adminPageNavigation', role === 'admin');
             show('adminPricingPanel', role === 'admin');
             show('extraDrinkEstimateSection', role === 'admin');
             show('extraDrinkAdminControls', role === 'admin');
@@ -2501,6 +2544,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             show('databaseBackupPanel', role === 'admin');
             applyWorkflowRoleVisibility();
             updateEventCheckInModeUI();
+            showStaffPage('overview');
         }
 
         /** Display a staff sign-in or access-denied message in the dedicated feedback area. */
@@ -2553,6 +2597,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         function showStaffLogin() {
             activeStaffUid = null;
             currentStaffRole = null;
+            activeStaffPage = 'overview';
             // Discard all simulated check-in/payment/drink changes when the staff session ends.
             clearSessionGuestOverrides();
             stopStaffRealtimeListeners();
