@@ -1169,7 +1169,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.49</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.50</p>
         </div>
     </footer>
 
@@ -3707,9 +3707,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     const referralEarned = hasEarnedReferralDrink(identity, qualified);
                     const rule = pricingSettings.drinkRules[getGuestTier(data)] || { mode: 'not_allowed', price: 0 };
                     const issued = isGuestDrinkChipIssued(data);
-                    // A paid upgrade resolves admission when the referral reward has not been earned.
-                    // If the referral is later earned, the guest returns to Referral pending to claim the chip.
-                    if (Boolean(data.welcomeDrinkUpgradeSelected) && !referralEarned) return true;
+                    // A selected upgrade includes a welcome-drink chip that must be issued,
+                    // even when the base admission or upgrade payment has already been recorded.
                     const chipRequired = referralEarned || rule.mode === 'included' ||
                         (rule.mode === 'upgrade' && Boolean(data.welcomeDrinkUpgradeSelected)) || issued;
                     return !chipRequired || issued;
@@ -3960,14 +3959,29 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                             amount.textContent = formatEuro(isPaid ? paidAmount : charge.total);
                             actions.appendChild(amount);
 
-                            const paymentButton = document.createElement('button');
-                            paymentButton.type = 'button';
-                            paymentButton.className = 'guest-action-btn ' +
-                                (isPaid ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
-                            paymentButton.textContent = isPaid ? 'MARK UNPAID' : 'MARK PAID';
-                            paymentButton.setAttribute('aria-pressed', String(isPaid));
-                            paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned));
-                            actions.appendChild(paymentButton);
+                            const paidBaseWithOptionalUpgrade = isPaid && paymentComplete &&
+                                charge.drinkMode === 'upgrade' && !charge.upgradeSelected &&
+                                !welcomeDrinkEarned && !chipAlreadyIssued;
+                            // Once the base admission is complete, the optional upgrade is the
+                            // only remaining action; do not offer a misleading MARK UNPAID control.
+                            if (!paidBaseWithOptionalUpgrade) {
+                                const paymentButton = document.createElement('button');
+                                paymentButton.type = 'button';
+                                paymentButton.className = 'guest-action-btn ' +
+                                    (isPaid ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
+                                paymentButton.textContent = isPaid
+                                    ? (paymentComplete ? 'MARK UNPAID' : 'PAID ✓')
+                                    : 'MARK PAID';
+                                paymentButton.setAttribute('aria-pressed', String(isPaid));
+                                if (isPaid && !paymentComplete) {
+                                    paymentButton.disabled = true;
+                                    paymentButton.title = 'Payment recorded. Complete the outstanding drink-chip action.';
+                                    paymentButton.classList.add('opacity-70', 'cursor-not-allowed');
+                                } else {
+                                    paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned));
+                                }
+                                actions.appendChild(paymentButton);
+                            }
 
                             if (drinkEntitled) {
                                 const chipButton = document.createElement('button');
