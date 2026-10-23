@@ -1030,6 +1030,11 @@
                             <div class="space-y-2 max-h-[60vh] overflow-y-auto pr-1" id="internationsUnpaidContainer"></div>
                             <p id="noInternationsUnpaid" class="text-xs text-gray-500 py-2 hidden">No checked-in guests are awaiting payment.</p>
                         </div>
+                        <div class="mb-4">
+                            <p class="text-[10px] uppercase tracking-widest text-amber-200 mb-2">Referral pending <span id="internationsReferralPendingCount" class="text-amber-200">(0)</span></p>
+                            <div class="space-y-2 max-h-[60vh] overflow-y-auto pr-1" id="internationsReferralPendingContainer"></div>
+                            <p id="noInternationsReferralPending" class="text-xs text-gray-500 py-2 hidden">No paid guests are waiting for a referral drink to be resolved.</p>
+                        </div>
                         <div>
                             <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Paid <span id="internationsPaidCount" class="text-emerald-200">(0)</span></p>
                             <div class="space-y-2 max-h-64 overflow-y-auto pr-1" id="internationsPaidContainer"></div>
@@ -1164,7 +1169,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.45</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.46</p>
         </div>
     </footer>
 
@@ -1366,6 +1371,7 @@
                 paidAt: null,
                 amountPaid: null,
                 paymentStatusUpdatedAt: null,
+                referralRewardResolved: false,
                 welcomeDrinkUpgradeSelected: false,
                 welcomeDrinkUpgradePrice: null,
                 welcomeDrinkUpgradeUpdatedAt: null,
@@ -3576,12 +3582,14 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const combinedContainer = document.getElementById('combinedGuestContainer');
                 const combinedPaidContainer = document.getElementById('combinedPaidContainer');
                 const unpaidContainer = document.getElementById('internationsUnpaidContainer');
+                const referralPendingContainer = document.getElementById('internationsReferralPendingContainer');
                 const paidContainer = document.getElementById('internationsPaidContainer');
                 hotelOpenContainer.replaceChildren();
                 hotelCheckedContainer.replaceChildren();
                 combinedContainer.replaceChildren();
                 combinedPaidContainer.replaceChildren();
                 unpaidContainer.replaceChildren();
+                referralPendingContainer.replaceChildren();
                 paidContainer.replaceChildren();
 
                 const rawGuestItems = effectiveGuestDocs.map((doc) => ({ doc, data: doc.data() || {} }));
@@ -3636,7 +3644,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         (rsvpItem && rsvpItem.data.invitedBy) ||
                         (inviter && inviter.data.invitedBy) || data.invitedBy || ''
                     );
-                    ['checkedIn', 'paid', 'welcomeDrinkUpgradeSelected', 'welcomeDrinkChipIssued'].forEach((field) => {
+                    ['checkedIn', 'paid', 'welcomeDrinkUpgradeSelected', 'welcomeDrinkChipIssued', 'referralRewardResolved'].forEach((field) => {
                         data[field] = group.some((item) => Boolean((item.data || {})[field]));
                     });
                     const checkedInItem = group.find((item) => item.data.checkedIn && item.data.checkedInAt);
@@ -3668,15 +3676,33 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 function isPaymentWorkflowComplete(item) {
                     const data = item.data || {};
                     if (!Boolean(data.paid)) return false;
+                    // Admin may close an unresolved referral reward at the end of the event.
+                    if (Boolean(data.referralRewardResolved)) return true;
                     const key = normalizeGuestName(data.name);
                     const identity = guestByNameKey.get(key)?.data || data;
                     const qualified = referralTrackingByInviter.get(key)?.qualifiedGuestIds.size || 0;
                     const referralEarned = hasEarnedReferralDrink(identity, qualified);
                     const rule = pricingSettings.drinkRules[getGuestTier(data)] || { mode: 'not_allowed', price: 0 };
                     const issued = isGuestDrinkChipIssued(data);
+                    // A paid upgrade resolves admission when the referral reward has not been earned.
+                    // If the referral is later earned, the guest returns to Referral pending to claim the chip.
+                    if (Boolean(data.welcomeDrinkUpgradeSelected) && !referralEarned) return true;
                     const chipRequired = referralEarned || rule.mode === 'included' ||
                         (rule.mode === 'upgrade' && Boolean(data.welcomeDrinkUpgradeSelected)) || issued;
                     return !chipRequired || issued;
+                }
+
+                /** Paid guests with a qualifying referral opportunity remain here until the chip is claimed, upgraded or administratively closed. */
+                function isReferralPendingPayment(item) {
+                    const data = item.data || {};
+                    if (!Boolean(data.paid) || Boolean(data.referralRewardResolved) || isGuestDrinkChipIssued(data)) return false;
+                    const key = normalizeGuestName(data.name);
+                    const identity = guestByNameKey.get(key)?.data || data;
+                    const registered = referralTrackingByInviter.get(key)?.guestIds.size || 0;
+                    const qualified = referralTrackingByInviter.get(key)?.qualifiedGuestIds.size || 0;
+                    const referralEarned = hasEarnedReferralDrink(identity, qualified);
+                    if (Boolean(data.welcomeDrinkUpgradeSelected) && !referralEarned) return false;
+                    return hasPotentialReferralDrink(identity, registered);
                 }
 
                 /** In one-step mode, payment/drink completion moves guests to Paid without requiring check-in. */
@@ -3920,6 +3946,15 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                                 chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
                                 actions.appendChild(chipButton);
                             }
+                            if (currentStaffRole === 'admin' && mode === 'payment' && isReferralPendingPayment(item)) {
+                                const closeReferralButton = document.createElement('button');
+                                closeReferralButton.type = 'button';
+                                closeReferralButton.className = 'guest-action-btn guest-action-btn--forward';
+                                closeReferralButton.textContent = 'MOVE TO PAID';
+                                closeReferralButton.title = 'Admin: close the outstanding referral reward and move this guest to Paid.';
+                                closeReferralButton.addEventListener('click', () => resolveReferralPendingPayment(doc.id, data.name));
+                                actions.appendChild(closeReferralButton);
+                            }
                         }
                         if (mode === 'combined') {
                             if (currentStaffRole === 'admin') appendDeleteAction();
@@ -4038,19 +4073,23 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 document.getElementById('paymentRsvpsPotential').textContent = formatEuroAmount(categoryPaymentTotals.RSVPs.potential);
                 document.getElementById('paymentRsvpsPaid').textContent = formatEuroAmount(categoryPaymentTotals.RSVPs.paid);
 
-                const unpaidGuests = checkedInGuests.filter((item) => !isPaymentWorkflowComplete(item)).sort((a, b) => {
+                const unpaidGuests = checkedInGuests.filter((item) => !isPaymentWorkflowComplete(item) && !isReferralPendingPayment(item)).sort((a, b) => {
                     const timeA = checkInTime(a), timeB = checkInTime(b);
                     if (timeA == null && timeB != null) return 1;
                     if (timeA != null && timeB == null) return -1;
                     if (timeA != null && timeB != null && timeA !== timeB) return timeA - timeB;
                     return compareNames(a, b);
                 });
-                const paidGuests = checkedInGuests.filter((item) => isPaymentWorkflowComplete(item)).sort(compareNames)
+                const referralPendingGuests = checkedInGuests.filter((item) => isReferralPendingPayment(item)).sort(compareNames);
+                const paidGuests = checkedInGuests.filter((item) => isPaymentWorkflowComplete(item) && !isReferralPendingPayment(item)).sort(compareNames);
                 unpaidGuests.forEach((item) => unpaidContainer.appendChild(makeGuestCard(item, 'payment')));
+                referralPendingGuests.forEach((item) => referralPendingContainer.appendChild(makeGuestCard(item, 'payment')));
                 paidGuests.forEach((item) => paidContainer.appendChild(makeGuestCard(item, 'payment')));
                 document.getElementById('internationsUnpaidCount').textContent = '(' + unpaidGuests.length + ')';
+                document.getElementById('internationsReferralPendingCount').textContent = '(' + referralPendingGuests.length + ')';
                 document.getElementById('internationsPaidCount').textContent = '(' + paidGuests.length + ')';
                 document.getElementById('noInternationsUnpaid').classList.toggle('hidden', unpaidGuests.length > 0);
+                document.getElementById('noInternationsReferralPending').classList.toggle('hidden', referralPendingGuests.length > 0);
                 document.getElementById('noInternationsPaid').classList.toggle('hidden', paidGuests.length > 0);
                 renderInternationsImportPreview();
                 applyGuestSorts();
@@ -4088,6 +4127,30 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 console.error('Welcome-drink chip update failed:', error);
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'Could not save the chip status. Check Firebase access rules and try again.';
+                listError.classList.remove('hidden');
+            }
+        }
+
+        /** Admin-only end-of-event action for closing an unresolved referral reward without falsely recording a chip issue. */
+        async function resolveReferralPendingPayment(id, guestName) {
+            if (currentStaffRole !== 'admin') {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Only an Admin can move a referral-pending guest to Paid.';
+                listError.classList.remove('hidden');
+                return;
+            }
+            if (!db || !id) {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Could not resolve the referral status because the guest database is not connected.';
+                listError.classList.remove('hidden');
+                return;
+            }
+            try {
+                await applyGuestStateUpdate(id, { referralRewardResolved: true });
+            } catch (error) {
+                console.error('Referral reward closure failed:', error);
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Could not move this guest to Paid. Check Admin database permissions and try again.';
                 listError.classList.remove('hidden');
             }
         }
@@ -4264,6 +4327,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             applySortToContainer('combinedGuestContainer',guestSortBy,'',-1);
             applySortToContainer('combinedPaidContainer',guestSortBy,'',1);
             applySortToContainer('internationsUnpaidContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortCheckInOrder':'',1);
+            applySortToContainer('internationsReferralPendingContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortCheckInOrder':'',1);
             applySortToContainer('internationsPaidContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortCheckInOrder':'',1);
             updateSortButtonStates();
         }
@@ -4305,8 +4369,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         function filterPaymentGuests() {
             const input = document.getElementById('paymentSearchInput');
             const query = (input ? input.value : '').trim().toLocaleLowerCase();
-            const counts = filterContainerCards(['internationsUnpaidContainer', 'internationsPaidContainer'], query);
+            const counts = filterContainerCards(['internationsUnpaidContainer', 'internationsReferralPendingContainer', 'internationsPaidContainer'], query);
             document.getElementById('internationsUnpaidCount').textContent = '(' + counts.internationsUnpaidContainer + ')';
+            document.getElementById('internationsReferralPendingCount').textContent = '(' + counts.internationsReferralPendingContainer + ')';
             document.getElementById('internationsPaidCount').textContent = '(' + counts.internationsPaidContainer + ')';
         }
 
