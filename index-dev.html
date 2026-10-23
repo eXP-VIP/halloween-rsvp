@@ -1756,13 +1756,11 @@
                 const selected = button.dataset.viewportPreference === preference;
                 button.setAttribute('aria-pressed', selected ? 'true' : 'false');
             });
-            const detectedMobile = window.matchMedia('(max-width: 640px)').matches;
             const staffViewActive = document.body.classList.contains('staff-mode');
             document.body.classList.toggle('staff-layout-mobile', staffViewActive && preference === 'phone');
             document.body.classList.toggle('staff-layout-desktop', staffViewActive && preference === 'desktop');
             document.documentElement.classList.toggle('staff-layout-desktop-active', staffViewActive && preference === 'desktop');
-            // With auto-detection, neither override button is selected; the detected layout is used silently.
-            void detectedMobile;
+            // With auto-detection, neither override button is selected; responsive CSS follows the actual viewport.
         }
         function setStaffViewportPreference(preference) {
             if (!['phone', 'desktop'].includes(preference)) return;
