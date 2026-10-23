@@ -1164,7 +1164,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.44</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.45</p>
         </div>
     </footer>
 
@@ -3721,7 +3721,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     const upgradeCanBeSelected = charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued;
 
                     const card = document.createElement('div');
-                    card.className = 'guest-card p-3 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ' +
+                    card.className = 'guest-card p-3 rounded border flex flex-col sm:flex-row sm:items-start justify-between gap-3 ' +
                         (isPaymentCard ? (paymentComplete ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-sky-950/30 border-sky-400/40') :
                         (checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'));
                     card.dataset.guestId = doc.id;
@@ -3828,22 +3828,22 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         titleLine.appendChild(badge);
                     }
 
-                    // On payment lists, make the individual referrals visible for guests whose referral reward is still pending.
+                    // Build the referral list here, then append it after the guest name in the payment-card layout.
+                    let referralList = null;
                     if (isPaymentCard && currentStaffRole !== 'hotel' && referralBadgeState && !referralBadgeState.startsWith('noneligible-') && referralBadgeState.endsWith('pending') && referralTracking.referredPeople && referralTracking.referredPeople.length) {
-                        const referralList = document.createElement('p');
+                        referralList = document.createElement('p');
                         referralList.className = 'text-xs text-amber-100/90 break-words mt-1';
                         referralList.appendChild(document.createTextNode('Referred guests: '));
                         referralTracking.referredPeople.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })).forEach((person, index) => {
                             if (index) referralList.appendChild(document.createTextNode(' · '));
                             referralList.appendChild(document.createTextNode(person.name + (person.paid ? ' (Paid)' : ' (Awaiting payment)')));
                         });
-                        details.appendChild(referralList);
                     }
 
                     const actions = document.createElement('div');
                     actions.className = mode === 'combined'
-                        ? 'flex w-full min-w-0 flex-wrap items-center gap-2 self-stretch sm:w-auto sm:shrink-0 sm:self-center'
-                        : 'flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center';
+                        ? 'flex w-full min-w-0 flex-wrap items-center gap-2 self-stretch sm:w-auto sm:shrink-0 sm:self-start'
+                        : 'flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-start';
 
                     const appendCheckInAction = () => {
                         const checkInButton = document.createElement('button');
@@ -3891,6 +3891,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
                         details.appendChild(titleLine);
                         if (guestMeta.textContent) details.appendChild(guestMeta);
+                        if (referralList) details.appendChild(referralList);
 
                         const canManageAdmission = mode === 'combined' || checkedIn;
                         if (canManageAdmission) {
