@@ -1169,7 +1169,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.47</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.48</p>
         </div>
     </footer>
 
@@ -3672,12 +3672,29 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
                 renderUnrecognizedWelcomeDrinkList();
 
+                /** A manual Admin resolution applies only to the specific payment transaction it closed. */
+                function isReferralRewardResolvedForCurrentPayment(data) {
+                    if (!Boolean(data && data.referralRewardResolved)) return false;
+                    const resolvedAt = data.referralRewardResolvedForPaidAt;
+                    const paidAt = data.paidAt;
+                    const toMillis = (value) => {
+                        if (!value) return null;
+                        if (typeof value.toMillis === 'function') return value.toMillis();
+                        if (value instanceof Date) return value.getTime();
+                        const parsed = Date.parse(value);
+                        return Number.isFinite(parsed) ? parsed : null;
+                    };
+                    const resolvedMillis = toMillis(resolvedAt);
+                    const paidMillis = toMillis(paidAt);
+                    return resolvedMillis != null && paidMillis != null && resolvedMillis === paidMillis;
+                }
+
                 /** Determine whether a guest has completed the payment/admission steps required by the active workflow. */
                 function isPaymentWorkflowComplete(item) {
                     const data = item.data || {};
                     if (!Boolean(data.paid)) return false;
-                    // Admin may close an unresolved referral reward at the end of the event.
-                    if (Boolean(data.referralRewardResolved)) return true;
+                    // Admin may close an unresolved referral reward for this payment only.
+                    if (isReferralRewardResolvedForCurrentPayment(data)) return true;
                     const key = normalizeGuestName(data.name);
                     const identity = guestByNameKey.get(key)?.data || data;
                     const qualified = referralTrackingByInviter.get(key)?.qualifiedGuestIds.size || 0;
@@ -3695,7 +3712,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 /** Paid guests with a qualifying referral opportunity remain here until the chip is claimed, upgraded or administratively closed. */
                 function isReferralPendingPayment(item) {
                     const data = item.data || {};
-                    if (!Boolean(data.paid) || Boolean(data.referralRewardResolved) || isGuestDrinkChipIssued(data)) return false;
+                    if (!Boolean(data.paid) || isReferralRewardResolvedForCurrentPayment(data) || isGuestDrinkChipIssued(data)) return false;
                     const key = normalizeGuestName(data.name);
                     const identity = guestByNameKey.get(key)?.data || data;
                     const tracking = referralTrackingByInviter.get(key) || { guestIds: new Set(), qualifiedGuestIds: new Set() };
@@ -3957,7 +3974,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                                 closeReferralButton.className = 'guest-action-btn guest-action-btn--forward';
                                 closeReferralButton.textContent = 'MOVE TO PAID';
                                 closeReferralButton.title = 'Admin: close the outstanding referral reward and move this guest to Paid.';
-                                closeReferralButton.addEventListener('click', () => resolveReferralPendingPayment(doc.id, data.name));
+                                closeReferralButton.addEventListener('click', () => resolveReferralPendingPayment(doc.id, data.name, data.paidAt));
                                 actions.appendChild(closeReferralButton);
                             }
                         }
@@ -4126,9 +4143,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 await applyGuestStateUpdate(id, {
                     welcomeDrinkChipIssued: nextIssued,
                     welcomeDrinkChipIssuedAt: nextIssued ? guestActionTimestamp() : null,
-                    welcomeDrinkChipIssuedBy: nextIssued ? 'staff' : null,
-                    // Undoing a chip must reopen the referral stage when the reward is still outstanding.
-                    ...(nextIssued ? {} : { referralRewardResolved: false })
+                    welcomeDrinkChipIssuedBy: nextIssued ? 'staff' : null
                 });
             } catch (error) {
                 console.error('Welcome-drink chip update failed:', error);
@@ -4139,7 +4154,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         }
 
         /** Admin-only end-of-event action for closing an unresolved referral reward without falsely recording a chip issue. */
-        async function resolveReferralPendingPayment(id, guestName) {
+        async function resolveReferralPendingPayment(id, guestName, paidAt) {
             if (currentStaffRole !== 'admin') {
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'Only an Admin can move a referral-pending guest to Paid.';
@@ -4153,7 +4168,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 return;
             }
             try {
-                await applyGuestStateUpdate(id, { referralRewardResolved: true });
+                // Tie the Admin override to this exact paid transaction. If payment is undone
+                // and later recorded again, the new paidAt naturally reopens referral evaluation.
+                await applyGuestStateUpdate(id, {
+                    referralRewardResolved: true,
+                    referralRewardResolvedForPaidAt: paidAt || null
+                });
             } catch (error) {
                 console.error('Referral reward closure failed:', error);
                 const listError = document.getElementById('guestlistError');
@@ -4231,10 +4251,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     paid: nextPaid,
                     paidAt: nextPaid ? guestActionTimestamp() : null,
                     amountPaid: nextPaid ? charge.total : null,
-                    paymentStatusUpdatedAt: guestActionTimestamp(),
-                    // Undoing payment reopens the referral stage; paying again recalculates it
-                    // from the current referral status instead of preserving an old override.
-                    referralRewardResolved: false
+                    paymentStatusUpdatedAt: guestActionTimestamp()
                 };
                 // Issue chip is a separate staff action. Payment alone does not complete
                 // the workflow while a required welcome-drink chip remains outstanding.
