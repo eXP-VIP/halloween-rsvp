@@ -535,9 +535,12 @@
         }
 
     
-        .staff-view-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem 0.6rem; }
-        .staff-view-select { min-height: 38px; max-width: 100%; padding: 0.4rem 0.6rem; border: 1px solid rgba(212,175,55,.42); border-radius: 7px; background: rgba(8,8,10,.92); color: #f3f4f6; font-family: 'Montserrat',sans-serif; font-size: 0.75rem; }
-        .staff-view-select:focus-visible { outline: 2px solid #d4af37; outline-offset: 2px; }
+        .staff-view-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+        .staff-view-caption { color: #a9a6a0; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; }
+        .staff-view-switch { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.2rem; padding: 0.2rem; border: 1px solid rgba(212,175,55,.38); border-radius: 0.65rem; background: rgba(8,8,10,.82); }
+        .staff-view-option { display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; min-height: 38px; padding: 0.5rem 0.7rem; border: 1px solid transparent; border-radius: 0.45rem; background: transparent; color: #d1d5db; font-family: 'Montserrat',sans-serif; font-size: 0.72rem; font-weight: 700; cursor: pointer; touch-action: manipulation; }
+        .staff-view-option[aria-pressed="true"] { border-color: rgba(212,175,55,.55); background: rgba(212,175,55,.17); color: #f5d77b; box-shadow: inset 0 0 0 1px rgba(212,175,55,.08); }
+        .staff-view-option:focus-visible { outline: 2px solid #f5d77b; outline-offset: 2px; }
         .staff-view-help { margin-top: 0.3rem; color: #a9a6a0; font-size: 0.68rem; line-height: 1.45; }
 
         /* Forced phone layout, including when the browser window is wider than a phone. */
@@ -763,16 +766,16 @@
                             <span id="staffIdentity" class="hidden text-xs text-gray-300 break-all">Signed in as <span id="staffIdentityUsername" class="text-gold font-semibold"></span></span>
                         </div>
                         <p id="adminPortalDescription" class="text-xs text-gray-400 mt-1">Guest list, check-in, payment and event administration</p>
-                        <div class="staff-view-controls mt-2" id="staffViewportControl">
-                            <label for="staffViewportPreference" class="text-[10px] font-bold tracking-wider text-gray-400">LAYOUT</label>
-                            <select id="staffViewportPreference" class="staff-view-select" aria-describedby="staffViewportHelp">
-                                <option value="auto">Auto-detect</option>
-                                <option value="phone">Phone view</option>
-                                <option value="desktop">Desktop view</option>
-                            </select>
+                        <div class="staff-view-controls mt-2" id="staffViewportControl" aria-label="Choose management portal layout">
+                            <span class="staff-view-caption">VIEW:</span>
+                            <div class="staff-view-switch" role="group" aria-label="Management portal view">
+                                <button type="button" class="staff-view-option" data-viewport-preference="auto" aria-pressed="true" onclick="setStaffViewportPreference('auto')"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Auto</button>
+                                <button type="button" class="staff-view-option" data-viewport-preference="phone" aria-pressed="false" onclick="setStaffViewportPreference('phone')"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i> Phone</button>
+                                <button type="button" class="staff-view-option" data-viewport-preference="desktop" aria-pressed="false" onclick="setStaffViewportPreference('desktop')"><i class="fa-solid fa-desktop" aria-hidden="true"></i> Desktop</button>
+                            </div>
                             <span id="adminViewportMode" class="inline-flex items-center gap-1.5 rounded-full border border-sky-300/30 bg-sky-950/40 px-2.5 py-1 text-[10px] font-bold tracking-wider text-sky-100" aria-live="polite"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i><span id="adminViewportModeLabel">DETECTING VIEW</span></span>
                         </div>
-                        <p id="staffViewportHelp" class="staff-view-help">Auto follows your screen width. Choose Phone or Desktop to override detection; your choice is saved in this browser.</p>
+                        <p id="staffViewportHelp" class="staff-view-help">Auto follows screen width. Tap Phone or Desktop to switch manually. Your choice is saved in this browser.</p>
                     </div>
                     <button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white shrink-0"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
@@ -1162,7 +1165,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.22.40</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.41</p>
         </div>
     </footer>
 
@@ -1743,9 +1746,20 @@
         function updateAdminViewportMode() {
             const indicator = document.getElementById('adminViewportMode');
             const label = document.getElementById('adminViewportModeLabel');
-            const select = document.getElementById('staffViewportPreference');
-            if (!indicator || !label || !select) return;
-            const preference = ['auto', 'phone', 'desktop'].includes(select.value) ? select.value : 'auto';
+            if (!indicator || !label) return;
+            let preference = 'auto';
+            try {
+                const saved = localStorage.getItem('halloween-staff-viewport-preference-v1');
+                if (['auto', 'phone', 'desktop'].includes(saved)) preference = saved;
+            } catch (error) {
+                preference = document.body.dataset.staffViewportPreference || 'auto';
+            }
+            if (!['auto', 'phone', 'desktop'].includes(preference)) preference = 'auto';
+            document.body.dataset.staffViewportPreference = preference;
+            document.querySelectorAll('[data-viewport-preference]').forEach(button => {
+                const selected = button.dataset.viewportPreference === preference;
+                button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+            });
             const detectedMobile = window.matchMedia('(max-width: 640px)').matches;
             const mobile = preference === 'phone' || (preference === 'auto' && detectedMobile);
             const staffViewActive = document.body.classList.contains('staff-mode');
@@ -1761,24 +1775,24 @@
             const icon = indicator.querySelector('i');
             if (icon) icon.className = mobile ? 'fa-solid fa-mobile-screen-button' : 'fa-solid fa-desktop';
         }
+        function setStaffViewportPreference(preference) {
+            if (!['auto', 'phone', 'desktop'].includes(preference)) return;
+            document.body.dataset.staffViewportPreference = preference;
+            try {
+                localStorage.setItem('halloween-staff-viewport-preference-v1', preference);
+            } catch (error) {
+                // Keep the selected layout for the current page even without browser storage.
+            }
+            updateAdminViewportMode();
+        }
         function initializeStaffViewportPreference() {
-            const select = document.getElementById('staffViewportPreference');
-            if (!select || select.dataset.initialized === 'true') return;
             try {
                 const saved = localStorage.getItem('halloween-staff-viewport-preference-v1');
-                if (['auto', 'phone', 'desktop'].includes(saved)) select.value = saved;
+                if (['auto', 'phone', 'desktop'].includes(saved)) document.body.dataset.staffViewportPreference = saved;
             } catch (error) {
-                // The chooser still works for this session when browser storage is unavailable.
+                // Auto-detection remains available when browser storage is unavailable.
             }
-            select.addEventListener('change', () => {
-                try {
-                    localStorage.setItem('halloween-staff-viewport-preference-v1', select.value);
-                } catch (error) {
-                    // Keep the selected layout for the current page even without browser storage.
-                }
-                updateAdminViewportMode();
-            });
-            select.dataset.initialized = 'true';
+            updateAdminViewportMode();
         }
         window.addEventListener('resize', updateAdminViewportMode, { passive: true });
         window.addEventListener('orientationchange', updateAdminViewportMode);
