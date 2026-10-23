@@ -1169,7 +1169,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.52</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.53</p>
         </div>
     </footer>
 
@@ -1375,6 +1375,7 @@
                 welcomeDrinkUpgradeSelected: false,
                 welcomeDrinkUpgradePrice: null,
                 welcomeDrinkUpgradeUpdatedAt: null,
+                welcomeDrinkUpgradePaidSeparately: false,
                 welcomeDrinkChipIssued: false,
                 welcomeDrinkChipIssuedAt: null,
                 welcomeDrinkChipIssuedBy: null
@@ -1434,7 +1435,8 @@
                 welcomeDrinkChipIssuedBy: null,
                 welcomeDrinkUpgradeSelected: false,
                 welcomeDrinkUpgradePrice: null,
-                welcomeDrinkUpgradeUpdatedAt: null
+                welcomeDrinkUpgradeUpdatedAt: null,
+                welcomeDrinkUpgradePaidSeparately: false
             };
             // Clear payment/drink fields first so Firestore rules permit the subsequent check-in reset.
             for (let start = 0; start < docs.length; start += 400) {
@@ -3315,6 +3317,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if (welcomeDrinkEarned && !currentlySelected) return;
             const nextSelected = !currentlySelected;
             if (nextSelected && (welcomeDrinkEarned || isGuestDrinkChipIssued(data))) return;
+            if (!nextSelected && Boolean(data.welcomeDrinkUpgradePaidSeparately) && isGuestDrinkChipIssued(data)) {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Undo the issued drink chip before unpaying the separately paid upgrade.';
+                listError.classList.remove('hidden');
+                return;
+            }
             try {
                 const upgradePrice = Number(rule.price || 0);
                 const update = {
@@ -3979,16 +3987,28 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                                 paymentButton.type = 'button';
                                 paymentButton.className = 'guest-action-btn ' +
                                     (isPaid ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
-                                paymentButton.textContent = isPaid
-                                    ? (paymentComplete ? 'MARK UNPAID' : 'PAID ✓')
-                                    : 'MARK PAID';
+                                const separatelyPaidUpgrade = isPaid &&
+                                    Boolean(data.welcomeDrinkUpgradePaidSeparately) && charge.upgradeSelected;
+                                paymentButton.textContent = separatelyPaidUpgrade
+                                    ? 'UNPAY UPGRADE'
+                                    : (isPaid ? (paymentComplete ? 'MARK UNPAID' : 'PAID ✓') : 'MARK PAID');
                                 paymentButton.setAttribute('aria-pressed', String(isPaid));
-                                if (isPaid && !paymentComplete) {
+                                if (separatelyPaidUpgrade && chipAlreadyIssued) {
+                                    paymentButton.disabled = true;
+                                    paymentButton.title = 'Undo the issued drink chip first. The base admission will remain paid.';
+                                    paymentButton.classList.add('opacity-70', 'cursor-not-allowed');
+                                } else if (isPaid && !paymentComplete) {
                                     paymentButton.disabled = true;
                                     paymentButton.title = 'Payment recorded. Complete the outstanding drink-chip action.';
                                     paymentButton.classList.add('opacity-70', 'cursor-not-allowed');
                                 } else {
-                                    paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned));
+                                    paymentButton.addEventListener('click', () => {
+                                        if (separatelyPaidUpgrade) {
+                                            toggleGuestDrinkUpgrade(doc.id, data, welcomeDrinkEarned);
+                                        } else {
+                                            toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned);
+                                        }
+                                    });
                                 }
                                 actions.appendChild(paymentButton);
                             }
@@ -4273,6 +4293,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
         /** Record or undo payment and refresh dependent admission, referral reward and chip state. */
         async function toggleGuestPayment(id, guestName, currentlyPaid, data, welcomeDrinkEarned) {
+            // A separately paid upgrade is its own transaction; never reverse base admission here.
+            if (currentlyPaid && Boolean(data.welcomeDrinkUpgradePaidSeparately) &&
+                Boolean(data.welcomeDrinkUpgradeSelected)) {
+                await toggleGuestDrinkUpgrade(id, data, welcomeDrinkEarned);
+                return;
+            }
             if (!db) {
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'The payment update cannot be saved because the guest database is not connected.';
