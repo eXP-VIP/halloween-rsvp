@@ -769,13 +769,12 @@
                         <div class="staff-view-controls mt-2" id="staffViewportControl" aria-label="Choose management portal layout">
                             <span class="staff-view-caption">VIEW:</span>
                             <div class="staff-view-switch" role="group" aria-label="Management portal view">
-                                <button type="button" class="staff-view-option" data-viewport-preference="auto" aria-pressed="true" onclick="setStaffViewportPreference('auto')"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Auto</button>
                                 <button type="button" class="staff-view-option" data-viewport-preference="phone" aria-pressed="false" onclick="setStaffViewportPreference('phone')"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i> Phone</button>
                                 <button type="button" class="staff-view-option" data-viewport-preference="desktop" aria-pressed="false" onclick="setStaffViewportPreference('desktop')"><i class="fa-solid fa-desktop" aria-hidden="true"></i> Desktop</button>
                             </div>
                             <span id="adminViewportMode" class="inline-flex items-center gap-1.5 rounded-full border border-sky-300/30 bg-sky-950/40 px-2.5 py-1 text-[10px] font-bold tracking-wider text-sky-100" aria-live="polite"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i><span id="adminViewportModeLabel">DETECTING VIEW</span></span>
                         </div>
-                        <p id="staffViewportHelp" class="staff-view-help">Auto follows screen width. Tap Phone or Desktop to switch manually. Your choice is saved in this browser.</p>
+                        <p id="staffViewportHelp" class="staff-view-help">Showing the detected layout. Tap Phone or Desktop only if the layout looks wrong. Your choice is saved in this browser.</p>
                     </div>
                     <button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white shrink-0"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
@@ -1165,7 +1164,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.41</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.42</p>
         </div>
     </footer>
 
@@ -1750,7 +1749,7 @@
             let preference = 'auto';
             try {
                 const saved = localStorage.getItem('halloween-staff-viewport-preference-v1');
-                if (['auto', 'phone', 'desktop'].includes(saved)) preference = saved;
+                if (['phone', 'desktop'].includes(saved)) preference = saved;
             } catch (error) {
                 preference = document.body.dataset.staffViewportPreference || 'auto';
             }
@@ -1776,7 +1775,7 @@
             if (icon) icon.className = mobile ? 'fa-solid fa-mobile-screen-button' : 'fa-solid fa-desktop';
         }
         function setStaffViewportPreference(preference) {
-            if (!['auto', 'phone', 'desktop'].includes(preference)) return;
+            if (!['phone', 'desktop'].includes(preference)) return;
             document.body.dataset.staffViewportPreference = preference;
             try {
                 localStorage.setItem('halloween-staff-viewport-preference-v1', preference);
@@ -1788,7 +1787,8 @@
         function initializeStaffViewportPreference() {
             try {
                 const saved = localStorage.getItem('halloween-staff-viewport-preference-v1');
-                if (['auto', 'phone', 'desktop'].includes(saved)) document.body.dataset.staffViewportPreference = saved;
+                if (['phone', 'desktop'].includes(saved)) document.body.dataset.staffViewportPreference = saved;
+                else localStorage.removeItem('halloween-staff-viewport-preference-v1');
             } catch (error) {
                 // Auto-detection remains available when browser storage is unavailable.
             }
