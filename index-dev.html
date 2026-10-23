@@ -1169,7 +1169,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.50</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.51</p>
         </div>
     </footer>
 
@@ -3939,7 +3939,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                                 (charge.upgradeSelected ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100 hover:bg-emerald-800/50' : 'border-sky-400/40 bg-sky-950/30 text-sky-100 hover:bg-sky-900/50');
                             upgradeButton.textContent = charge.upgradeSelected
                                 ? (isPaid ? 'REMOVE UPGRADE' : 'UNDO UPGRADE')
-                                : (isPaid ? 'PAY UPGRADE +' : 'DRINK UPGRADE +') + formatEuro(charge.upgradePrice);
+                                : (isPaid ? 'PAY UPGRADE ' : 'DRINK UPGRADE +') + formatEuro(charge.upgradePrice);
                             upgradeButton.title = isPaid
                                 ? (charge.upgradeSelected ? 'Remove the upgrade and deduct only ' : 'Add the upgrade and collect only ') + formatEuro(charge.upgradePrice)
                                 : 'Paid upgrade: ' + formatEuro(charge.upgradePrice);
@@ -3953,17 +3953,20 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
                         const canManageAdmission = mode === 'combined' || checkedIn;
                         if (canManageAdmission) {
-                            const amount = document.createElement('span');
-                            amount.className = 'text-sm font-semibold text-white tabular-nums whitespace-nowrap';
-                            const paidAmount = data.amountPaid != null ? Number(data.amountPaid) : charge.total;
-                            amount.textContent = formatEuro(isPaid ? paidAmount : charge.total);
-                            actions.appendChild(amount);
-
                             const paidBaseWithOptionalUpgrade = isPaid && paymentComplete &&
                                 charge.drinkMode === 'upgrade' && !charge.upgradeSelected &&
                                 !welcomeDrinkEarned && !chipAlreadyIssued;
-                            // Once the base admission is complete, the optional upgrade is the
-                            // only remaining action; do not offer a misleading MARK UNPAID control.
+                            // Once the base admission is complete, show only the optional upgrade's
+                            // actual price, not the already-paid base admission total.
+                            if (!paidBaseWithOptionalUpgrade) {
+                                const amount = document.createElement('span');
+                                amount.className = 'text-sm font-semibold text-white tabular-nums whitespace-nowrap';
+                                const paidAmount = data.amountPaid != null ? Number(data.amountPaid) : charge.total;
+                                amount.textContent = formatEuro(isPaid ? paidAmount : charge.total);
+                                actions.appendChild(amount);
+                            }
+
+                            // Do not offer a misleading MARK UNPAID control for a paid base admission.
                             if (!paidBaseWithOptionalUpgrade) {
                                 const paymentButton = document.createElement('button');
                                 paymentButton.type = 'button';
