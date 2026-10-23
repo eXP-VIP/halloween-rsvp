@@ -772,7 +772,7 @@
                                 <button type="button" class="staff-view-option" data-viewport-preference="phone" aria-pressed="false" onclick="setStaffViewportPreference('phone')"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i> Phone</button>
                                 <button type="button" class="staff-view-option" data-viewport-preference="desktop" aria-pressed="false" onclick="setStaffViewportPreference('desktop')"><i class="fa-solid fa-desktop" aria-hidden="true"></i> Desktop</button>
                             </div>
-                            <span id="adminViewportMode" class="inline-flex items-center gap-1.5 rounded-full border border-sky-300/30 bg-sky-950/40 px-2.5 py-1 text-[10px] font-bold tracking-wider text-sky-100" aria-live="polite"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i><span id="adminViewportModeLabel">DETECTING VIEW</span></span>
+                            
                         </div>
                         <p id="staffViewportHelp" class="staff-view-help">Showing the detected layout. Tap Phone or Desktop only if the layout looks wrong. Your choice is saved in this browser.</p>
                     </div>
@@ -1164,7 +1164,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 18:00 <span class="text-gold">·</span> Open end</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.42</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.23.43</p>
         </div>
     </footer>
 
@@ -1743,9 +1743,6 @@
             return role === 'admin' || role === 'internations';
         }
         function updateAdminViewportMode() {
-            const indicator = document.getElementById('adminViewportMode');
-            const label = document.getElementById('adminViewportModeLabel');
-            if (!indicator || !label) return;
             let preference = 'auto';
             try {
                 const saved = localStorage.getItem('halloween-staff-viewport-preference-v1');
@@ -1760,19 +1757,12 @@
                 button.setAttribute('aria-pressed', selected ? 'true' : 'false');
             });
             const detectedMobile = window.matchMedia('(max-width: 640px)').matches;
-            const mobile = preference === 'phone' || (preference === 'auto' && detectedMobile);
             const staffViewActive = document.body.classList.contains('staff-mode');
             document.body.classList.toggle('staff-layout-mobile', staffViewActive && preference === 'phone');
             document.body.classList.toggle('staff-layout-desktop', staffViewActive && preference === 'desktop');
             document.documentElement.classList.toggle('staff-layout-desktop-active', staffViewActive && preference === 'desktop');
-            label.textContent = preference === 'auto'
-                ? (mobile ? 'PHONE VIEW · AUTO' : 'DESKTOP VIEW · AUTO')
-                : (mobile ? 'PHONE VIEW · MANUAL' : 'DESKTOP VIEW · MANUAL');
-            indicator.setAttribute('aria-label', preference === 'auto'
-                ? `Automatically showing the ${mobile ? 'phone' : 'desktop'} layout`
-                : `Manually selected the ${mobile ? 'phone' : 'desktop'} layout`);
-            const icon = indicator.querySelector('i');
-            if (icon) icon.className = mobile ? 'fa-solid fa-mobile-screen-button' : 'fa-solid fa-desktop';
+            // With auto-detection, neither override button is selected; the detected layout is used silently.
+            void detectedMobile;
         }
         function setStaffViewportPreference(preference) {
             if (!['phone', 'desktop'].includes(preference)) return;
