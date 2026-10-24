@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="app-build-target" content="live">
     <meta name="theme-color" content="#08080a">
-    <meta name="description" content="A private Halloween soirée by invitation only at The Dean Munich, Autograph Collection. Saturday, 31 October 2026, from 20:00. Two rooms, two bars and an open-ended night. Music winds down at 01:00.">
+    <meta name="description" content="A private, guest-list-only Halloween soirée at The Dean Munich, Autograph Collection by Marriott. A hidden event space, two rooms, twin DJ setups and two bars. Saturday, 31 October 2026, from 20:00, open end; music winds down at 01:00.">
 
     <!-- Open Graph / WhatsApp Preview -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://sign-up.partybag.com/" />
-    <meta property="og:title" content="The Dean After Dark | Invite-Only Halloween Soirée" />
-    <meta property="og:description" content="A private Halloween soirée by invitation only at The Dean Munich, Autograph Collection. Saturday, 31 October 2026, from 20:00. Two rooms, two bars and an open-ended night. Music winds down at 01:00." />
+    <meta property="og:title" content="The Dean After Dark | Private Halloween Soirée" />
+    <meta property="og:description" content="A private, guest-list-only Halloween soirée at The Dean Munich, Autograph Collection by Marriott. Saturday, 31 October 2026, from 20:00; music winds down at 01:00." />
     <meta property="og:image" content="https://sign-up.partybag.com/Halloween4WhatsApp.jpg" />
     <meta property="og:image:secure_url" content="https://sign-up.partybag.com/Halloween4WhatsApp.jpg" />
     <meta property="og:image:type" content="image/jpeg" />
@@ -663,15 +663,15 @@
 
             <div class="venue-gallery mb-7" aria-label="Photos and atmosphere concept for the event spaces">
                 <figure class="venue-shot room">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTXvb59KqOK1i5JN-wJAtQxiCO_AG8_3C_-TlKQjAGprTtKxnWq_v14WHw&amp;s=10" alt="Warmly lit private lounge and party room" loading="lazy" decoding="async">
+                    <img src="The Secret Party Room.jpg" alt="The Dean party rooms" loading="lazy" decoding="async">
                     <figcaption>The Secret Party Room</figcaption>
                 </figure>
                 <figure class="venue-shot lobby">
-                    <img src="Gemini_Generated_Image_-1.jpg" alt="The chill-out Lounge" loading="lazy" decoding="async">
+                    <img src="The chill-out Lounge.jpg" alt="The chill-out Lounge" loading="lazy" decoding="async">
                     <figcaption>The chill-out Lounge</figcaption>
                 </figure>
                 <figure class="venue-shot concept">
-                    <img src="Gemini_Generated_Image_ang8ctang8ctang8.jpg" alt="AI-generated concept of the party room decorated for Halloween" loading="lazy" decoding="async">
+                    <img src="Atmosphere Concept.jpg" alt="AI-generated concept of the party room decorated for Halloween" loading="lazy" decoding="async">
                     <figcaption>Atmosphere Concept</figcaption>
                 </figure>
             </div>
@@ -1035,6 +1035,11 @@
                             <div class="space-y-2 max-h-[60vh] overflow-y-auto pr-1" id="internationsUnpaidContainer"></div>
                             <p id="noInternationsUnpaid" class="text-xs text-gray-500 py-2 hidden">No checked-in guests are awaiting payment.</p>
                         </div>
+                        <div class="mb-4">
+                            <p class="text-[10px] uppercase tracking-widest text-amber-200 mb-2">Referral pending <span id="internationsReferralPendingCount" class="text-amber-200">(0)</span></p>
+                            <div class="space-y-2 max-h-[60vh] overflow-y-auto pr-1" id="internationsReferralPendingContainer"></div>
+                            <p id="noInternationsReferralPending" class="text-xs text-gray-500 py-2 hidden">No paid guests are waiting for a referral drink to be resolved.</p>
+                        </div>
                         <div>
                             <p class="text-[10px] uppercase tracking-widest text-emerald-200 mb-2">Paid <span id="internationsPaidCount" class="text-emerald-200">(0)</span></p>
                             <div class="space-y-2 max-h-64 overflow-y-auto pr-1" id="internationsPaidContainer"></div>
@@ -1374,9 +1379,11 @@
                 paidAt: null,
                 amountPaid: null,
                 paymentStatusUpdatedAt: null,
+                referralRewardResolved: false,
                 welcomeDrinkUpgradeSelected: false,
                 welcomeDrinkUpgradePrice: null,
                 welcomeDrinkUpgradeUpdatedAt: null,
+                welcomeDrinkUpgradePaidSeparately: false,
                 welcomeDrinkChipIssued: false,
                 welcomeDrinkChipIssuedAt: null,
                 welcomeDrinkChipIssuedBy: null
@@ -1392,7 +1399,7 @@
         function refreshGuestlistView() {
             const section = document.getElementById('guestlistSection');
             if (!section || section.classList.contains('hidden')) return;
-            // Session-only operational test actions redraw from the cached snapshot without reopening the listener.
+            // Session-only DEV actions should redraw the cached snapshot, not unsubscribe and re-fetch the full list.
             if (cachedGuestSnapshot && typeof guestlistSnapshotHandler === 'function') {
                 guestlistSnapshotHandler(cachedGuestSnapshot);
             } else {
@@ -1442,7 +1449,8 @@
                 welcomeDrinkChipIssuedBy: null,
                 welcomeDrinkUpgradeSelected: false,
                 welcomeDrinkUpgradePrice: null,
-                welcomeDrinkUpgradeUpdatedAt: null
+                welcomeDrinkUpgradeUpdatedAt: null,
+                welcomeDrinkUpgradePaidSeparately: false
             };
             // Clear payment/drink fields first so Firestore rules permit the subsequent check-in reset.
             for (let start = 0; start < docs.length; start += 400) {
@@ -3340,17 +3348,32 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if (welcomeDrinkEarned && !currentlySelected) return;
             const nextSelected = !currentlySelected;
             if (nextSelected && (welcomeDrinkEarned || isGuestDrinkChipIssued(data))) return;
+            if (!nextSelected && Boolean(data.welcomeDrinkUpgradePaidSeparately) && isGuestDrinkChipIssued(data)) {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Undo the issued drink chip before unpaying the separately paid upgrade.';
+                listError.classList.remove('hidden');
+                return;
+            }
             try {
+                const upgradePrice = Number(rule.price || 0);
                 const update = {
                     welcomeDrinkUpgradeSelected: nextSelected,
-                    welcomeDrinkUpgradePrice: nextSelected ? Number(rule.price || 0) : null,
+                    welcomeDrinkUpgradePrice: nextSelected ? upgradePrice : null,
                     welcomeDrinkUpgradeUpdatedAt: guestActionTimestamp()
                 };
                 if (data.paid) {
-                    update.paid = false;
-                    update.paidAt = null;
-                    update.amountPaid = null;
+                    // For an already-paid guest, this button settles only the upgrade.
+                    // Keep the guest in Paid while the drink chip is issued separately.
+                    const previouslyPaid = data.amountPaid != null
+                        ? Number(data.amountPaid)
+                        : calculateGuestCharge({ ...data, welcomeDrinkUpgradeSelected: false }, false).basePrice;
+                    update.paid = true;
+                    update.paidAt = data.paidAt || guestActionTimestamp();
+                    update.amountPaid = Math.max(0, previouslyPaid + (nextSelected ? upgradePrice : -upgradePrice));
+                    update.welcomeDrinkUpgradePaidSeparately = nextSelected;
                     update.paymentStatusUpdatedAt = guestActionTimestamp();
+                } else {
+                    update.welcomeDrinkUpgradePaidSeparately = false;
                 }
                 await applyGuestStateUpdate(id, update);
             } catch (error) {
@@ -3608,9 +3631,10 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     if (getGuestTier(person.data) !== 'friends') return;
                     const name = String(person.inviter || '').trim(), key = normalizeGuestName(name);
                     if (!key) return;
-                    if(!referralTrackingByInviter.has(key))referralTrackingByInviter.set(key,{name,guestIds:new Set(),checkedInGuestIds:new Set(),qualifiedGuestIds:new Set()});
+                    if(!referralTrackingByInviter.has(key))referralTrackingByInviter.set(key,{name,guestIds:new Set(),checkedInGuestIds:new Set(),qualifiedGuestIds:new Set(),referredPeople:[]});
                     const tr = referralTrackingByInviter.get(key);
                     tr.guestIds.add(personKey);
+                    tr.referredPeople.push({name: person.name || personKey, paid: Boolean(person.paid)});
                     if (person.checkedIn) tr.checkedInGuestIds.add(personKey);
                     if (person.qualifiedReferral) tr.qualifiedGuestIds.add(personKey);
                 });
@@ -3622,12 +3646,14 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const combinedContainer = document.getElementById('combinedGuestContainer');
                 const combinedPaidContainer = document.getElementById('combinedPaidContainer');
                 const unpaidContainer = document.getElementById('internationsUnpaidContainer');
+                const referralPendingContainer = document.getElementById('internationsReferralPendingContainer');
                 const paidContainer = document.getElementById('internationsPaidContainer');
                 hotelOpenContainer.replaceChildren();
                 hotelCheckedContainer.replaceChildren();
                 combinedContainer.replaceChildren();
                 combinedPaidContainer.replaceChildren();
                 unpaidContainer.replaceChildren();
+                referralPendingContainer.replaceChildren();
                 paidContainer.replaceChildren();
 
                 const rawGuestItems = effectiveGuestDocs.map((doc) => ({ doc, data: doc.data() || {} }));
@@ -3682,7 +3708,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         (rsvpItem && rsvpItem.data.invitedBy) ||
                         (inviter && inviter.data.invitedBy) || data.invitedBy || ''
                     );
-                    ['checkedIn', 'paid', 'welcomeDrinkUpgradeSelected', 'welcomeDrinkChipIssued'].forEach((field) => {
+                    ['checkedIn', 'paid', 'welcomeDrinkUpgradeSelected', 'welcomeDrinkChipIssued', 'referralRewardResolved'].forEach((field) => {
                         data[field] = group.some((item) => Boolean((item.data || {})[field]));
                     });
                     const checkedInItem = group.find((item) => item.data.checkedIn && item.data.checkedInAt);
@@ -3710,19 +3736,65 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
                 renderUnrecognizedWelcomeDrinkList();
 
+                /** A manual Admin resolution applies only to the specific payment transaction it closed. */
+                function isReferralRewardResolvedForCurrentPayment(data) {
+                    if (!Boolean(data && data.referralRewardResolved)) return false;
+                    const resolvedAt = data.referralRewardResolvedForPaidAt;
+                    const paidAt = data.paidAt;
+                    const toMillis = (value) => {
+                        if (!value) return null;
+                        if (typeof value.toMillis === 'function') return value.toMillis();
+                        if (value instanceof Date) return value.getTime();
+                        const parsed = Date.parse(value);
+                        return Number.isFinite(parsed) ? parsed : null;
+                    };
+                    const resolvedMillis = toMillis(resolvedAt);
+                    const paidMillis = toMillis(paidAt);
+                    return resolvedMillis != null && paidMillis != null && resolvedMillis === paidMillis;
+                }
+
                 /** Determine whether a guest has completed the payment/admission steps required by the active workflow. */
                 function isPaymentWorkflowComplete(item) {
                     const data = item.data || {};
                     if (!Boolean(data.paid)) return false;
+                    // Admin may close an unresolved referral reward for this payment only.
+                    if (isReferralRewardResolvedForCurrentPayment(data)) return true;
                     const key = normalizeGuestName(data.name);
                     const identity = guestByNameKey.get(key)?.data || data;
                     const qualified = referralTrackingByInviter.get(key)?.qualifiedGuestIds.size || 0;
                     const referralEarned = hasEarnedReferralDrink(identity, qualified);
                     const rule = pricingSettings.drinkRules[getGuestTier(data)] || { mode: 'not_allowed', price: 0 };
                     const issued = isGuestDrinkChipIssued(data);
+                    // A selected upgrade includes a welcome-drink chip that must be issued,
+                    // even when the base admission or upgrade payment has already been recorded.
+                    // An upgrade bought after the base admission was already paid is an
+                    // additional settled purchase: keep the guest in Paid while the chip is pending.
+                    if (rule.mode === 'upgrade' && Boolean(data.welcomeDrinkUpgradeSelected) &&
+                        Boolean(data.welcomeDrinkUpgradePaidSeparately)) return true;
                     const chipRequired = referralEarned || rule.mode === 'included' ||
                         (rule.mode === 'upgrade' && Boolean(data.welcomeDrinkUpgradeSelected)) || issued;
                     return !chipRequired || issued;
+                }
+
+                /** Paid guests with a qualifying referral opportunity remain here until the chip is claimed, upgraded or administratively closed. */
+                function isReferralPendingPayment(item) {
+                    const data = item.data || {};
+                    if (!Boolean(data.paid) || isReferralRewardResolvedForCurrentPayment(data) || isGuestDrinkChipIssued(data)) return false;
+                    const key = normalizeGuestName(data.name);
+                    const identity = guestByNameKey.get(key)?.data || data;
+                    const tracking = referralTrackingByInviter.get(key) || { guestIds: new Set(), qualifiedGuestIds: new Set() };
+                    const registered = tracking.guestIds.size;
+                    const qualified = tracking.qualifiedGuestIds.size;
+                    const referralEarned = hasEarnedReferralDrink(identity, qualified);
+                    // Referral pending is only for a genuine reward opportunity: the registered
+                    // count has reached the threshold, but qualification is not complete yet.
+                    // "Insufficient" registrations cannot earn the reward and belong in Paid.
+                    const rule = pricingSettings.referralRules[getGuestTier(identity)] || { eligible: false, threshold: 2 };
+                    const thresholdReachedByRegistrations = isReferralDrinkEligible(identity) &&
+                        Number(tracking.guestIds.size) >= Math.max(1, Number(rule.threshold) || 2);
+                    const referralsStillPending = thresholdReachedByRegistrations && registered > qualified;
+                    const earnedRewardUnclaimed = referralEarned && !isGuestDrinkChipIssued(data);
+                    return referralsStillPending || earnedRewardUnclaimed;
                 }
 
                 /** In one-step mode, payment/drink completion moves guests to Paid without requiring check-in. */
@@ -3767,7 +3839,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     const upgradeCanBeSelected = charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued;
 
                     const card = document.createElement('div');
-                    card.className = 'guest-card p-3 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ' +
+                    card.className = 'guest-card p-3 rounded border flex flex-col sm:flex-row sm:items-start justify-between gap-3 ' +
                         (isPaymentCard ? (paymentComplete ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-sky-950/30 border-sky-400/40') :
                         (checkedIn ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-obsidian border-gold/20'));
                     card.dataset.guestId = doc.id;
@@ -3876,10 +3948,22 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         titleLine.appendChild(badge);
                     }
 
+                    // Build the referral list here, then append it after the guest name in the payment-card layout.
+                    let referralList = null;
+                    if (isPaymentCard && currentStaffRole !== 'hotel' && referralBadgeState && !referralBadgeState.startsWith('noneligible-') && referralBadgeState.endsWith('pending') && referralTracking.referredPeople && referralTracking.referredPeople.length) {
+                        referralList = document.createElement('p');
+                        referralList.className = 'text-xs text-amber-100/90 break-words mt-1';
+                        referralList.appendChild(document.createTextNode('Referred guests: '));
+                        referralTracking.referredPeople.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })).forEach((person, index) => {
+                            if (index) referralList.appendChild(document.createTextNode(' · '));
+                            referralList.appendChild(document.createTextNode(person.name + (person.paid ? ' (Paid)' : ' (Awaiting payment)')));
+                        });
+                    }
+
                     const actions = document.createElement('div');
                     actions.className = mode === 'combined'
-                        ? 'flex w-full min-w-0 flex-wrap items-center gap-2 self-stretch sm:w-auto sm:shrink-0 sm:self-center'
-                        : 'flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center';
+                        ? 'flex w-full min-w-0 flex-wrap items-center gap-2 self-stretch sm:w-auto sm:shrink-0 sm:self-start'
+                        : 'flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-start';
 
                     const appendCheckInAction = () => {
                         const checkInButton = document.createElement('button');
@@ -3911,39 +3995,76 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     };
 
                     if (isPaymentCard) {
+                        const separatelyPaidUpgradeSelected = isPaid &&
+                            Boolean(data.welcomeDrinkUpgradePaidSeparately) && charge.upgradeSelected;
                         if (charge.drinkMode === 'upgrade' && !welcomeDrinkEarned && !chipAlreadyIssued &&
-                            (upgradeCanBeSelected || charge.upgradeSelected)) {
+                            !separatelyPaidUpgradeSelected && (upgradeCanBeSelected || charge.upgradeSelected)) {
                             const upgradeButton = document.createElement('button');
                             upgradeButton.type = 'button';
                             upgradeButton.className = 'shrink-0 rounded border px-3 py-2 text-xs font-semibold tracking-wider ' +
                                 (charge.upgradeSelected ? 'border-emerald-500/50 bg-emerald-900/40 text-emerald-100 hover:bg-emerald-800/50' : 'border-sky-400/40 bg-sky-950/30 text-sky-100 hover:bg-sky-900/50');
                             upgradeButton.textContent = charge.upgradeSelected
                                 ? 'UNDO UPGRADE'
-                                : 'DRINK UPGRADE +' + formatEuro(charge.upgradePrice);
-                            upgradeButton.title = 'Paid upgrade: ' + formatEuro(charge.upgradePrice);
+                                : (isPaid ? 'PAY UPGRADE ' : 'DRINK UPGRADE +') + formatEuro(charge.upgradePrice);
+                            upgradeButton.title = isPaid
+                                ? (charge.upgradeSelected ? 'Remove the upgrade and deduct only ' : 'Add the upgrade and collect only ') + formatEuro(charge.upgradePrice)
+                                : 'Paid upgrade: ' + formatEuro(charge.upgradePrice);
                             upgradeButton.addEventListener('click', () => toggleGuestDrinkUpgrade(doc.id, data, welcomeDrinkEarned));
                             actions.appendChild(upgradeButton);
                         }
 
                         details.appendChild(titleLine);
                         if (guestMeta.textContent) details.appendChild(guestMeta);
+                        if (referralList) details.appendChild(referralList);
 
                         const canManageAdmission = mode === 'combined' || checkedIn;
                         if (canManageAdmission) {
-                            const amount = document.createElement('span');
-                            amount.className = 'text-sm font-semibold text-white tabular-nums whitespace-nowrap';
-                            const paidAmount = data.amountPaid != null ? Number(data.amountPaid) : charge.total;
-                            amount.textContent = formatEuro(isPaid ? paidAmount : charge.total);
-                            actions.appendChild(amount);
+                            const paidBaseWithOptionalUpgrade = isPaid && paymentComplete &&
+                                charge.drinkMode === 'upgrade' && !charge.upgradeSelected &&
+                                !welcomeDrinkEarned && !chipAlreadyIssued;
+                            // Once the base admission is complete, show only the optional upgrade's
+                            // actual price, not the already-paid base admission total.
+                            if (!paidBaseWithOptionalUpgrade) {
+                                const amount = document.createElement('span');
+                                amount.className = 'text-sm font-semibold text-white tabular-nums whitespace-nowrap';
+                                const paidAmount = data.amountPaid != null ? Number(data.amountPaid) : charge.total;
+                                amount.textContent = formatEuro(isPaid ? paidAmount : charge.total);
+                                actions.appendChild(amount);
+                            }
 
-                            const paymentButton = document.createElement('button');
-                            paymentButton.type = 'button';
-                            paymentButton.className = 'guest-action-btn ' +
-                                (isPaid ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
-                            paymentButton.textContent = isPaid ? 'MARK UNPAID' : 'MARK PAID';
-                            paymentButton.setAttribute('aria-pressed', String(isPaid));
-                            paymentButton.addEventListener('click', () => toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned));
-                            actions.appendChild(paymentButton);
+                            // Do not offer a misleading MARK UNPAID control for a paid base admission.
+                            if (!paidBaseWithOptionalUpgrade) {
+                                const paymentButton = document.createElement('button');
+                                paymentButton.type = 'button';
+                                paymentButton.className = 'guest-action-btn ' +
+                                    (isPaid ? 'guest-action-btn--undo' : 'guest-action-btn--forward');
+                                const separatelyPaidUpgrade = isPaid &&
+                                    Boolean(data.welcomeDrinkUpgradePaidSeparately) && charge.upgradeSelected;
+                                paymentButton.textContent = separatelyPaidUpgrade
+                                    ? 'UNPAY UPGRADE'
+                                    : (isPaid ? (paymentComplete ? 'MARK UNPAID' : 'PAID ✓') : 'MARK PAID');
+                                paymentButton.setAttribute('aria-pressed', String(isPaid));
+                                if (isPaid && chipAlreadyIssued) {
+                                    paymentButton.disabled = true;
+                                    paymentButton.title = separatelyPaidUpgrade
+                                        ? 'Undo the issued drink chip first. The base admission will remain paid.'
+                                        : 'Undo the issued drink chip before marking the admission unpaid.';
+                                    paymentButton.classList.add('opacity-70', 'cursor-not-allowed');
+                                } else if (isPaid && !paymentComplete) {
+                                    paymentButton.disabled = true;
+                                    paymentButton.title = 'Payment recorded. Complete the outstanding drink-chip action.';
+                                    paymentButton.classList.add('opacity-70', 'cursor-not-allowed');
+                                } else {
+                                    paymentButton.addEventListener('click', () => {
+                                        if (separatelyPaidUpgrade) {
+                                            toggleGuestDrinkUpgrade(doc.id, data, welcomeDrinkEarned);
+                                        } else {
+                                            toggleGuestPayment(doc.id, data.name, isPaid, data, welcomeDrinkEarned);
+                                        }
+                                    });
+                                }
+                                actions.appendChild(paymentButton);
+                            }
 
                             if (drinkEntitled) {
                                 const chipButton = document.createElement('button');
@@ -3954,6 +4075,15 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                                 chipButton.setAttribute('aria-pressed', String(chipAlreadyIssued));
                                 chipButton.addEventListener('click', () => markWelcomeDrinkChipIssued(doc.id, data.name, chipAlreadyIssued));
                                 actions.appendChild(chipButton);
+                            }
+                            if (currentStaffRole === 'admin' && mode === 'payment' && isReferralPendingPayment(item)) {
+                                const closeReferralButton = document.createElement('button');
+                                closeReferralButton.type = 'button';
+                                closeReferralButton.className = 'guest-action-btn guest-action-btn--forward';
+                                closeReferralButton.textContent = 'MOVE TO PAID';
+                                closeReferralButton.title = 'Admin: close the outstanding referral reward and move this guest to Paid.';
+                                closeReferralButton.addEventListener('click', () => resolveReferralPendingPayment(doc.id, data.name, data.paidAt));
+                                actions.appendChild(closeReferralButton);
                             }
                         }
                         if (mode === 'combined') {
@@ -4073,19 +4203,23 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 document.getElementById('paymentRsvpsPotential').textContent = formatEuroAmount(categoryPaymentTotals.RSVPs.potential);
                 document.getElementById('paymentRsvpsPaid').textContent = formatEuroAmount(categoryPaymentTotals.RSVPs.paid);
 
-                const unpaidGuests = checkedInGuests.filter((item) => !isPaymentWorkflowComplete(item)).sort((a, b) => {
+                const unpaidGuests = checkedInGuests.filter((item) => !isPaymentWorkflowComplete(item) && !isReferralPendingPayment(item)).sort((a, b) => {
                     const timeA = checkInTime(a), timeB = checkInTime(b);
                     if (timeA == null && timeB != null) return 1;
                     if (timeA != null && timeB == null) return -1;
                     if (timeA != null && timeB != null && timeA !== timeB) return timeA - timeB;
                     return compareNames(a, b);
                 });
-                const paidGuests = checkedInGuests.filter((item) => isPaymentWorkflowComplete(item)).sort(compareNames)
+                const referralPendingGuests = checkedInGuests.filter((item) => isReferralPendingPayment(item)).sort(compareNames);
+                const paidGuests = checkedInGuests.filter((item) => isPaymentWorkflowComplete(item) && !isReferralPendingPayment(item)).sort(compareNames);
                 unpaidGuests.forEach((item) => unpaidContainer.appendChild(makeGuestCard(item, 'payment')));
+                referralPendingGuests.forEach((item) => referralPendingContainer.appendChild(makeGuestCard(item, 'payment')));
                 paidGuests.forEach((item) => paidContainer.appendChild(makeGuestCard(item, 'payment')));
                 document.getElementById('internationsUnpaidCount').textContent = '(' + unpaidGuests.length + ')';
+                document.getElementById('internationsReferralPendingCount').textContent = '(' + referralPendingGuests.length + ')';
                 document.getElementById('internationsPaidCount').textContent = '(' + paidGuests.length + ')';
                 document.getElementById('noInternationsUnpaid').classList.toggle('hidden', unpaidGuests.length > 0);
+                document.getElementById('noInternationsReferralPending').classList.toggle('hidden', referralPendingGuests.length > 0);
                 document.getElementById('noInternationsPaid').classList.toggle('hidden', paidGuests.length > 0);
                 renderInternationsImportPreview();
                 applyGuestSorts();
@@ -4124,6 +4258,35 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 console.error('Welcome-drink chip update failed:', error);
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'Could not save the chip status. Check Firebase access rules and try again.';
+                listError.classList.remove('hidden');
+            }
+        }
+
+        /** Admin-only end-of-event action for closing an unresolved referral reward without falsely recording a chip issue. */
+        async function resolveReferralPendingPayment(id, guestName, paidAt) {
+            if (currentStaffRole !== 'admin') {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Only an Admin can move a referral-pending guest to Paid.';
+                listError.classList.remove('hidden');
+                return;
+            }
+            if (!db || !id) {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Could not resolve the referral status because the guest database is not connected.';
+                listError.classList.remove('hidden');
+                return;
+            }
+            try {
+                // Tie the Admin override to this exact paid transaction. If payment is undone
+                // and later recorded again, the new paidAt naturally reopens referral evaluation.
+                await applyGuestStateUpdate(id, {
+                    referralRewardResolved: true,
+                    referralRewardResolvedForPaidAt: paidAt || null
+                });
+            } catch (error) {
+                console.error('Referral reward closure failed:', error);
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Could not move this guest to Paid. Check Admin database permissions and try again.';
                 listError.classList.remove('hidden');
             }
         }
@@ -4184,6 +4347,18 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
         /** Record or undo payment and refresh dependent admission, referral reward and chip state. */
         async function toggleGuestPayment(id, guestName, currentlyPaid, data, welcomeDrinkEarned) {
+            // A separately paid upgrade is its own transaction; never reverse base admission here.
+            if (currentlyPaid && Boolean(data.welcomeDrinkUpgradePaidSeparately) &&
+                Boolean(data.welcomeDrinkUpgradeSelected)) {
+                await toggleGuestDrinkUpgrade(id, data, welcomeDrinkEarned);
+                return;
+            }
+            if (currentlyPaid && isGuestDrinkChipIssued(data)) {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Undo the issued drink chip before marking the admission unpaid.';
+                listError.classList.remove('hidden');
+                return;
+            }
             if (!db) {
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'The payment update cannot be saved because the guest database is not connected.';
@@ -4300,6 +4475,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             applySortToContainer('combinedGuestContainer',guestSortBy,'',-1);
             applySortToContainer('combinedPaidContainer',guestSortBy,'',1);
             applySortToContainer('internationsUnpaidContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortCheckInOrder':'',1);
+            applySortToContainer('internationsReferralPendingContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortCheckInOrder':'',1);
             applySortToContainer('internationsPaidContainer',paymentSortBy,paymentSortBy==='timeOrder'?'sortCheckInOrder':'',1);
             updateSortButtonStates();
         }
@@ -4341,8 +4517,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         function filterPaymentGuests() {
             const input = document.getElementById('paymentSearchInput');
             const query = (input ? input.value : '').trim().toLocaleLowerCase();
-            const counts = filterContainerCards(['internationsUnpaidContainer', 'internationsPaidContainer'], query);
+            const counts = filterContainerCards(['internationsUnpaidContainer', 'internationsReferralPendingContainer', 'internationsPaidContainer'], query);
             document.getElementById('internationsUnpaidCount').textContent = '(' + counts.internationsUnpaidContainer + ')';
+            document.getElementById('internationsReferralPendingCount').textContent = '(' + counts.internationsReferralPendingContainer + ')';
             document.getElementById('internationsPaidCount').textContent = '(' + counts.internationsPaidContainer + ')';
         }
 
