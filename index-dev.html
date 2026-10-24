@@ -1174,7 +1174,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.24.61</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.24.62</p>
         </div>
     </footer>
 
@@ -1203,7 +1203,10 @@
         let activeStaffUid = null;
         let staffActivationPromise = null;
         let guestlistUnsubscribe = null;
+        let guestlistSnapshotHandler = null;
         let cachedGuestSnapshot = null;
+        // O(1) membership lookup avoids scanning every guest repeatedly while rendering each card.
+        let cachedImportedMemberByNameKey = new Map();
         // Sign-up alert history is scoped to this staff UID and browser; Firestore role documents are intentionally read-only.
         const SIGNUP_ALERT_STORAGE_PREFIX = 'halloween-signup-alert-last-login-v1:';
         // DEV and LIVE share an origin, so keep their local alert history separate.
@@ -1395,7 +1398,13 @@
         /** Refresh the visible list after an in-tab test action without changing any guest record in Firestore. */
         function refreshGuestlistView() {
             const section = document.getElementById('guestlistSection');
-            if (section && !section.classList.contains('hidden')) loadLiveGuestlist();
+            if (!section || section.classList.contains('hidden')) return;
+            // Session-only DEV actions should redraw the cached snapshot, not unsubscribe and re-fetch the full list.
+            if (cachedGuestSnapshot && typeof guestlistSnapshotHandler === 'function') {
+                guestlistSnapshotHandler(cachedGuestSnapshot);
+            } else {
+                loadLiveGuestlist();
+            }
         }
         /** Use Firestore timestamps in live mode and serializable local timestamps in test mode. */
         function guestActionTimestamp() {
@@ -1581,11 +1590,8 @@
         function findImportedMemberData(data) {
             const key = normalizeGuestName(data && data.name);
             if (!key) return isImportedMemberRecord(data) ? data : null;
-            const match = cachedGuestDocs.find(doc => {
-                const candidate = doc.data() || {};
-                return isImportedMemberRecord(candidate) && normalizeGuestName(candidate.name) === key;
-            });
-            return match ? (match.data() || {}) : (isImportedMemberRecord(data) ? data : null);
+            const match = cachedImportedMemberByNameKey.get(key);
+            return match || (isImportedMemberRecord(data) ? data : null);
         }
         /** Central membership predicate for member-specific pricing and referral rules. */
         function isInterNationsMember(data) { return isImportedMemberRecord(data); }
@@ -3453,11 +3459,19 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 guestlistUnsubscribe();
                 guestlistUnsubscribe = null;
             }
-            guestlistUnsubscribe = db.collection('halloween_guests').onSnapshot((snapshot) => {
+            guestlistSnapshotHandler = (snapshot) => {
                 try {
                 cachedGuestSnapshot = snapshot;
                 const effectiveGuestDocs = snapshot.docs.map(makeEffectiveGuestDoc);
                 cachedGuestDocs = effectiveGuestDocs;
+                // Build once per snapshot; many per-card pricing/referral helpers need this membership lookup.
+                cachedImportedMemberByNameKey = new Map();
+                effectiveGuestDocs.forEach((guestDoc) => {
+                    const data = guestDoc.data() || {};
+                    if (!isImportedMemberRecord(data)) return;
+                    const key = normalizeGuestName(data.name);
+                    if (key && !cachedImportedMemberByNameKey.has(key)) cachedImportedMemberByNameKey.set(key, data);
+                });
 
                 // Process the first snapshot as a catch-up window; later added documents are live-session sign-ups.
                 // The timestamp is per staff UID but stored locally because event_users role documents are read-only.
@@ -4217,7 +4231,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     listError.textContent = 'The guest records were received but the list could not be rendered: ' + (error && error.message ? error.message : String(error));
                     listError.classList.remove('hidden');
                 }
-            }, (error) => {
+            };
+            guestlistUnsubscribe = db.collection('halloween_guests').onSnapshot(guestlistSnapshotHandler, (error) => {
                 console.error('Guest list subscription failed:', error);
                 listError.textContent = 'Could not load the guest list: ' + (error && error.code ? error.code + ' — ' : '') + (error && error.message ? error.message : 'Check the database connection and access rules.');
                 listError.classList.remove('hidden');
