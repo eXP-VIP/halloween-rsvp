@@ -1174,7 +1174,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.24.60</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.24.61</p>
         </div>
     </footer>
 
@@ -2128,6 +2128,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 (/^[A-Z]{2}$/i.test(raw) ? raw.toUpperCase() : '') ||
                 (trailingCode ? COUNTRY_FLAG_CODES[normalizeCountryKey(trailingCode[1])] : '');
             if (!code && trailingCode && /^[A-Z]{2}$/i.test(trailingCode[1])) code = trailingCode[1].toUpperCase();
+            // Resolve supported ISO alpha-3 values as well as country names and alpha-2 codes.
+            if (!code && trailingCode && /^[A-Z]{3}$/i.test(trailingCode[1])) {
+                const alpha3 = trailingCode[1].toUpperCase();
+                const alpha2 = Object.keys(COUNTRY_ALPHA3_BY_ALPHA2).find((candidate) => COUNTRY_ALPHA3_BY_ALPHA2[candidate] === alpha3);
+                if (alpha2) code = alpha2;
+            }
             if (!code) {
                 const candidates = Object.keys(COUNTRY_FLAG_CODES)
                     .filter((name) => name.length > 3 && (key.endsWith(' ' + name) || key.startsWith(name + ' ')))
@@ -2175,6 +2181,20 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             const raw = sanitizeGuestDisplayName(country).trim();
             return /^[A-Za-z]{3}$/.test(raw) ? raw.toUpperCase() : '';
         }
+        function isMissingCountryValue(country) {
+            const raw = String(country || '').trim();
+            return !raw || /^(?:n\/a|not available|unknown|not known|not specified|no country|none|null|undefined|[-–—]+)$/i.test(raw);
+        }
+        /** Return a stable country key: recognized aliases share a flag key; other non-empty values remain countable. */
+        function getCountryCountKey(country) {
+            const raw = sanitizeGuestDisplayName(country).trim();
+            if (isMissingCountryValue(raw)) return '';
+            const flag = getCountryFlag(raw);
+            if (flag) return 'flag:' + flag;
+            const normalized = normalizeCountryKey(raw);
+            return normalized ? 'name:' + normalized : '';
+        }
+
         function getCountrySearchTerms(country) {
             const raw = sanitizeGuestDisplayName(country);
             if (!raw) return '';
@@ -3525,15 +3545,23 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const recentSignupCount = document.getElementById('newSignups24hCount');
                 if (recentSignupCount) recentSignupCount.textContent = String(recentGuestPersonKeys.size);
 
-                // Merge country values across duplicate RSVP/member records before counting unique represented countries.
+                // Count represented countries across all guests. Ignore missing values, normalize recognized aliases,
+                // and retain non-empty country values even if no flag mapping exists.
+                // Merge duplicate RSVP/member records by person; prefer a recognized country when records disagree.
                 const countryByPerson = new Map();
                 effectiveGuestDocs.forEach((guestDoc) => {
                     const data = guestDoc.data() || {};
                     const personKey = normalizeGuestName(data.name) || guestDoc.id;
-                    const flag = getCountryFlag(data.country);
-                    if (flag && !countryByPerson.has(personKey)) countryByPerson.set(personKey, flag);
+                    const country = sanitizeGuestDisplayName(data.country).trim();
+                    const countryKey = getCountryCountKey(country);
+                    if (!countryKey) return;
+                    const hasKnownFlag = countryKey.startsWith('flag:');
+                    const existingCountry = countryByPerson.get(personKey);
+                    if (!existingCountry || (!existingCountry.hasKnownFlag && hasKnownFlag)) {
+                        countryByPerson.set(personKey, { key: countryKey, hasKnownFlag });
+                    }
                 });
-                const representedCountryKeys = new Set(countryByPerson.values());
+                const representedCountryKeys = new Set(Array.from(countryByPerson.values(), (country) => country.key));
                 const countryCount = document.getElementById('guestCountryCount');
                 if (countryCount) countryCount.textContent = String(representedCountryKeys.size);
                 const hotelCountryCount = document.getElementById('hotelGuestCountryCount');
@@ -3820,15 +3848,17 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     name.className = 'font-medium text-sm text-white break-words';
                     name.textContent = sanitizeGuestDisplayName(data.name) || '(No name provided)';
                     titleLine.appendChild(name);
-                    const memberCountry = String(memberDetails.country || data.country || '').trim();
+                    const memberCountry = [memberDetails.country, data.country]
+                        .map((value) => sanitizeGuestDisplayName(value).trim())
+                        .find((value) => !isMissingCountryValue(value)) || '';
                     card.dataset.searchCountry = getCountrySearchTerms(memberCountry);
                     const countryFlag = getCountryFlag(memberCountry);
-                    if (countryFlag) {
+                    // Do not hide the country just because no flag mapping is available.
+                    if (memberCountry) {
                         const countryBadge = document.createElement('span');
-                        countryBadge.className = 'inline-flex items-center justify-center rounded-full border border-gray-500/40 bg-black/30 px-2 py-1 text-sm leading-none';
-                        const countryDisplayName = getCountryDisplayName(memberCountry);
                         countryBadge.className = 'inline-flex items-center justify-center gap-1 rounded-full border border-gray-500/40 bg-black/30 px-2 py-1 text-xs leading-none';
-                        countryBadge.textContent = countryFlag + (countryDisplayName ? ' ' + countryDisplayName : '');
+                        const countryDisplayName = getCountryDisplayName(memberCountry) || memberCountry;
+                        countryBadge.textContent = [countryFlag, countryDisplayName].filter(Boolean).join(' ');
                         countryBadge.title = memberCountry;
                         countryBadge.setAttribute('aria-label', 'Country: ' + memberCountry);
                         titleLine.appendChild(countryBadge);
