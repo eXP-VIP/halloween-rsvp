@@ -4407,7 +4407,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         }
 
         /** Delete a guest record after UI confirmation and authorization checks. */
-        async /** Conservative name-variant match; actual merge always requires explicit admin confirmation. */
+        /** Conservative name-variant match; actual merge always requires explicit admin confirmation. */
         function findStrongDuplicateCandidate(item) {
             if (!item || !item.data || currentStaffRole !== 'admin') return null;
             const key = mergeCandidateNameKey(item.data.name);
@@ -4452,7 +4452,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 if(e){e.textContent='Could not merge these records. Refresh the guest list and try again.';e.classList.remove('hidden');}
             }
         }
-        function deleteGuest(id, guestName) {
+        async function deleteGuest(id, guestName) {
             if (!db) {
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'The guest database is not connected, so this guest could not be deleted.';
