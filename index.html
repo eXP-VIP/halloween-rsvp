@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-build-target" content="live">
+    <meta name="app-build-target" content="dev">
     <meta name="theme-color" content="#08080a">
     <meta name="description" content="A private, guest-list-only Halloween soirée at The Dean Munich, Autograph Collection by Marriott. A hidden event space, two rooms, twin DJ setups and a dedicated bar. Saturday, 31 October 2026, from 20:00, open end; music winds down at 01:00.">
 
@@ -1060,6 +1060,16 @@
 
 
                     <div id="guestManagementPage" class="hidden">
+                        <section id="duplicateReviewPanel" class="staff-panel mb-4" aria-labelledby="duplicateReviewHeading">
+                            <div class="staff-panel__header">
+                                <h4 id="duplicateReviewHeading" class="staff-panel__title">Possible duplicate guests</h4>
+                                <span id="duplicateReviewCount" class="staff-panel__meta">Checking…</span>
+                            </div>
+                            <p class="text-xs text-gray-300 mb-3">Review likely name variants here, even when the records are far apart in the guest list. Nothing is merged automatically.</p>
+                            <div id="duplicateReviewList" class="space-y-3">
+                                <p class="text-xs text-gray-400">Duplicate suggestions will appear here when the guest list is loaded.</p>
+                            </div>
+                        </section>
                         <section id="internationsImportPanel" class="staff-panel">
                         <div class="staff-panel__header">
                             <h4 class="staff-panel__title">Import InterNations guest list</h4>
@@ -1174,7 +1184,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.25.69</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Build 2026.10.25.74</p>
         </div>
     </footer>
 
@@ -2079,12 +2089,20 @@
             );
         }
         /** Stable aliases let imports match a corrected display name to its original imported identity. */
+        /** Conservative comparison key for obvious spelling variants such as Loeffler/Löffler. */
+        function mergeCandidateNameKey(value) {
+            return sanitizeGuestDisplayName(value).toLocaleLowerCase()
+                .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+                .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
+        }
         function getStoredGuestNameKeys(data) {
             if (!data || typeof data !== 'object') return [];
             const firstName = typeof data.firstName === 'string' ? data.firstName.trim() : '';
             const lastName = typeof data.lastName === 'string' ? data.lastName.trim() : '';
             const combinedName = firstName && lastName ? firstName + ' ' + lastName : '';
-            return Array.from(new Set([data.name, combinedName, data.importNameKey]
+            const aliases = Array.isArray(data.mergeAliases) ? data.mergeAliases : [];
+            return Array.from(new Set([data.name, combinedName, data.importNameKey, ...aliases]
                 .map((value) => normalizeGuestName(value))
                 .filter(Boolean)));
         }
@@ -2473,6 +2491,15 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                                 updateData.invitedBy = sanitizeGuestDisplayName(rsvpSourceData.invitedBy);
                             }
                             if (rsvpSourceData.createdAt) updateData.createdAt = rsvpSourceData.createdAt;
+                            // Preserve RSVP/check-in/payment facts when consolidating an exact-name RSVP into its member record.
+                            ['checkedIn','checkedInAt','paid','paidAt','amountPaid','paymentStatusUpdatedAt',
+                             'welcomeDrinkChipIssued','welcomeDrinkChipIssuedAt','welcomeDrinkChipIssuedBy',
+                             'welcomeDrinkUpgradeSelected','welcomeDrinkUpgradePrice','welcomeDrinkUpgradeUpdatedAt',
+                             'welcomeDrinkUpgradePaidSeparately'].forEach(field => {
+                                if (rsvpSourceData[field] !== undefined && (prior[field] === undefined || prior[field] === null || prior[field] === false)) {
+                                    updateData[field] = rsvpSourceData[field];
+                                }
+                            });
                         }
                         if (entry.membershipStatus) updateData.interNationsStatus = entry.membershipStatus;
                         if (entry.country) updateData.country = entry.country;
@@ -2497,6 +2524,18 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                             updateData.importedAt = firebase.firestore.FieldValue.serverTimestamp();
                         }
                         operations.push({ type: 'update', ref: existing.ref, data: updateData });
+                        // Exact normalized full-name matches are 100% matches: consolidate RSVP duplicates into the member record.
+                        // Accent/transliteration variants remain review suggestions and are never auto-merged here.
+                        if (isImportedMemberRecord(prior)) {
+                            sameNameDocs.forEach(candidateDoc => {
+                                if (candidateDoc.id === existing.id) return;
+                                const candidate = candidateDoc.data() || {};
+                                if (normalizeGuestName(candidate.name) !== entry.key || isImportedMemberRecord(candidate)) return;
+                                const isRsvpRecord = candidate.rsvpSubmitted === true || candidate.rsvpSource === 'website' ||
+                                    candidate.source === 'website' || Boolean(String(candidate.invitedBy || '').trim());
+                                if (isRsvpRecord) operations.push({ type: 'delete', ref: candidateDoc.ref });
+                            });
+                        }
                     } else {
                         added++;
                         const ref = db.collection('halloween_guests').doc();
@@ -3464,6 +3503,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 cachedGuestSnapshot = snapshot;
                 const effectiveGuestDocs = snapshot.docs.map(makeEffectiveGuestDoc);
                 cachedGuestDocs = effectiveGuestDocs;
+                renderDuplicateReviewList();
                 // Build once per snapshot; many per-card pricing/referral helpers need this membership lookup.
                 cachedImportedMemberByNameKey = new Map();
                 effectiveGuestDocs.forEach((guestDoc) => {
@@ -4386,6 +4426,179 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         }
 
         /** Delete a guest record after UI confirmation and authorization checks. */
+        /** Conservative name-variant match; actual merge always requires explicit admin confirmation. */
+        function findStrongDuplicateCandidate(item) {
+            if (!item || !item.data || currentStaffRole !== 'admin') return null;
+            const key = mergeCandidateNameKey(item.data.name);
+            if (!key) return null;
+            const candidates = (cachedGuestDocs || []).filter(other => {
+                if (!other || other.id === item.doc.id) return false;
+                const d = other.data() || {};
+                return mergeCandidateNameKey(d.name) === key && normalizeGuestName(d.name) !== normalizeGuestName(item.data.name);
+            });
+            if (!candidates.length) return null;
+            const isRsvp = d => !isImportedMemberRecord(d) && (d.rsvpSubmitted === true || d.source === 'website' || Boolean(String(d.invitedBy || '').trim()));
+            const chosen = candidates.find(other => isRsvp(item.data) && isImportedMemberRecord(other.data() || {})) || candidates[0];
+            return {doc:chosen,data:chosen.data()||{}};
+        }
+        function renderDuplicateReviewList() {
+            const list = document.getElementById('duplicateReviewList');
+            const count = document.getElementById('duplicateReviewCount');
+            if (!list || !count) return;
+            list.replaceChildren();
+            if (currentStaffRole !== 'admin') {
+                count.textContent = 'Admin only';
+                return;
+            }
+            const docs = cachedGuestDocs || [];
+            const seen = new Set();
+            const pairs = [];
+            docs.forEach(item => {
+                const data = item.data() || {};
+                const key = mergeCandidateNameKey(data.name);
+                if (!key) return;
+                docs.forEach(other => {
+                    if (other.id === item.id) return;
+                    const otherData = other.data() || {};
+                    if (mergeCandidateNameKey(otherData.name) !== key ||
+                        normalizeGuestName(otherData.name) === normalizeGuestName(data.name)) return;
+                    const pairKey = [item.id, other.id].sort().join('::');
+                    if (seen.has(pairKey)) return;
+                    seen.add(pairKey);
+                    pairs.push({ a: item, ad: data, b: other, bd: otherData, key: pairKey });
+                });
+            });
+            pairs.sort((x, y) => String(x.ad.name || '').localeCompare(String(y.ad.name || ''), undefined, { sensitivity: 'base' }));
+            const visiblePairs = pairs.filter(pair => !dismissedDuplicatePairs.has(pair.key));
+            count.textContent = visiblePairs.length + (visiblePairs.length === 1 ? ' suggestion' : ' suggestions');
+            if (!visiblePairs.length) {
+                const empty = document.createElement('p');
+                empty.className = 'text-xs text-gray-400';
+                empty.textContent = 'No strong duplicate suggestions found.';
+                list.appendChild(empty);
+                return;
+            }
+            visiblePairs.forEach(pair => {
+                const card = document.createElement('div');
+                card.className = 'rounded-lg border border-amber-400/30 bg-black/25 p-3';
+                const heading = document.createElement('p');
+                heading.className = 'text-sm font-semibold text-amber-100 mb-2';
+                heading.textContent = 'Possible match';
+                card.appendChild(heading);
+                const records = document.createElement('div');
+                records.className = 'grid grid-cols-1 sm:grid-cols-2 gap-2';
+                [[pair.a,pair.ad],[pair.b,pair.bd]].forEach(([doc,data]) => {
+                    const record = document.createElement('div');
+                    record.className = 'rounded border border-white/10 bg-black/20 p-2 min-w-0';
+                    const name = document.createElement('p');
+                    name.className = 'text-sm font-semibold text-white break-words';
+                    name.textContent = sanitizeGuestDisplayName(data.name) || '(unnamed guest)';
+                    record.appendChild(name);
+                    const meta = document.createElement('p');
+                    meta.className = 'text-xs text-gray-300 mt-1 break-words';
+                    const source = isImportedMemberRecord(data) ? 'InterNations import' : 'RSVP / guest record';
+                    const status = data.checkedIn ? 'Checked in' : 'Not checked in';
+                    meta.textContent = [source, status].filter(Boolean).join(' · ');
+                    record.appendChild(meta);
+                    if (data.country) {
+                        const country = document.createElement('p');
+                        country.className = 'text-xs text-gray-400 mt-1';
+                        country.textContent = 'Country: ' + sanitizeGuestDisplayName(data.country);
+                        record.appendChild(country);
+                    }
+                    records.appendChild(record);
+                });
+                card.appendChild(records);
+                const actions = document.createElement('div');
+                actions.className = 'flex flex-wrap gap-2 mt-3';
+                const merge = document.createElement('button');
+                merge.type = 'button';
+                merge.className = 'gold-btn rounded-lg px-3 py-2 text-xs uppercase tracking-wider';
+                merge.textContent = 'Merge these records';
+                merge.addEventListener('click', async () => {
+                    await mergeStrongDuplicate(pair.a.id, pair.b.id);
+                    renderDuplicateReviewList();
+                });
+                const dismiss = document.createElement('button');
+                dismiss.type = 'button';
+                dismiss.className = 'sort-option';
+                dismiss.textContent = 'Not a duplicate';
+                dismiss.title = 'Hide this suggestion for this browser session.';
+                dismiss.addEventListener('click', () => {
+                    dismissedDuplicatePairs.add(pair.key);
+                    renderDuplicateReviewList();
+                });
+                if (dismissedDuplicatePairs.has(pair.key)) return;
+                actions.append(merge, dismiss);
+                card.appendChild(actions);
+                list.appendChild(card);
+            });
+            if (!list.children.length) {
+                const empty = document.createElement('p');
+                empty.className = 'text-xs text-gray-400';
+                empty.textContent = 'No unresolved suggestions. Dismissed suggestions stay hidden for this browser session.';
+                list.appendChild(empty);
+            }
+        }
+
+        const dismissedDuplicatePairs = new Set();
+        async function mergeStrongDuplicate(primaryId, duplicateId) {
+            if (!db || currentStaffRole !== 'admin') return;
+            if (!IS_DEVELOPMENT_BUILD) {
+                const e=document.getElementById('guestlistError');
+                if(e){e.textContent='Duplicate merging is enabled in DEV only until tested.';e.classList.remove('hidden');}
+                return;
+            }
+            const a=(cachedGuestDocs||[]).find(d=>d.id===primaryId), b=(cachedGuestDocs||[]).find(d=>d.id===duplicateId);
+            if(!a||!b)return;
+            const ad=a.data()||{}, bd=b.data()||{};
+            const isRsvp=d=>!isImportedMemberRecord(d)&&(d.rsvpSubmitted===true||d.rsvpSource==='website'||d.source==='website'||Boolean(String(d.invitedBy||'').trim()));
+            // Membership identity takes precedence; RSVP facts are copied onto that surviving member record.
+            const memberDoc=isImportedMemberRecord(ad)?a:(isImportedMemberRecord(bd)?b:null);
+            const rsvpDoc=isRsvp(ad)?a:(isRsvp(bd)?b:null);
+            const survivor=memberDoc|| (rsvpDoc||a);
+            const remove=survivor.id===a.id?b:a;
+            const sd=survivor.data()||{}, rd=remove.data()||{};
+            const member=isImportedMemberRecord(sd)?sd:(isImportedMemberRecord(rd)?rd:null);
+            const rsvp=isRsvp(sd)?sd:(isRsvp(rd)?rd:null);
+            const aliases=Array.from(new Set([...(Array.isArray(sd.mergeAliases)?sd.mergeAliases:[]),...(Array.isArray(rd.mergeAliases)?rd.mergeAliases:[]),sd.name,rd.name,sd.importNameKey,rd.importNameKey].map(v=>String(v||'').trim()).filter(Boolean)));
+            if(!window.confirm('Merge “'+(rd.name||'duplicate')+'” into the InterNations member record when present? Membership identity takes precedence; RSVP details and both name variants are retained. The duplicate record will be deleted.'))return;
+            try {
+                const update={
+                    mergeAliases:aliases,
+                    mergedDuplicateIds:Array.from(new Set([...(Array.isArray(sd.mergedDuplicateIds)?sd.mergedDuplicateIds:[]),remove.id])),
+                    checkedIn:Boolean(sd.checkedIn||rd.checkedIn),
+                    paid:Boolean(sd.paid||rd.paid),
+                    rsvpSubmitted:Boolean(sd.rsvpSubmitted||rd.rsvpSubmitted||isRsvp(sd)||isRsvp(rd))
+                };
+                if (!sd.checkedIn && rd.checkedInAt) update.checkedInAt=rd.checkedInAt;
+                else if (sd.checkedInAt) update.checkedInAt=sd.checkedInAt;
+                if (!sd.paidAt && rd.paidAt) update.paidAt=rd.paidAt;
+                else if (sd.paidAt) update.paidAt=sd.paidAt;
+                if (sd.amountPaid == null && rd.amountPaid != null) update.amountPaid=rd.amountPaid;
+                else if (sd.amountPaid != null) update.amountPaid=sd.amountPaid;
+                if (!String(sd.invitedBy||'').trim() && rsvp && String(rsvp.invitedBy||'').trim()) update.invitedBy=rsvp.invitedBy;
+                if (!sd.createdAt && rsvp && rsvp.createdAt) update.createdAt=rsvp.createdAt;
+                if (member) {
+                    update.guestType=member.guestType||'internations_member';
+                    update.source='internations_import';
+                    update.importNameKey=member.importNameKey||rd.importNameKey||sd.importNameKey||'';
+                    update.membershipMerged=true;
+                    if(member.country)update.country=member.country;
+                    if(member.interNationsStatus)update.interNationsStatus=member.interNationsStatus;
+                    if(member.importedAt)update.importedAt=member.importedAt;
+                    if(member.name)update.name=member.name;
+                    if(member.firstName)update.firstName=member.firstName;
+                    if(member.lastName)update.lastName=member.lastName;
+                }
+                await survivor.ref.update(update);
+                await remove.ref.delete();
+            } catch(error) {
+                console.error('Guest merge failed:',error);
+                const e=document.getElementById('guestlistError');
+                if(e){e.textContent='Could not merge these records. Refresh the guest list and try again.';e.classList.remove('hidden');}
+            }
+        }
         async function deleteGuest(id, guestName) {
             if (!db) {
                 const listError = document.getElementById('guestlistError');
