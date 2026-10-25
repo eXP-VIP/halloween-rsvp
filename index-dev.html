@@ -1174,7 +1174,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.25.69</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.25.70</p>
         </div>
     </footer>
 
@@ -2079,12 +2079,20 @@
             );
         }
         /** Stable aliases let imports match a corrected display name to its original imported identity. */
+        /** Conservative comparison key for obvious spelling variants such as Loeffler/Löffler. */
+        function mergeCandidateNameKey(value) {
+            return sanitizeGuestDisplayName(value).toLocaleLowerCase()
+                .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+                .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
+        }
         function getStoredGuestNameKeys(data) {
             if (!data || typeof data !== 'object') return [];
             const firstName = typeof data.firstName === 'string' ? data.firstName.trim() : '';
             const lastName = typeof data.lastName === 'string' ? data.lastName.trim() : '';
             const combinedName = firstName && lastName ? firstName + ' ' + lastName : '';
-            return Array.from(new Set([data.name, combinedName, data.importNameKey]
+            const aliases = Array.isArray(data.mergeAliases) ? data.mergeAliases : [];
+            return Array.from(new Set([data.name, combinedName, data.importNameKey, ...aliases]
                 .map((value) => normalizeGuestName(value))
                 .filter(Boolean)));
         }
@@ -3984,6 +3992,18 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         checkInButton.addEventListener('click', () => toggleCheckIn(doc.id, checkedIn));
                         actions.appendChild(checkInButton);
                     };
+                    const appendMergeSuggestion = () => {
+                        if (currentStaffRole !== 'admin' || mode !== 'hotel') return;
+                        const candidate = findStrongDuplicateCandidate(item);
+                        if (!candidate) return;
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'shrink-0 rounded border border-amber-400/50 bg-amber-950/50 px-3 py-2 text-xs text-amber-100 hover:bg-amber-900/70 transition-colors';
+                        button.textContent = 'MERGE DUPLICATE?';
+                        button.title = 'Strong name match: ' + sanitizeGuestDisplayName(candidate.data.name) + '. Review and confirm before merging.';
+                        button.addEventListener('click', () => mergeStrongDuplicate(doc.id, candidate.doc.id));
+                        actions.appendChild(button);
+                    };
                     const appendDeleteAction = () => {
                         const deleteButton = document.createElement('button');
                         deleteButton.type = 'button';
@@ -4095,6 +4115,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         if (guestMeta.textContent) details.appendChild(guestMeta);
                         // The separate Check In control belongs only to the two-step workflow.
                         if (twoStepCheckInEnabled && !singleTeamCombinedMode && mode === 'hotel') appendCheckInAction();
+                        appendMergeSuggestion();
                         if (currentStaffRole === 'admin') appendDeleteAction();
                     }
 
@@ -4386,7 +4407,52 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         }
 
         /** Delete a guest record after UI confirmation and authorization checks. */
-        async function deleteGuest(id, guestName) {
+        async /** Conservative name-variant match; actual merge always requires explicit admin confirmation. */
+        function findStrongDuplicateCandidate(item) {
+            if (!item || !item.data || currentStaffRole !== 'admin') return null;
+            const key = mergeCandidateNameKey(item.data.name);
+            if (!key) return null;
+            const candidates = (cachedGuestDocs || []).filter(other => {
+                if (!other || other.id === item.doc.id) return false;
+                const d = other.data() || {};
+                return mergeCandidateNameKey(d.name) === key && normalizeGuestName(d.name) !== normalizeGuestName(item.data.name);
+            });
+            if (!candidates.length) return null;
+            const isRsvp = d => !isImportedMemberRecord(d) && (d.rsvpSubmitted === true || d.source === 'website' || Boolean(String(d.invitedBy || '').trim()));
+            const chosen = candidates.find(other => isRsvp(item.data) && isImportedMemberRecord(other.data() || {})) || candidates[0];
+            return {doc:chosen,data:chosen.data()||{}};
+        }
+        async function mergeStrongDuplicate(primaryId, duplicateId) {
+            if (!db || currentStaffRole !== 'admin') return;
+            if (!IS_DEVELOPMENT_BUILD) {
+                const e=document.getElementById('guestlistError');
+                if(e){e.textContent='Duplicate merging is enabled in DEV only until tested.';e.classList.remove('hidden');}
+                return;
+            }
+            const a=(cachedGuestDocs||[]).find(d=>d.id===primaryId), b=(cachedGuestDocs||[]).find(d=>d.id===duplicateId);
+            if(!a||!b)return;
+            const ad=a.data()||{}, bd=b.data()||{};
+            const isRsvp=d=>!isImportedMemberRecord(d)&&(d.rsvpSubmitted===true||d.source==='website'||Boolean(String(d.invitedBy||'').trim()));
+            const survivor=isRsvp(ad)?a:(isRsvp(bd)?b:a), remove=survivor.id===a.id?b:a;
+            const sd=survivor.data()||{}, rd=remove.data()||{};
+            const member=isImportedMemberRecord(sd)?sd:rd;
+            const aliases=Array.from(new Set([...(Array.isArray(sd.mergeAliases)?sd.mergeAliases:[]),...(Array.isArray(rd.mergeAliases)?rd.mergeAliases:[]),sd.name,rd.name,sd.importNameKey,rd.importNameKey].map(v=>String(v||'').trim()).filter(Boolean)));
+            if(!window.confirm('Merge “'+(rd.name||'duplicate')+'” into “'+(sd.name||'primary record')+'”? The RSVP record is kept when present; membership country/status and both name variants are retained. The duplicate record will be deleted.'))return;
+            try {
+                const update={mergeAliases:aliases,mergedDuplicateIds:Array.from(new Set([...(Array.isArray(sd.mergedDuplicateIds)?sd.mergedDuplicateIds:[]),remove.id]))};
+                if(member.country)update.country=member.country;
+                if(member.interNationsStatus)update.interNationsStatus=member.interNationsStatus;
+                if(member.importedAt)update.importedAt=member.importedAt;
+                if(isImportedMemberRecord(member)){update.importNameKey=member.importNameKey||rd.importNameKey||sd.importNameKey||'';update.membershipMerged=true;}
+                await survivor.ref.update(update);
+                await remove.ref.delete();
+            } catch(error) {
+                console.error('Guest merge failed:',error);
+                const e=document.getElementById('guestlistError');
+                if(e){e.textContent='Could not merge these records. Refresh the guest list and try again.';e.classList.remove('hidden');}
+            }
+        }
+        function deleteGuest(id, guestName) {
             if (!db) {
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'The guest database is not connected, so this guest could not be deleted.';
