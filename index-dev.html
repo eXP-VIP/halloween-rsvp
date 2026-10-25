@@ -1184,7 +1184,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.25.71</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.25.72</p>
         </div>
     </footer>
 
@@ -4448,15 +4448,16 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 });
             });
             pairs.sort((x, y) => String(x.ad.name || '').localeCompare(String(y.ad.name || ''), undefined, { sensitivity: 'base' }));
-            count.textContent = pairs.length + (pairs.length === 1 ? ' suggestion' : ' suggestions');
-            if (!pairs.length) {
+            const visiblePairs = pairs.filter(pair => !dismissedDuplicatePairs.has(pair.key));
+            count.textContent = visiblePairs.length + (visiblePairs.length === 1 ? ' suggestion' : ' suggestions');
+            if (!visiblePairs.length) {
                 const empty = document.createElement('p');
                 empty.className = 'text-xs text-gray-400';
                 empty.textContent = 'No strong duplicate suggestions found.';
                 list.appendChild(empty);
                 return;
             }
-            pairs.forEach(pair => {
+            visiblePairs.forEach(pair => {
                 const card = document.createElement('div');
                 card.className = 'rounded-lg border border-amber-400/30 bg-black/25 p-3';
                 const heading = document.createElement('p');
@@ -4476,10 +4477,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     meta.className = 'text-xs text-gray-300 mt-1 break-words';
                     const source = isImportedMemberRecord(data) ? 'InterNations import' : 'RSVP / guest record';
                     const status = data.checkedIn ? 'Checked in' : 'Not checked in';
-                    const dateValue = data.createdAt || data.importedAt;
-                    const dateMs = timestampMillis(dateValue);
-                    const dateText = dateMs == null ? '' : new Date(dateMs).toLocaleDateString([], {day:'2-digit',month:'short',year:'numeric'});
-                    meta.textContent = [source, status, dateText].filter(Boolean).join(' · ');
+                    meta.textContent = [source, status].filter(Boolean).join(' · ');
                     record.appendChild(meta);
                     if (data.country) {
                         const country = document.createElement('p');
