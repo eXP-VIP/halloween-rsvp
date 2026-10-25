@@ -1184,7 +1184,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.25.72</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.25.73</p>
         </div>
     </footer>
 
@@ -4531,18 +4531,45 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             const a=(cachedGuestDocs||[]).find(d=>d.id===primaryId), b=(cachedGuestDocs||[]).find(d=>d.id===duplicateId);
             if(!a||!b)return;
             const ad=a.data()||{}, bd=b.data()||{};
-            const isRsvp=d=>!isImportedMemberRecord(d)&&(d.rsvpSubmitted===true||d.source==='website'||Boolean(String(d.invitedBy||'').trim()));
-            const survivor=isRsvp(ad)?a:(isRsvp(bd)?b:a), remove=survivor.id===a.id?b:a;
+            const isRsvp=d=>!isImportedMemberRecord(d)&&(d.rsvpSubmitted===true||d.rsvpSource==='website'||d.source==='website'||Boolean(String(d.invitedBy||'').trim()));
+            // Membership identity takes precedence; RSVP facts are copied onto that surviving member record.
+            const memberDoc=isImportedMemberRecord(ad)?a:(isImportedMemberRecord(bd)?b:null);
+            const rsvpDoc=isRsvp(ad)?a:(isRsvp(bd)?b:null);
+            const survivor=memberDoc|| (rsvpDoc||a);
+            const remove=survivor.id===a.id?b:a;
             const sd=survivor.data()||{}, rd=remove.data()||{};
-            const member=isImportedMemberRecord(sd)?sd:rd;
+            const member=isImportedMemberRecord(sd)?sd:(isImportedMemberRecord(rd)?rd:null);
+            const rsvp=isRsvp(sd)?sd:(isRsvp(rd)?rd:null);
             const aliases=Array.from(new Set([...(Array.isArray(sd.mergeAliases)?sd.mergeAliases:[]),...(Array.isArray(rd.mergeAliases)?rd.mergeAliases:[]),sd.name,rd.name,sd.importNameKey,rd.importNameKey].map(v=>String(v||'').trim()).filter(Boolean)));
-            if(!window.confirm('Merge “'+(rd.name||'duplicate')+'” into “'+(sd.name||'primary record')+'”? The RSVP record is kept when present; membership country/status and both name variants are retained. The duplicate record will be deleted.'))return;
+            if(!window.confirm('Merge “'+(rd.name||'duplicate')+'” into the InterNations member record when present? Membership identity takes precedence; RSVP details and both name variants are retained. The duplicate record will be deleted.'))return;
             try {
-                const update={mergeAliases:aliases,mergedDuplicateIds:Array.from(new Set([...(Array.isArray(sd.mergedDuplicateIds)?sd.mergedDuplicateIds:[]),remove.id]))};
-                if(member.country)update.country=member.country;
-                if(member.interNationsStatus)update.interNationsStatus=member.interNationsStatus;
-                if(member.importedAt)update.importedAt=member.importedAt;
-                if(isImportedMemberRecord(member)){update.importNameKey=member.importNameKey||rd.importNameKey||sd.importNameKey||'';update.membershipMerged=true;}
+                const update={
+                    mergeAliases:aliases,
+                    mergedDuplicateIds:Array.from(new Set([...(Array.isArray(sd.mergedDuplicateIds)?sd.mergedDuplicateIds:[]),remove.id])),
+                    checkedIn:Boolean(sd.checkedIn||rd.checkedIn),
+                    paid:Boolean(sd.paid||rd.paid),
+                    rsvpSubmitted:Boolean(sd.rsvpSubmitted||rd.rsvpSubmitted||isRsvp(sd)||isRsvp(rd))
+                };
+                if (!sd.checkedIn && rd.checkedInAt) update.checkedInAt=rd.checkedInAt;
+                else if (sd.checkedInAt) update.checkedInAt=sd.checkedInAt;
+                if (!sd.paidAt && rd.paidAt) update.paidAt=rd.paidAt;
+                else if (sd.paidAt) update.paidAt=sd.paidAt;
+                if (sd.amountPaid == null && rd.amountPaid != null) update.amountPaid=rd.amountPaid;
+                else if (sd.amountPaid != null) update.amountPaid=sd.amountPaid;
+                if (!String(sd.invitedBy||'').trim() && rsvp && String(rsvp.invitedBy||'').trim()) update.invitedBy=rsvp.invitedBy;
+                if (!sd.createdAt && rsvp && rsvp.createdAt) update.createdAt=rsvp.createdAt;
+                if (member) {
+                    update.guestType=member.guestType||'internations_member';
+                    update.source='internations_import';
+                    update.importNameKey=member.importNameKey||rd.importNameKey||sd.importNameKey||'';
+                    update.membershipMerged=true;
+                    if(member.country)update.country=member.country;
+                    if(member.interNationsStatus)update.interNationsStatus=member.interNationsStatus;
+                    if(member.importedAt)update.importedAt=member.importedAt;
+                    if(member.name)update.name=member.name;
+                    if(member.firstName)update.firstName=member.firstName;
+                    if(member.lastName)update.lastName=member.lastName;
+                }
                 await survivor.ref.update(update);
                 await remove.ref.delete();
             } catch(error) {
