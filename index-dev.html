@@ -1192,7 +1192,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.27.90</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.27.91</p>
         </div>
     </footer>
 
@@ -3543,8 +3543,36 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     const manualHelp = document.createElement('p');
                     manualHelp.className = 'text-xs text-gray-400';
                     manualHelp.textContent = ranked.length
-                        ? 'Possible matches are listed first. Search all registrations if needed.'
-                        : 'No close match found. Search all registrations to find the correct person.';
+                        ? 'Review full and partial suggestions below. No match is selected automatically. Search all registrations if needed.'
+                        : 'No full or partial match suggested. Search all registrations to find the correct person.';
+                    const suggestions = document.createElement('div');
+                    suggestions.className = 'flex max-h-48 flex-col gap-1 overflow-y-auto';
+                    if (ranked.length) {
+                        const exact = ranked.filter(candidate => candidate.key === requestKey);
+                        const partial = ranked.filter(candidate => candidate.key !== requestKey);
+                        const appendSuggestionGroup = (label, group) => {
+                            if (!group.length) return;
+                            const groupLabel = document.createElement('p');
+                            groupLabel.className = 'text-xs font-semibold text-gray-300 pt-1';
+                            groupLabel.textContent = label;
+                            suggestions.appendChild(groupLabel);
+                            group.slice(0, 5).forEach(candidate => {
+                                const button = document.createElement('button');
+                                button.type = 'button';
+                                button.className = 'w-full rounded-md border border-gray-600 px-3 py-2 text-left text-sm text-gray-100 hover:bg-white/10';
+                                button.textContent = candidate.name + (candidate.docs.length > 1 ? ' · ' + candidate.docs.length + ' records' : '');
+                                button.addEventListener('click', () => showCandidateConfirmation(candidate));
+                                suggestions.appendChild(button);
+                            });
+                        };
+                        appendSuggestionGroup('Full match', exact);
+                        appendSuggestionGroup('Partial matches', partial);
+                    } else {
+                        const noSuggestion = document.createElement('p');
+                        noSuggestion.className = 'text-xs text-gray-400';
+                        noSuggestion.textContent = 'No full or partial matches suggested.';
+                        suggestions.appendChild(noSuggestion);
+                    }
                     const search = document.createElement('input');
                     search.type = 'search';
                     search.placeholder = 'Search registered names…';
@@ -3552,7 +3580,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     search.setAttribute('aria-label', 'Search all registrations for cancellation request ' + (item.name || 'unnamed guest'));
                     const results = document.createElement('div');
                     results.className = 'flex max-h-48 flex-col gap-1 overflow-y-auto';
-                    manual.append(manualHeading, manualHelp, search, results);
+                    manual.append(manualHeading, manualHelp, suggestions, search, results);
                     card.appendChild(manual);
 
                     const deleteArea = document.createElement('div');
