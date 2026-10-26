@@ -1422,8 +1422,9 @@
                 guestlistSnapshotHandler(cachedGuestSnapshot);
             } else {
                 loadLiveGuestlist();
-                loadCancellationRequests();
             }
+            // The cancellation queue is independent of the cached guest-list render.
+            loadCancellationRequests();
         }
         /** Use Firestore timestamps in live mode and serializable local timestamps in test mode. */
         function guestActionTimestamp() {
