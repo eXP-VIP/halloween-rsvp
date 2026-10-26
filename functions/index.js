@@ -385,10 +385,9 @@ exports.adminRestoreDatabaseBackup = region.https.onCall(async (data, context) =
 });
 
 /**
- * Public self-service cancellation for a single website RSVP.
- * Never matches or deletes imported InterNations member records. Since the public RSVP
- * form collects names rather than an email or account, matching name + inviter is a
- * convenience check, not strong identity verification; only one exact match is eligible.
+ * Public self-service cancellation by exact full name.
+ * A matching name is the verification method for this event's public RSVP flow.
+ * Never matches or deletes imported InterNations member records.
  */
 exports.removeWebsiteRsvp = region.https.onCall(async (data, context) => {
   const clean = value => String(value || "").normalize("NFKC").trim().replace(/\s+/g, " ");
@@ -397,31 +396,35 @@ exports.removeWebsiteRsvp = region.https.onCall(async (data, context) => {
     throw httpsError("invalid-argument", "Enter the full name used when registering.");
   }
 
-  // Query only by the submitted full name; all eligibility checks and deletion run
-  // inside the trusted function so public Firestore reads/deletes remain disabled.
-  const snapshot = await db.collection("halloween_guests").where("name", "==", name).get();
-  const matches = snapshot.docs.filter(doc => {
-    const guest = doc.data() || {};
-    const isImportedMember = guest.guestType === "internations_member" || guest.source === "internations_import";
-    return !isImportedMember &&
-      guest.source === "website" &&
-      clean(guest.name) === name;
-  });
+  try {
+    const snapshot = await db.collection("halloween_guests").where("name", "==", name).get();
+    const matches = snapshot.docs.filter(doc => {
+      const guest = doc.data() || {};
+      const isImportedMember = guest.guestType === "internations_member" || guest.source === "internations_import";
+      return !isImportedMember && guest.source === "website" && clean(guest.name) === name;
+    });
 
-  if (matches.length === 0) {
-    throw httpsError("not-found", "We could not find a matching website registration. Check the full name or contact the event organiser.");
-  }
+    if (matches.length === 0) {
+      throw httpsError("not-found", "We could not find a matching website registration. Check the full name.");
+    }
 
-  if (matches.some(doc => {
-    const guest = doc.data() || {};
-    return guest.checkedIn === true || guest.paid === true;
-  })) {
-    throw httpsError("failed-precondition", "This registration needs to be handled by the event organiser. Please contact the organiser rather than removing it online.");
-  }
+    // The submitted exact full name is the public verification check. Delete all matching
+    // website RSVP records together, including duplicates, but never imported member records.
+    const batch = db.batch();
+    matches.forEach(match => batch.delete(match.ref));
+    await batch.commit();
 
-  for (const match of matches) {
-    await match.ref.delete();
+    console.info("removeWebsiteRsvp completed", {
+      matchedName: name,
+      removedCount: matches.length
+    });
+    return { success: true, removedCount: matches.length };
+  } catch (error) {
+    if (error instanceof functions.https.HttpsError) throw error;
+    console.error("removeWebsiteRsvp failed", {
+      errorCode: error && error.code || "unknown",
+      message: error && error.message || String(error)
+    });
+    throw httpsError("internal", "The RSVP removal could not be completed. Please try again or contact the event organiser.");
   }
-  return { success: true, removedCount: matches.length };
 });
-
