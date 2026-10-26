@@ -29,18 +29,16 @@
 <main>
   <p class="eyebrow">The Dean After Dark</p>
   <h1>Remove your RSVP</h1>
-  <p class="intro">Use the same full name and inviter details you entered when registering. This only removes a website RSVP; imported InterNations member entries are not affected.</p>
+  <p class="intro">Enter the same full name you used when registering. This only removes website RSVP records; imported InterNations member entries are not affected.</p>
   <form id="removeForm">
     <label for="fullName">Full name used for registration</label>
     <input id="fullName" name="fullName" autocomplete="name" maxlength="120" required>
-    <label for="invitedBy">Invited by (leave blank if you left it blank)</label>
-    <input id="invitedBy" name="invitedBy" maxlength="120" autocomplete="off">
     <button id="removeButton" type="submit">Remove my registration</button>
   </form>
   <div id="status" class="status hidden" role="status" aria-live="polite"></div>
   <p class="note">For privacy, the guest list is never shown. If your registration cannot be matched uniquely, or if payment/check-in has already been recorded, contact the event organiser.</p>
   <a class="back" href="/">← Back to the event page</a>
-  <p style="text-align:center;color:#6f6962;font-size:10px;margin:18px 0 0">Build 2026.10.26.78</p>
+  <p style="text-align:center;color:#6f6962;font-size:10px;margin:18px 0 0">Build 2026.10.26.79</p>
 </main>
 <script>
   const firebaseConfig = {
@@ -61,12 +59,11 @@
     event.preventDefault();
     if (!form.reportValidity()) return;
     const name = document.getElementById("fullName").value.normalize("NFKC").trim().replace(/\s+/g, " ");
-    const invitedBy = document.getElementById("invitedBy").value.normalize("NFKC").trim().replace(/\s+/g, " ");
     button.disabled = true;
     button.textContent = "Checking registration…";
     status.classList.add("hidden");
     try {
-      await removeRsvp({name, invitedBy});
+      await removeRsvp({name});
       form.classList.add("hidden");
       status.textContent = "Your website registration has been removed. Thank you for letting us know.";
       status.classList.remove("hidden");
