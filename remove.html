@@ -37,7 +37,7 @@
   <div id="status" class="status hidden" role="status" aria-live="polite"></div>
   <p class="note" style="text-align:center">Questions? <a href="https://wa.me/4917681117359" target="_blank" rel="noopener noreferrer" style="color:var(--gold)">Contact Ari on WhatsApp</a></p>
   <a class="back" href="/">← Back to the event page</a>
-  <p style="text-align:center;color:#6f6962;font-size:10px;margin:18px 0 0">Build 2026.10.26.82</p>
+  <p style="text-align:center;color:#6f6962;font-size:10px;margin:18px 0 0">Build 2026.10.26.83</p>
 </main>
 <script>
   const firebaseConfig = {
@@ -98,7 +98,7 @@
       });
       await Promise.race([request, timeout]);
       form.classList.add("hidden");
-      status.textContent = "Your website registration has been removed. Thank you for letting us know.";
+      status.textContent = "RSVP Cancelled\nThanks for freeing up your spot for someone else!";
       status.classList.remove("hidden");
     } catch (error) {
       status.textContent = friendlyRemovalError(error);
