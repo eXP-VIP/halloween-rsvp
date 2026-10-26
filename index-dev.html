@@ -734,6 +734,11 @@
             </form>
             <div id="statusMessage" role="status" aria-live="polite" class="hidden mt-6 p-5 sm:p-6 rounded-lg bg-gold/10 border border-gold/40 text-center">
                 <p id="statusText" class="text-sm sm:text-base text-amber-100 leading-relaxed"></p>
+                <div id="cancellationLinkPanel" class="hidden mt-4 rounded-lg border border-amber-300/30 bg-black/30 p-4 text-left">
+                    <p class="text-sm text-white font-semibold">Keep your private cancellation link</p>
+                    <p class="text-xs text-gray-300 mt-1 mb-3">If your plans change, use this link to cancel your RSVP. Anyone with the link can request cancellation, so keep it private.</p>
+                    <a id="cancellationLink" href="#" class="break-all text-sm text-amber-200 underline underline-offset-4">Open cancellation page</a>
+                </div>
                 <div id="guestSummary" class="hidden text-left mt-5 p-4 rounded-lg bg-black/30 border border-gold/20">
                     <h3 class="font-serif text-xs uppercase tracking-[0.16em] text-gold mb-3">Details submitted</h3>
                     <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 text-sm">
@@ -1192,7 +1197,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.26.86</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.26.87</p>
         </div>
     </footer>
 
@@ -2776,10 +2781,27 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
 
             try {
-                await db.collection('halloween_guests').add({
+                // Give each new RSVP a private, unguessable bearer token for cancellation.
+                // The guest record and token mapping are created atomically; the token is never stored on the guest record.
+                const guestRef = db.collection('halloween_guests').doc();
+                const cancellationToken = Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
+                const tokenRef = db.collection('cancellation_tokens').doc(cancellationToken);
+                const batch = db.batch();
+                batch.set(guestRef, {
                     ...guest,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                batch.set(tokenRef, {
+                    guestId: guestRef.id,
+                    name: guest.name,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                await batch.commit();
+                const cancelLink = new URL('/remove.html', window.location.origin);
+                cancelLink.searchParams.set('token', cancellationToken);
+                const cancelLinkElement = document.getElementById('cancellationLink');
+                cancelLinkElement.href = cancelLink.toString();
+                document.getElementById('cancellationLinkPanel').classList.remove('hidden');
                 lastSubmittedGuest = guest;
                 showSubmittedGuest(guest);
                 statusText.textContent = 'Thank you — your registration has been saved to the guest list. Please use the same full name when you arrive so the hotel can find you.';
