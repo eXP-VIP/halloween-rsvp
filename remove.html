@@ -30,14 +30,15 @@
   <p class="eyebrow">The Dean After Dark</p>
   <h1>Remove your RSVP</h1>
   <form id="removeForm">
+    <p class="intro" style="margin-bottom:10px">Use the private cancellation link you received after registering.</p>
     <label for="fullName">Full name used for registration</label>
     <input id="fullName" name="fullName" autocomplete="name" maxlength="120" required>
-    <button id="removeButton" type="submit">Remove my registration</button>
+    <button id="removeButton" type="submit">Request cancellation</button>
   </form>
   <div id="status" class="status hidden" role="status" aria-live="polite"></div>
   <p class="note" style="text-align:center">Questions? <a href="https://wa.me/4917681117359" target="_blank" rel="noopener noreferrer" style="color:var(--gold)">Contact Ari on WhatsApp</a></p>
   <a class="back" href="/">← Back to the event page</a>
-  <p style="text-align:center;color:#6f6962;font-size:10px;margin:18px 0 0">Build 2026.10.26.86</p>
+  <p style="text-align:center;color:#6f6962;font-size:10px;margin:18px 0 0">Build 2026.10.26.87</p>
 </main>
 <script>
   const firebaseConfig = {
@@ -54,11 +55,16 @@
   const button = document.getElementById("removeButton");
   const status = document.getElementById("status");
   const db = firebase.firestore();
+  const cancellationToken = new URLSearchParams(window.location.search).get("token") || "";
 
   function friendlyRemovalError(error) {
-    const code = String(error && error.code || "").toLowerCase();
-    const message = String(error && error.message || "").toLowerCase();
-    return "We could not save your cancellation request. Please try again or contact Ari on WhatsApp.";
+    return "We could not verify this registration. Please use the private cancellation link from your RSVP confirmation or contact Ari on WhatsApp.";
+  }
+
+  if (!/^[a-f0-9]{64}$/.test(cancellationToken)) {
+    form.classList.add("hidden");
+    status.textContent = "A private cancellation link is required to verify your registration. Please use the link shown after you registered or contact Ari on WhatsApp.";
+    status.classList.remove("hidden");
   }
 
   form.addEventListener("submit", async event => {
@@ -66,12 +72,17 @@
     if (!form.reportValidity()) return;
     const name = document.getElementById("fullName").value.normalize("NFKC").trim().replace(/\s+/g, " ");
     button.disabled = true;
-    button.textContent = "Checking registration…";
+    button.textContent = "Verifying registration…";
     status.classList.add("hidden");
-    let timeoutId;
     try {
+      // Firestore rules permit a public exact-token read only for a valid token mapping.
+      const tokenSnapshot = await db.collection("cancellation_tokens").doc(cancellationToken).get();
+      if (!tokenSnapshot.exists || tokenSnapshot.data().name !== name) {
+        throw new Error("registration-not-found");
+      }
       await db.collection("cancellation_requests").add({
         name,
+        token: cancellationToken,
         status: "pending",
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -82,9 +93,8 @@
       status.textContent = friendlyRemovalError(error);
       status.classList.remove("hidden");
     } finally {
-      window.clearTimeout(timeoutId);
       button.disabled = false;
-      button.textContent = "Remove my registration";
+      button.textContent = "Request cancellation";
     }
   });
 </script>
