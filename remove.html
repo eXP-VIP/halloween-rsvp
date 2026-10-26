@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <title>Remove RSVP | The Dean After Dark</title>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-functions-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <style>
     :root{color-scheme:dark;--gold:#e7c779;--bg:#08080a;--panel:#151416;--muted:#b8b4b0}
     *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#292016 0,var(--bg) 58%);color:#f7f4ef;font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;display:flex;justify-content:center;align-items:center;padding:24px}
@@ -37,7 +37,7 @@
   <div id="status" class="status hidden" role="status" aria-live="polite"></div>
   <p class="note" style="text-align:center">Questions? <a href="https://wa.me/4917681117359" target="_blank" rel="noopener noreferrer" style="color:var(--gold)">Contact Ari on WhatsApp</a></p>
   <a class="back" href="/">← Back to the event page</a>
-  <p style="text-align:center;color:#6f6962;font-size:10px;margin:18px 0 0">Build 2026.10.26.83</p>
+  <p style="text-align:center;color:#6f6962;font-size:10px;margin:18px 0 0">Build 2026.10.26.86</p>
 </main>
 <script>
   const firebaseConfig = {
@@ -53,30 +53,12 @@
   const form = document.getElementById("removeForm");
   const button = document.getElementById("removeButton");
   const status = document.getElementById("status");
-  const removeRsvp = firebase.app().functions("europe-west1").httpsCallable("removeWebsiteRsvp");
+  const db = firebase.firestore();
 
   function friendlyRemovalError(error) {
     const code = String(error && error.code || "").toLowerCase();
     const message = String(error && error.message || "").toLowerCase();
-    if (message.includes("could not find a matching website registration") ||
-        message.includes("no matching website registration")) {
-      return "We could not find a registration under that exact name. Check the spelling or contact Ari on WhatsApp.";
-    }
-    if (message.includes("handled by the event organiser") || code.includes("failed-precondition")) {
-      return "Ari needs to handle this registration manually. Please contact Ari on WhatsApp.";
-    }
-    if (code.includes("invalid-argument")) {
-      return "Please enter the same full name you used when registering.";
-    }
-    if (code.includes("not-found") && !message.includes("matching website registration")) {
-      return "The online removal service is not available. Please contact Ari on WhatsApp for help removing your RSVP.";
-    }
-    if (code.includes("client/timeout") || code.includes("deadline-exceeded") ||
-        code.includes("unavailable") || code.includes("internal") ||
-        message.trim() === "internal" || message.includes("internal server error")) {
-      return "We could not confirm whether the removal completed because the service did not respond correctly. Please contact Ari on WhatsApp before trying again.";
-    }
-    return "We could not confirm the removal. Please contact Ari on WhatsApp before trying again.";
+    return "We could not save your cancellation request. Please try again or contact Ari on WhatsApp.";
   }
 
   form.addEventListener("submit", async event => {
@@ -88,15 +70,11 @@
     status.classList.add("hidden");
     let timeoutId;
     try {
-      const request = removeRsvp({name});
-      const timeout = new Promise((_, reject) => {
-        timeoutId = window.setTimeout(() => {
-          const error = new Error("Removal request timed out");
-          error.code = "client/timeout";
-          reject(error);
-        }, 30000);
+      await db.collection("cancellation_requests").add({
+        name,
+        status: "pending",
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
-      await Promise.race([request, timeout]);
       form.classList.add("hidden");
       status.textContent = "RSVP Cancelled\nThanks for freeing up your spot for someone else!";
       status.classList.remove("hidden");
