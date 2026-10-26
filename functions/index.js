@@ -383,3 +383,44 @@ exports.adminRestoreDatabaseBackup = region.https.onCall(async (data, context) =
     counts: Object.fromEntries(BACKUP_COLLECTIONS.map(name => [name, collections[name].length]))
   };
 });
+
+/**
+ * Public self-service cancellation for a single website RSVP.
+ * Never matches or deletes imported InterNations member records. Since the public RSVP
+ * form collects names rather than an email or account, matching name + inviter is a
+ * convenience check, not strong identity verification; only one exact match is eligible.
+ */
+exports.removeWebsiteRsvp = region.https.onCall(async (data, context) => {
+  const clean = value => String(value || "").normalize("NFKC").trim().replace(/\s+/g, " ");
+  const name = clean(data && data.name);
+  const invitedBy = clean(data && data.invitedBy);
+  if (name.length < 2 || name.length > 120 || invitedBy.length > 120) {
+    throw httpsError("invalid-argument", "Enter the full name and the inviter exactly as used when registering.");
+  }
+
+  // Query only by the submitted full name; all eligibility checks and deletion run
+  // inside the trusted function so public Firestore reads/deletes remain disabled.
+  const snapshot = await db.collection("halloween_guests").where("name", "==", name).get();
+  const matches = snapshot.docs.filter(doc => {
+    const guest = doc.data() || {};
+    const isImportedMember = guest.guestType === "internations_member" || guest.source === "internations_import";
+    return !isImportedMember &&
+      guest.source === "website" &&
+      clean(guest.name) === name &&
+      clean(guest.invitedBy) === invitedBy;
+  });
+
+  if (matches.length !== 1) {
+    // Do not reveal whether a name exists or whether it belongs to a protected member record.
+    throw httpsError("not-found", "We could not verify one matching website registration. Check the details or contact the event organiser.");
+  }
+
+  const guest = matches[0].data() || {};
+  if (guest.checkedIn === true || guest.paid === true) {
+    throw httpsError("failed-precondition", "This registration needs to be handled by the event organiser. Please contact the organiser rather than removing it online.");
+  }
+
+  await matches[0].ref.delete();
+  return { success: true };
+});
+
