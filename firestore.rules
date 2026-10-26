@@ -164,42 +164,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // A cancellation token is a 256-bit unguessable bearer secret. Public access is exact-document get only.
-    // Admin can list/create mappings for backfill; public visitors cannot enumerate token mappings.
-    match /cancellation_tokens/{token} {
-      allow get: if token.matches('^[a-f0-9]{64}$')
-        && resource.data.guestId is string
-        && resource.data.name is string;
-      allow list: if isAdmin();
-      allow update, delete: if false;
-      allow create: if token.matches('^[a-f0-9]{64}$')
-        && request.resource.data.keys().hasAll(['guestId', 'name', 'createdAt'])
-        && request.resource.data.keys().hasOnly(['guestId', 'name', 'createdAt'])
-        && request.resource.data.guestId is string
-        && request.resource.data.name is string
-        && request.resource.data.name.size() >= 2
-        && request.resource.data.name.size() <= 120
-        && request.resource.data.createdAt == request.time
-        && (isAdmin() || (
-          !exists(/databases/$(database)/documents/halloween_guests/$(request.resource.data.guestId))
-          && existsAfter(/databases/$(database)/documents/halloween_guests/$(request.resource.data.guestId))
-          && getAfter(/databases/$(database)/documents/halloween_guests/$(request.resource.data.guestId)).data.name == request.resource.data.name
-          && getAfter(/databases/$(database)/documents/halloween_guests/$(request.resource.data.guestId)).data.source == 'website'
-        ));
-    }
-
-    // Public visitors may submit a cancellation request only for a valid private token/name pair.
+    // Public visitors may submit a cancellation request, but cannot read or alter requests.
     // Existing guest deletion permissions remain unchanged.
     match /cancellation_requests/{requestId} {
-      allow create: if request.resource.data.keys().hasAll(['name', 'token', 'status', 'createdAt'])
-        && request.resource.data.keys().hasOnly(['name', 'token', 'status', 'createdAt'])
+      allow create: if request.resource.data.keys().hasAll(['name', 'status', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['name', 'status', 'createdAt'])
         && request.resource.data.name is string
         && request.resource.data.name.size() >= 2
         && request.resource.data.name.size() <= 120
-        && request.resource.data.token is string
-        && request.resource.data.token.matches('^[a-f0-9]{64}$')
-        && exists(/databases/$(database)/documents/cancellation_tokens/$(request.resource.data.token))
-        && get(/databases/$(database)/documents/cancellation_tokens/$(request.resource.data.token)).data.name == request.resource.data.name
         && request.resource.data.status == 'pending'
         && request.resource.data.createdAt == request.time;
       allow get, list: if isAdmin();
