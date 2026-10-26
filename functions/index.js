@@ -393,9 +393,8 @@ exports.adminRestoreDatabaseBackup = region.https.onCall(async (data, context) =
 exports.removeWebsiteRsvp = region.https.onCall(async (data, context) => {
   const clean = value => String(value || "").normalize("NFKC").trim().replace(/\s+/g, " ");
   const name = clean(data && data.name);
-  const invitedBy = clean(data && data.invitedBy);
-  if (name.length < 2 || name.length > 120 || invitedBy.length > 120) {
-    throw httpsError("invalid-argument", "Enter the full name and the inviter exactly as used when registering.");
+  if (name.length < 2 || name.length > 120) {
+    throw httpsError("invalid-argument", "Enter the full name used when registering.");
   }
 
   // Query only by the submitted full name; all eligibility checks and deletion run
@@ -406,8 +405,7 @@ exports.removeWebsiteRsvp = region.https.onCall(async (data, context) => {
     const isImportedMember = guest.guestType === "internations_member" || guest.source === "internations_import";
     return !isImportedMember &&
       guest.source === "website" &&
-      clean(guest.name) === name &&
-      clean(guest.invitedBy) === invitedBy;
+      clean(guest.name) === name;
   });
 
   if (matches.length !== 1) {
