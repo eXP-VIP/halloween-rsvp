@@ -1735,8 +1735,7 @@
                 button.textContent = basicUpgradeForecastEnabled ? 'Basics upgrade: ON' : 'Basics upgrade: OFF';
                 button.setAttribute('aria-pressed', String(basicUpgradeForecastEnabled));
             }
-            if (typeof refreshGuestList === 'function') refreshGuestList();
-            else if (typeof renderGuestList === 'function') renderGuestList();
+            if (typeof refreshGuestlistView === 'function') refreshGuestlistView();
         }
         const attendanceScaledStatIds = [
             'guestTotalCount',
