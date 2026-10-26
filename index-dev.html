@@ -936,7 +936,7 @@
                             </div>
                         </div>
                         <div id="collectedMetric" class="staff-metric-card">
-                            <div class="flex flex-wrap items-center justify-between gap-2"><h5 class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Revenue (€)</h5><button type="button" id="attendance66Button" class="sort-option" onclick="toggleAttendanceForecast()">100% attendance</button></div>
+                            <div class="flex flex-wrap items-center justify-between gap-2"><h5 class="h-6 flex items-end text-[10px] uppercase tracking-wider text-gray-300">Revenue (€)</h5><div class="flex flex-wrap gap-2"><button type="button" id="attendance66Button" class="sort-option" onclick="toggleAttendanceForecast()">100% attendance</button><button type="button" id="basicUpgradeForecastButton" class="sort-option" onclick="toggleBasicUpgradeForecast()" aria-pressed="false">Basics upgrade: OFF</button></div></div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 items-start">
                                 <div class="min-w-0">
                                     <div class="stat-pair-grid">
@@ -1184,7 +1184,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.25.74</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.26.75</p>
         </div>
     </footer>
 
@@ -1725,6 +1725,19 @@
         }
 
         let attendanceForecastRate = 1;
+        // Forecast-only assumption: Basics guests choose the €5 welcome-drink upgrade.
+        let basicUpgradeForecastEnabled = false;
+        function toggleBasicUpgradeForecast() {
+            if (currentStaffRole !== 'admin') return;
+            basicUpgradeForecastEnabled = !basicUpgradeForecastEnabled;
+            const button = document.getElementById('basicUpgradeForecastButton');
+            if (button) {
+                button.textContent = basicUpgradeForecastEnabled ? 'Basics upgrade: ON' : 'Basics upgrade: OFF';
+                button.setAttribute('aria-pressed', String(basicUpgradeForecastEnabled));
+            }
+            if (typeof refreshGuestList === 'function') refreshGuestList();
+            else if (typeof renderGuestList === 'function') renderGuestList();
+        }
         const attendanceScaledStatIds = [
             'guestTotalCount',
             'hotelGuestTotalCount',
@@ -4192,7 +4205,23 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     drinkForecastCounts[kind]++;
                     if (issuedNameKeys.has(key)) drinkIssuedCounts[kind]++;
                 });
-                const estimatedDrinkTotal = estimatedDrinksByPerson.size;
+                if (basicUpgradeForecastEnabled) {
+                    categoryPeople.forEach(person => {
+                        const key = normalizeGuestName(person.data.name);
+                        if (!key || getGuestCategory(person.data) !== 'Basics' || estimatedDrinksByPerson.has(key)) return;
+                        const rule = pricingSettings.drinkRules[getGuestTier(person.data)] || { mode: 'not_allowed' };
+                        if (rule.mode !== 'included' && !estimatedEarnedKeys.has(key)) drinkForecastCounts.upgrades++;
+                    });
+                }
+                const forecastWelcomeKeys = new Set(estimatedDrinksByPerson.keys());
+                if (basicUpgradeForecastEnabled) {
+                    categoryPeople.forEach(person => {
+                        const key = normalizeGuestName(person.data.name);
+                        const rule = pricingSettings.drinkRules[getGuestTier(person.data)] || { mode: 'not_allowed' };
+                        if (key && getGuestCategory(person.data) === 'Basics' && rule.mode !== 'included' && !estimatedEarnedKeys.has(key)) forecastWelcomeKeys.add(key);
+                    });
+                }
+                const estimatedDrinkTotal = forecastWelcomeKeys.size;
                 document.getElementById('drinkEstimateTotal').textContent = estimatedDrinkTotal;
                 updateExtraDrinkForecastDisplay();
                 const issuedEligibleDrinkTotal = Object.values(drinkIssuedCounts).reduce((sum, count) => sum + count, 0);
@@ -4215,7 +4244,14 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     const key = normalizeGuestName(person.data.name);
                     const category = getGuestCategory(person.data);
                     const categoryTotal = categoryPaymentTotals[category] || categoryPaymentTotals.RSVPs;
-                    const potentialAmount = calculateGuestCharge(person.data, estimatedEarnedKeys.has(key)).total;
+                    const potentialCharge = calculateGuestCharge(person.data, estimatedEarnedKeys.has(key));
+                    let potentialAmount = potentialCharge.total;
+                    const isBasicsUpgradeForecast = basicUpgradeForecastEnabled &&
+                        category === 'Basics' &&
+                        potentialCharge.drinkMode !== 'included' &&
+                        !potentialCharge.upgradeSelected &&
+                        !estimatedEarnedKeys.has(key);
+                    if (isBasicsUpgradeForecast) potentialAmount += 5;
                     categoryTotal.potential += potentialAmount;
                     maxFullAttendance += potentialAmount;
                     if (person.paid) {
