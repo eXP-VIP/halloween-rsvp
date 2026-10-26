@@ -1071,6 +1071,14 @@
                                 <span id="cancellationRequestsCount" class="staff-panel__meta">Loading…</span>
                             </div>
                             <p class="text-xs text-gray-300 mb-3">Guests have been told their RSVP is cancelled. Review each request here and remove the matching website registration when appropriate.</p>
+                            <div class="rounded-lg border border-amber-300/20 bg-black/20 p-3 mb-4">
+                                <p class="text-sm text-white font-semibold mb-1">Existing website registrations</p>
+                                <p class="text-xs text-gray-300 mb-3">Create private cancellation links for older website RSVPs that predate the token system. This does not delete or change guest records. The CSV contains private bearer links, so store and share it securely.</p>
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <button id="backfillCancellationTokensBtn" type="button" class="sort-option">Generate missing links &amp; export CSV</button>
+                                    <span id="backfillCancellationTokensStatus" class="text-xs text-gray-400" role="status" aria-live="polite"></span>
+                                </div>
+                            </div>
                             <div id="cancellationRequestsList" class="space-y-3"><p class="text-xs text-gray-400">Loading cancellation requests…</p></div>
                         </section>
                         <section id="duplicateReviewPanel" class="staff-panel mb-4" aria-labelledby="duplicateReviewHeading">
@@ -1197,7 +1205,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.26.87</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.26.88</p>
         </div>
     </footer>
 
@@ -3527,6 +3535,44 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             });
         }
 
+        /** Admin-only backfill: mint missing private cancellation links for legacy website RSVP records. */
+        async function backfillCancellationTokens() {
+            const button = document.getElementById('backfillCancellationTokensBtn');
+            const status = document.getElementById('backfillCancellationTokensStatus');
+            if (!db || currentStaffRole !== 'admin') { if (status) status.textContent = 'Admin access required.'; return; }
+            if (!window.confirm('Generate private cancellation links for existing website RSVP records that do not already have one? A CSV containing private links will download. Keep it secure and send each guest only their own link.')) return;
+            button.disabled = true;
+            if (status) status.textContent = 'Checking existing registrations and tokens…';
+            try {
+                const results = await Promise.all([db.collection('halloween_guests').get(), db.collection('cancellation_tokens').get()]);
+                const guests = results[0].docs.filter(doc => { const data = doc.data() || {}; return data.source === 'website' && typeof data.name === 'string' && data.name.trim().length >= 2; });
+                const tokenByGuestId = new Map();
+                results[1].docs.forEach(doc => { const data = doc.data() || {}; if (data.guestId) tokenByGuestId.set(data.guestId, doc.id); });
+                const missing = guests.filter(doc => !tokenByGuestId.has(doc.id));
+                let created = 0;
+                for (let start = 0; start < missing.length; start += 400) {
+                    const batch = db.batch(); const chunk = missing.slice(start, start + 400);
+                    chunk.forEach(guestDoc => {
+                        const data = guestDoc.data();
+                        const token = Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
+                        batch.set(db.collection('cancellation_tokens').doc(token), { guestId: guestDoc.id, name: data.name, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                        tokenByGuestId.set(guestDoc.id, token);
+                    });
+                    await batch.commit(); created += chunk.length;
+                }
+                const rows = [['Guest name', 'Guest record ID', 'Cancellation link']];
+                guests.forEach(doc => { const token = tokenByGuestId.get(doc.id); if (token) { const link = new URL('/remove.html', window.location.origin); link.searchParams.set('token', token); rows.push([String((doc.data() || {}).name || ''), doc.id, link.toString()]); } });
+                const csv = rows.map(row => row.map(value => '"' + String(value).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+                const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' }));
+                const download = document.createElement('a'); download.href = url; download.download = 'private-cancellation-links-' + new Date().toISOString().slice(0, 10) + '.csv';
+                document.body.appendChild(download); download.click(); download.remove(); URL.revokeObjectURL(url);
+                if (status) status.textContent = 'Done: ' + created + ' new links created; CSV exported for ' + guests.length + ' website RSVPs.';
+            } catch (error) {
+                console.error('Cancellation token backfill failed:', error);
+                if (status) status.textContent = 'Backfill failed. Confirm the latest Firestore rules are published, then retry.';
+                window.alert('Could not generate cancellation links. Verify Firestore rules are published, then retry.');
+            } finally { button.disabled = false; }
+        }
         function loadLiveGuestlist() {
             const listError = document.getElementById('guestlistError');
             if (!db) {
@@ -5460,6 +5506,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 workflowCheckbox.disabled = false;
             }
         });
+
+        const backfillCancellationTokensBtn = document.getElementById('backfillCancellationTokensBtn');
+        if (backfillCancellationTokensBtn) backfillCancellationTokensBtn.addEventListener('click', backfillCancellationTokens);
 
         document.getElementById('createDatabaseBackupBtn').addEventListener('click', downloadDatabaseBackup);
         document.getElementById('restoreDatabaseBackupBtn').addEventListener('click', restoreSelectedDatabaseBackup);
