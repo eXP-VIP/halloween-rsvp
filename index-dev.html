@@ -1060,6 +1060,14 @@
 
 
                     <div id="guestManagementPage" class="hidden">
+                        <section id="cancellationRequestsPanel" class="staff-panel mb-4" aria-labelledby="cancellationRequestsHeading">
+                            <div class="staff-panel__header">
+                                <h4 id="cancellationRequestsHeading" class="staff-panel__title">RSVP cancellation requests</h4>
+                                <span id="cancellationRequestsCount" class="staff-panel__meta">Loading…</span>
+                            </div>
+                            <p class="text-xs text-gray-300 mb-3">Guests have been told their RSVP is cancelled. Review each request here and remove the matching website registration when appropriate.</p>
+                            <div id="cancellationRequestsList" class="space-y-3"><p class="text-xs text-gray-400">Loading cancellation requests…</p></div>
+                        </section>
                         <section id="duplicateReviewPanel" class="staff-panel mb-4" aria-labelledby="duplicateReviewHeading">
                             <div class="staff-panel__header">
                                 <h4 id="duplicateReviewHeading" class="staff-panel__title">Possible duplicate guests</h4>
@@ -1414,6 +1422,7 @@
                 guestlistSnapshotHandler(cachedGuestSnapshot);
             } else {
                 loadLiveGuestlist();
+                loadCancellationRequests();
             }
         }
         /** Use Firestore timestamps in live mode and serializable local timestamps in test mode. */
@@ -2972,6 +2981,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         /** Return the interface to the staff login state and hide role-protected tools. */
         function showStaffLogin() {
             activeStaffUid = null;
+            if (cancellationRequestsUnsubscribe) { cancellationRequestsUnsubscribe(); cancellationRequestsUnsubscribe = null; }
             currentStaffRole = null;
             activeStaffPage = 'overview';
             // Discard all simulated check-in/payment/drink changes when the staff session ends.
@@ -3434,6 +3444,67 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
         /** Subscribe to workflow settings, pricing settings and guest changes, caching snapshots for consistent renders. */
         // Live subscriptions retain unsubscribe handles so they can be stopped when a staff session ends.
+
+        let cancellationRequestsUnsubscribe = null;
+
+        /** Subscribe to the public cancellation queue for verified Admin staff only. */
+        function loadCancellationRequests() {
+            const list = document.getElementById('cancellationRequestsList');
+            const count = document.getElementById('cancellationRequestsCount');
+            if (!db || currentStaffRole !== 'admin') {
+                if (count) count.textContent = 'Admin only';
+                if (list) list.textContent = 'Cancellation requests are visible to Admin staff only.';
+                return;
+            }
+            if (cancellationRequestsUnsubscribe) return;
+            cancellationRequestsUnsubscribe = db.collection('cancellation_requests').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+                const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const pending = requests.filter(item => item.status !== 'completed');
+                if (count) count.textContent = pending.length + ' pending · ' + requests.length + ' total';
+                if (!list) return;
+                list.replaceChildren();
+                if (!requests.length) { list.textContent = 'No cancellation requests yet.'; return; }
+                requests.forEach((item) => {
+                    const card = document.createElement('div');
+                    card.className = 'rounded-lg border border-gray-700 bg-black/20 p-3';
+                    const heading = document.createElement('div');
+                    heading.className = 'flex flex-wrap items-center justify-between gap-2 font-semibold text-white';
+                    const name = document.createElement('span'); name.textContent = item.name || '(No name supplied)';
+                    const state = document.createElement('span');
+                    state.className = item.status === 'completed' ? 'text-xs text-green-300' : 'text-xs text-amber-200';
+                    state.textContent = item.status === 'completed' ? 'Completed' : 'Pending deletion';
+                    heading.append(name, state); card.appendChild(heading);
+                    const details = document.createElement('p'); details.className = 'text-xs text-gray-400 mt-1';
+                    const created = item.createdAt && typeof item.createdAt.toDate === 'function' ? item.createdAt.toDate().toLocaleString() : 'Date unavailable';
+                    details.textContent = 'Requested: ' + created; card.appendChild(details);
+                    if (item.status !== 'completed') {
+                        const done = document.createElement('button'); done.type = 'button'; done.className = 'sort-option mt-3'; done.textContent = 'Mark completed';
+                        done.addEventListener('click', async () => {
+                            if (!window.confirm('Mark the cancellation request for ' + (item.name || 'this guest') + ' as completed? Only do this after removing the matching website registration.')) return;
+                            done.disabled = true;
+                            try {
+                                await db.collection('cancellation_requests').doc(item.id).update({
+                                    status: 'completed',
+                                    completedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                    completedBy: activeStaffUid || ''
+                                });
+                            } catch (error) {
+                                console.error('Could not complete cancellation request:', error);
+                                window.alert('Could not update this request. Check Firestore permissions and try again.');
+                                done.disabled = false;
+                            }
+                        });
+                        card.appendChild(done);
+                    }
+                    list.appendChild(card);
+                });
+            }, (error) => {
+                console.error('Cancellation request subscription failed:', error);
+                if (count) count.textContent = 'Unavailable';
+                if (list) list.textContent = 'Could not load cancellation requests. Check Firestore rules and your Admin access.';
+            });
+        }
+
         function loadLiveGuestlist() {
             const listError = document.getElementById('guestlistError');
             if (!db) {
