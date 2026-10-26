@@ -1192,7 +1192,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.27.87</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.27.88</p>
         </div>
     </footer>
 
@@ -3477,7 +3477,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     if (!candidatesByKey.has(key)) candidatesByKey.set(key, { key, name, docs: [] });
                     candidatesByKey.get(key).docs.push(doc);
                 });
-                const candidates = Array.from(candidatesByKey.values());
+                const candidates = Array.from(candidatesByKey.values()).sort((a, b) => a.name.localeCompare(b.name));
                 const levenshteinDistance = (a, b) => {
                     const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
                     for (let i = 1; i <= a.length; i++) {
@@ -3493,7 +3493,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
                 requests.forEach((item) => {
                     const card = document.createElement('div');
-                    card.className = 'rounded-lg border border-gray-700 bg-black/20 p-3 space-y-2';
+                    card.className = 'rounded-lg border border-gray-700 bg-black/20 p-3 space-y-3';
                     const heading = document.createElement('div');
                     heading.className = 'flex flex-wrap items-center justify-between gap-2 font-semibold text-white';
                     const name = document.createElement('span'); name.textContent = item.name || '(No name supplied)';
@@ -3509,73 +3509,117 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     const requestKey = normalizeGuestName(item.name);
                     const ranked = candidates.map(candidate => {
                         const distance = levenshteinDistance(requestKey, candidate.key);
-                        const maxLength = Math.max(requestKey.length, candidate.key.length, 1);
-                        const similarity = 1 - distance / maxLength;
+                        const similarity = 1 - distance / Math.max(requestKey.length, candidate.key.length, 1);
                         const aWords = requestKey.split(/\s+/).filter(Boolean);
                         const bWords = candidate.key.split(/\s+/).filter(Boolean);
                         const sharedWord = aWords.some(word => bWords.includes(word));
                         return { ...candidate, similarity, plausible: candidate.key === requestKey || similarity >= 0.68 || (sharedWord && similarity >= 0.48) };
                     }).filter(candidate => candidate.plausible)
                       .sort((a, b) => (b.key === requestKey) - (a.key === requestKey) || b.similarity - a.similarity || a.name.localeCompare(b.name));
-                    const actionArea = document.createElement('div');
-                    actionArea.className = 'space-y-2';
-                    const select = document.createElement('select');
-                    select.className = 'w-full rounded-md border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white';
-                    select.setAttribute('aria-label', 'Select the registered guest matching cancellation request for ' + (item.name || 'unnamed guest'));
-                    const placeholder = document.createElement('option');
-                    placeholder.value = ''; placeholder.textContent = 'Select a matching registration…';
-                    select.appendChild(placeholder);
-                    const addOption = (candidate, label) => {
-                        const option = document.createElement('option');
-                        option.value = candidate.key;
-                        option.textContent = label || (candidate.name + (candidate.docs.length > 1 ? ' · ' + candidate.docs.length + ' records' : ''));
-                        select.appendChild(option);
-                    };
-                    ranked.forEach(candidate => addOption(candidate, candidate.name + (candidate.key === requestKey ? ' · exact match' : ' · ' + Math.round(candidate.similarity * 100) + '% similar') + (candidate.docs.length > 1 ? ' · ' + candidate.docs.length + ' records' : '')));
-                    const manual = document.createElement('details');
-                    manual.className = 'rounded-md border border-gray-600/70 p-2';
-                    const summary = document.createElement('summary');
-                    summary.className = 'cursor-pointer text-xs font-medium text-gray-200';
-                    summary.textContent = 'Search all registrations for a match';
+
+                    const matchConfirmation = document.createElement('div');
+                    matchConfirmation.className = 'hidden rounded-lg border border-amber-300/40 bg-amber-950/30 p-3 space-y-2';
+                    const matchQuestion = document.createElement('p');
+                    matchQuestion.className = 'text-sm font-medium text-amber-100';
+                    const matchActions = document.createElement('div');
+                    matchActions.className = 'flex flex-wrap gap-2';
+                    const confirmMatch = document.createElement('button');
+                    confirmMatch.type = 'button';
+                    confirmMatch.className = 'rounded-md bg-amber-300 px-3 py-2 text-sm font-semibold text-black';
+                    confirmMatch.textContent = 'Yes, this is the correct RSVP';
+                    const rejectMatch = document.createElement('button');
+                    rejectMatch.type = 'button';
+                    rejectMatch.className = 'rounded-md border border-gray-500 px-3 py-2 text-sm text-gray-100';
+                    rejectMatch.textContent = 'No, choose another';
+                    matchActions.append(confirmMatch, rejectMatch);
+                    matchConfirmation.append(matchQuestion, matchActions);
+                    card.appendChild(matchConfirmation);
+
+                    const manual = document.createElement('div');
+                    manual.className = 'space-y-2';
+                    const manualHeading = document.createElement('p');
+                    manualHeading.className = 'text-sm font-semibold text-gray-100';
+                    manualHeading.textContent = 'Match manually to any RSVP';
+                    const manualHelp = document.createElement('p');
+                    manualHelp.className = 'text-xs text-gray-400';
+                    manualHelp.textContent = ranked.length
+                        ? 'Possible matches are listed first. Search all registrations if needed.'
+                        : 'No close match found. Search all registrations to find the correct person.';
                     const search = document.createElement('input');
-                    search.type = 'search'; search.placeholder = 'Search registered names…';
-                    search.className = 'mt-2 w-full rounded-md border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white';
+                    search.type = 'search';
+                    search.placeholder = 'Search registered names…';
+                    search.className = 'w-full rounded-md border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white';
                     search.setAttribute('aria-label', 'Search all registrations for cancellation request ' + (item.name || 'unnamed guest'));
                     const results = document.createElement('div');
-                    results.className = 'mt-2 flex max-h-40 flex-col gap-1 overflow-y-auto';
+                    results.className = 'flex max-h-48 flex-col gap-1 overflow-y-auto';
+                    manual.append(manualHeading, manualHelp, search, results);
+                    card.appendChild(manual);
+
+                    const deleteArea = document.createElement('div');
+                    deleteArea.className = 'hidden space-y-2';
+                    const deleteButton = document.createElement('button');
+                    deleteButton.type = 'button';
+                    deleteButton.className = 'sort-option';
+                    deleteButton.textContent = 'Delete matching registration';
+                    const deleteNote = document.createElement('p');
+                    deleteNote.className = 'text-xs text-amber-100';
+                    deleteArea.append(deleteButton, deleteNote);
+                    card.appendChild(deleteArea);
+
+                    let selectedCandidate = null;
+                    let confirmedCandidate = null;
+                    const showCandidateConfirmation = candidate => {
+                        selectedCandidate = candidate;
+                        confirmedCandidate = null;
+                        matchQuestion.textContent = 'Is "' + candidate.name + '" the correct RSVP for cancellation request "' + (item.name || '(No name supplied)') + '"?';
+                        matchConfirmation.classList.remove('hidden');
+                        deleteArea.classList.add('hidden');
+                    };
                     const renderSearch = () => {
                         results.replaceChildren();
                         const query = normalizeGuestName(search.value);
-                        const matches = candidates.filter(candidate => !query || candidate.key.includes(query)).slice(0, 40);
+                        const filtered = query
+                            ? candidates.filter(candidate => candidate.key.includes(query) || candidate.name.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase()))
+                            : ranked.length ? ranked : candidates;
+                        const matches = filtered.slice(0, 40);
                         if (!matches.length) {
-                            const empty = document.createElement('p'); empty.className = 'text-xs text-gray-400 py-2';
+                            const empty = document.createElement('p');
+                            empty.className = 'text-xs text-gray-400 py-2';
                             empty.textContent = 'No registrations match this search.';
-                            results.appendChild(empty); return;
+                            results.appendChild(empty);
+                            return;
                         }
                         matches.forEach(candidate => {
-                            const button = document.createElement('button'); button.type = 'button';
+                            const button = document.createElement('button');
+                            button.type = 'button';
                             button.className = 'w-full rounded-md border border-gray-600 px-3 py-2 text-left text-sm text-gray-100 hover:bg-white/10';
-                            button.textContent = candidate.name + (candidate.docs.length > 1 ? ' · ' + candidate.docs.length + ' records' : '');
-                            button.addEventListener('click', () => { select.value = candidate.key; });
+                            const isSuggested = ranked.some(entry => entry.key === candidate.key);
+                            const label = candidate.name + (candidate.docs.length > 1 ? ' · ' + candidate.docs.length + ' records' : '') +
+                                (isSuggested && !query ? (candidate.key === requestKey ? ' · exact match' : ' · possible match') : '');
+                            button.textContent = label;
+                            button.addEventListener('click', () => showCandidateConfirmation(candidate));
                             results.appendChild(button);
                         });
                     };
                     search.addEventListener('input', renderSearch);
-                    manual.append(summary, search, results);
-                    const matchHint = document.createElement('p');
-                    matchHint.className = 'text-xs text-amber-100';
-                    matchHint.textContent = ranked.length
-                        ? 'Possible matches are suggested below. Verify the name before deleting; no registration is removed automatically.'
-                        : 'No close match found. Search all registrations to find the correct person.';
-                    const deleteButton = document.createElement('button');
-                    deleteButton.type = 'button'; deleteButton.className = 'sort-option';
-                    deleteButton.textContent = 'Delete matching registration';
-                    deleteButton.disabled = true;
-                    select.addEventListener('change', () => { deleteButton.disabled = !select.value; });
+                    confirmMatch.addEventListener('click', () => {
+                        if (!selectedCandidate) return;
+                        confirmedCandidate = selectedCandidate;
+                        matchQuestion.textContent = 'Match confirmed: "' + confirmedCandidate.name + '" (' + confirmedCandidate.docs.length + ' registration record' + (confirmedCandidate.docs.length === 1 ? '' : 's') + ').';
+                        matchActions.classList.add('hidden');
+                        deleteNote.textContent = 'The match has been confirmed. Delete only after checking the selected name.';
+                        deleteArea.classList.remove('hidden');
+                    });
+                    rejectMatch.addEventListener('click', () => {
+                        selectedCandidate = null;
+                        confirmedCandidate = null;
+                        matchConfirmation.classList.add('hidden');
+                        matchActions.classList.remove('hidden');
+                        deleteArea.classList.add('hidden');
+                    });
                     deleteButton.addEventListener('click', async () => {
-                        if (currentStaffRole !== 'admin' || !db) return;
-                        const candidate = candidates.find(entry => entry.key === select.value);
-                        if (!candidate) return;
+                        if (currentStaffRole !== 'admin' || !db || !confirmedCandidate) return;
+                        const candidate = confirmedCandidate;
                         const message = 'Delete the website registration for "' + candidate.name + '" (' + candidate.docs.length + ' matching record' + (candidate.docs.length === 1 ? '' : 's') + ') in response to cancellation request "' + (item.name || '(No name supplied)') + '"? This cannot be undone.';
                         if (!window.confirm(message)) return;
                         deleteButton.disabled = true; deleteButton.textContent = 'Deleting…';
@@ -3594,8 +3638,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                             deleteButton.disabled = false; deleteButton.textContent = 'Delete matching registration';
                         }
                     });
-                    actionArea.append(matchHint, select, manual, deleteButton);
-                    card.appendChild(actionArea);
+                    renderSearch();
                     list.appendChild(card);
                 });
             }, (error) => {
