@@ -408,17 +408,20 @@ exports.removeWebsiteRsvp = region.https.onCall(async (data, context) => {
       clean(guest.name) === name;
   });
 
-  if (matches.length !== 1) {
-    // Do not reveal whether a name exists or whether it belongs to a protected member record.
-    throw httpsError("not-found", "We could not verify one matching website registration. Check the details or contact the event organiser.");
+  if (matches.length === 0) {
+    throw httpsError("not-found", "We could not find a matching website registration. Check the full name or contact the event organiser.");
   }
 
-  const guest = matches[0].data() || {};
-  if (guest.checkedIn === true || guest.paid === true) {
+  if (matches.some(doc => {
+    const guest = doc.data() || {};
+    return guest.checkedIn === true || guest.paid === true;
+  })) {
     throw httpsError("failed-precondition", "This registration needs to be handled by the event organiser. Please contact the organiser rather than removing it online.");
   }
 
-  await matches[0].ref.delete();
-  return { success: true };
+  for (const match of matches) {
+    await match.ref.delete();
+  }
+  return { success: true, removedCount: matches.length };
 });
 
