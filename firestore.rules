@@ -164,6 +164,27 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Public visitors may submit a cancellation request, but cannot read or alter requests.
+    // Existing guest deletion permissions remain unchanged.
+    match /cancellation_requests/{requestId} {
+      allow create: if request.resource.data.keys().hasAll(['name', 'status', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['name', 'status', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time;
+      allow get, list: if isAdmin();
+      allow update: if isAdmin()
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'completedAt', 'completedBy'])
+        && request.resource.data.status == 'completed'
+        && request.resource.data.completedAt == request.time
+        && request.resource.data.completedBy is string
+        && request.resource.data.completedBy.size() <= 128;
+      allow delete: if false;
+    }
+
     // Workflow and pricing settings are visible to active staff but writable only by an Admin.
     match /event_settings/{settingId} {
       allow read: if isActiveStaff();
