@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#08080a"><meta name="robots" content="noindex,nofollow">
+<title>Remove RSVP | The Dean After Dark (DEV)</title>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<style>
+:root{color-scheme:dark;--gold:#e7c779;--bg:#08080a;--panel:#151416;--muted:#b8b4b0}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#292016 0,var(--bg) 58%);color:#f7f4ef;font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;display:flex;justify-content:center;align-items:center;padding:24px}
+main{width:100%;max-width:520px;background:rgba(21,20,22,.94);border:1px solid #8b6b35;border-radius:18px;padding:28px;box-shadow:0 18px 60px #0008}
+.eyebrow{color:var(--gold);font-size:12px;letter-spacing:.2em;text-transform:uppercase;text-align:center;margin:0 0 8px}
+h1{font-family:Georgia,serif;text-transform:uppercase;letter-spacing:.07em;text-align:center;font-size:clamp(25px,6vw,34px);line-height:1.2;margin:0 0 14px}
+.intro{color:#ddd8d0;text-align:center;font-size:14px;margin:0 0 24px}
+label{display:block;font-size:13px;color:var(--gold);margin:16px 0 7px}
+input{width:100%;border:1px solid #5d5140;border-radius:8px;background:#0d0c0d;color:white;padding:13px;font:inherit}
+input:focus{outline:2px solid var(--gold);outline-offset:2px}
+button{width:100%;margin-top:22px;border:1px solid var(--gold);border-radius:8px;padding:14px;background:var(--gold);color:#17120a;font-weight:750;text-transform:uppercase;letter-spacing:.08em;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}.status{margin-top:18px;padding:13px;border:1px solid #5d5140;border-radius:8px;font-size:14px;white-space:pre-line}
+.hidden{display:none}.back{display:block;text-align:center;margin-top:22px;color:var(--gold);font-size:13px}.note{color:var(--muted);font-size:12px;margin-top:18px}
+</style></head>
+<body><main>
+<p class="eyebrow">The Dean After Dark · Development test</p><h1>Remove your RSVP</h1>
+<p class="intro">Enter the name you used to register. We’ll review your request and remove the matching registration.</p>
+<form id="removeForm"><label for="fullName">Full name used for registration</label><input id="fullName" name="fullName" autocomplete="name" maxlength="120" minlength="2" required><button id="removeButton" type="submit">Request RSVP removal</button></form>
+<div id="status" class="status hidden" role="status" aria-live="polite"></div>
+<p class="note" style="text-align:center">Questions? <a href="https://wa.me/4917681117359" target="_blank" rel="noopener noreferrer" style="color:var(--gold)">Contact Ari on WhatsApp</a></p>
+<a class="back" href="/index-dev.html">← Back to the development event page</a>
+<p style="text-align:center;color:#6f6962;font-size:10px;margin:18px 0 0">Build 2026.10.27.84</p>
+</main>
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyBvcXFzc65H5RyVYUsYa7ANUoxASRWPKZ0",
+    authDomain: "the-dean-munich-halloween.firebaseapp.com",
+    projectId: "the-dean-munich-halloween",
+    storageBucket: "the-dean-munich-halloween.firebasestorage.app",
+    messagingSenderId: "142114750141",
+    appId: "1:142114750141:web:6aa9b1154d3582b91d81d4",
+    measurementId: "G-B28F50SQWD"
+  };
+try { firebase.initializeApp(firebaseConfig); } catch (error) { /* already initialized */ }
+const db = firebase.firestore();
+const form = document.getElementById('removeForm');
+const button = document.getElementById('removeButton');
+const status = document.getElementById('status');
+form.addEventListener('submit', async event => {
+ event.preventDefault();
+ if (!form.reportValidity()) return;
+ const name = document.getElementById('fullName').value.normalize('NFKC').trim().replace(/\\s+/g, ' ');
+ if (name.length < 2 || name.length > 120) { status.textContent = 'Please enter the full name you used to register.'; status.classList.remove('hidden'); return; }
+ button.disabled = true; button.textContent = 'Sending request…'; status.classList.add('hidden');
+ try {
+  await db.collection('cancellation_requests').add({name, status:'pending', createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  form.classList.add('hidden');
+  status.textContent = 'Request received. Your name has been added to the removal list. We’ll review it and remove the matching registration.';
+  status.classList.remove('hidden');
+ } catch (error) {
+  console.error('Cancellation request failed:', error);
+  status.textContent = 'We could not submit your request. Please try again or contact Ari on WhatsApp.';
+  status.classList.remove('hidden');
+ } finally { button.disabled = false; button.textContent = 'Request RSVP removal'; }
+});
+</script></body></html>
