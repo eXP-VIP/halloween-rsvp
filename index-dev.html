@@ -1184,7 +1184,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.26.76</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.26.77</p>
         </div>
     </footer>
 
@@ -1704,18 +1704,14 @@
                 const key = normalizeGuestName(data.name) || doc.id;
                 if (key && !guests.has(key)) guests.set(key, data);
             });
-            const withWelcome = new Set(cachedEstimatedWelcomeDrinkKeys);
-            guests.forEach(data => {
-                const key = normalizeGuestName(data.name);
-                if (!key) return;
-                const rule = pricingSettings.drinkRules[getGuestTier(data)] || { mode: 'not_allowed' };
-                if (rule.mode === 'included' || Boolean(data.welcomeDrinkUpgradeSelected)) withWelcome.add(key);
-                if (basicUpgradeForecastEnabled && getGuestCategory(data) === 'Basics' && rule.mode !== 'included') withWelcome.add(key);
-            });
-            const welcomeDrinkCount = [...guests.values()].reduce((total, data) => {
-                const key = normalizeGuestName(data.name);
-                return total + (key && withWelcome.has(key) ? 1 : 0);
-            }, 0);
+            // Use the same welcome-drink forecast total shown in the statistics block.
+            // This keeps potential and real upgrades, included drinks and referral rewards
+            // consistent with the extra-drink calculation.
+            const welcomeDrinkTotalEl = document.getElementById('drinkEstimateTotal');
+            let welcomeDrinkCount = welcomeDrinkTotalEl
+                ? parseStatAmount(welcomeDrinkTotalEl.textContent)
+                : cachedEstimatedWelcomeDrinkKeys.size;
+            if (!Number.isFinite(welcomeDrinkCount)) welcomeDrinkCount = cachedEstimatedWelcomeDrinkKeys.size;
             const count = Math.max(0, guests.size * multiplier - welcomeDrinkCount);
             output.dataset.fullAttendanceValue = String(count);
             output.textContent = Math.round(count * attendanceForecastRate).toLocaleString('de-DE');
