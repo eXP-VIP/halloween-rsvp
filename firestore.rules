@@ -165,61 +165,14 @@ service cloud.firestore {
     }
 
     // A cancellation token is a 256-bit unguessable bearer secret. Public access is exact-document get only.
-    // A token mapping may be created only atomically with the matching new website guest record.
+    // Admin can list/create mappings for backfill; public visitors cannot enumerate token mappings.
     match /cancellation_tokens/{token} {
-      allow get: if token.matches('^[a-f0-9]{64}
-      allow get, list: if isAdmin();
-      allow update: if isAdmin()
-        && resource.data.status == 'pending'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'completedAt', 'completedBy'])
-        && request.resource.data.status == 'completed'
-        && request.resource.data.completedAt == request.time
-        && request.resource.data.completedBy is string
-        && request.resource.data.completedBy.size() <= 128;
-      allow delete: if false;
-    }
-
-    // Workflow and pricing settings are visible to active staff but writable only by an Admin.
-    match /event_settings/{settingId} {
-      allow read: if isActiveStaff();
-      allow write: if isAdmin();
-    }
-
-    // Legacy unregistered-inviter reward records are retired: referral drinks are for members only.
-    match /welcome_drink_rewards/{rewardId} {
-      allow read, write: if false;
-    }
-  }
-}
-)
+      allow get: if token.matches('^[a-f0-9]{64}$')
         && resource.data.guestId is string
         && resource.data.name is string;
-      allow list, update, delete: if false;
-      allow create: if token.matches('^[a-f0-9]{64}
-      allow get, list: if isAdmin();
-      allow update: if isAdmin()
-        && resource.data.status == 'pending'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'completedAt', 'completedBy'])
-        && request.resource.data.status == 'completed'
-        && request.resource.data.completedAt == request.time
-        && request.resource.data.completedBy is string
-        && request.resource.data.completedBy.size() <= 128;
-      allow delete: if false;
-    }
-
-    // Workflow and pricing settings are visible to active staff but writable only by an Admin.
-    match /event_settings/{settingId} {
-      allow read: if isActiveStaff();
-      allow write: if isAdmin();
-    }
-
-    // Legacy unregistered-inviter reward records are retired: referral drinks are for members only.
-    match /welcome_drink_rewards/{rewardId} {
-      allow read, write: if false;
-    }
-  }
-}
-)
+      allow list: if isAdmin();
+      allow update, delete: if false;
+      allow create: if token.matches('^[a-f0-9]{64}$')
         && request.resource.data.keys().hasAll(['guestId', 'name', 'createdAt'])
         && request.resource.data.keys().hasOnly(['guestId', 'name', 'createdAt'])
         && request.resource.data.guestId is string
@@ -227,8 +180,12 @@ service cloud.firestore {
         && request.resource.data.name.size() >= 2
         && request.resource.data.name.size() <= 120
         && request.resource.data.createdAt == request.time
-        && getAfter(/databases/$(database)/documents/halloween_guests/$(request.resource.data.guestId)).data.name == request.resource.data.name
-        && getAfter(/databases/$(database)/documents/halloween_guests/$(request.resource.data.guestId)).data.source == 'website';
+        && (isAdmin() || (
+          !exists(/databases/$(database)/documents/halloween_guests/$(request.resource.data.guestId))
+          && existsAfter(/databases/$(database)/documents/halloween_guests/$(request.resource.data.guestId))
+          && getAfter(/databases/$(database)/documents/halloween_guests/$(request.resource.data.guestId)).data.name == request.resource.data.name
+          && getAfter(/databases/$(database)/documents/halloween_guests/$(request.resource.data.guestId)).data.source == 'website'
+        ));
     }
 
     // Public visitors may submit a cancellation request only for a valid private token/name pair.
@@ -240,31 +197,7 @@ service cloud.firestore {
         && request.resource.data.name.size() >= 2
         && request.resource.data.name.size() <= 120
         && request.resource.data.token is string
-        && request.resource.data.token.matches('^[a-f0-9]{64}
-      allow get, list: if isAdmin();
-      allow update: if isAdmin()
-        && resource.data.status == 'pending'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'completedAt', 'completedBy'])
-        && request.resource.data.status == 'completed'
-        && request.resource.data.completedAt == request.time
-        && request.resource.data.completedBy is string
-        && request.resource.data.completedBy.size() <= 128;
-      allow delete: if false;
-    }
-
-    // Workflow and pricing settings are visible to active staff but writable only by an Admin.
-    match /event_settings/{settingId} {
-      allow read: if isActiveStaff();
-      allow write: if isAdmin();
-    }
-
-    // Legacy unregistered-inviter reward records are retired: referral drinks are for members only.
-    match /welcome_drink_rewards/{rewardId} {
-      allow read, write: if false;
-    }
-  }
-}
-)
+        && request.resource.data.token.matches('^[a-f0-9]{64}$')
         && exists(/databases/$(database)/documents/cancellation_tokens/$(request.resource.data.token))
         && get(/databases/$(database)/documents/cancellation_tokens/$(request.resource.data.token)).data.name == request.resource.data.name
         && request.resource.data.status == 'pending'
