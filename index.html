@@ -746,26 +746,15 @@
                     <section id="postRegistrationActions" class="hidden w-full max-w-xl rounded-xl border-2 border-emerald-500/50 bg-emerald-950/40 p-5 sm:p-6 text-center shadow-lg shadow-black/20" aria-labelledby="futurePartyHeading">
                         <p class="text-emerald-300 text-xs font-bold uppercase tracking-[0.2em] mb-2"><i class="fa-solid fa-calendar-check mr-2"></i>Keep the date</p>
                         <h3 id="futurePartyHeading" class="font-serif text-base sm:text-lg uppercase tracking-wider text-white mb-3">Want a reminder and future invitations?</h3>
-                        <div class="mt-5 space-y-4 text-left">
-                            <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-lg border border-emerald-500/25 bg-black/20 p-4">
-                                <div>
-                                    <h4 class="font-semibold text-sm text-white mb-1">WhatsApp reminders and invitations</h4>
-                                    <p class="text-xs sm:text-sm text-gray-200 leading-relaxed">Join the private Exclusive Parties (eXP) WhatsApp group for a reminder a few days before the party and invitations to future events. Leave anytime. Admin-only announcements, maximum two posts per month, no chat and a hidden members list.</p>
-                                </div>
-                                <div class="w-full md:w-auto">
-                                    <a href="#" id="groupInviteLink" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn hidden w-full md:w-auto justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-whatsapp"></i> Join WhatsApp Group</a>
-                                </div>
+                        <div class="mt-5 flex flex-col items-center gap-4">
+                            <p class="text-sm text-gray-100 leading-relaxed">Join the private Exclusive Parties (eXP) WhatsApp group for a reminder a few days before the party and invitations to future events. Leave anytime. Admin-only announcements, maximum 2 per month, no chat and hidden members.</p>
+                            <a href="#" id="groupInviteLink" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn hidden inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-whatsapp"></i> Join WhatsApp Group</a>
+                            <p class="text-sm text-gray-100 leading-relaxed mt-2">No WhatsApp? Add a calendar reminder instead.</p>
+                            <div class="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
+                                <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=The%20Dean%20After%20Dark%20%E2%80%93%20Halloween%20Soir%C3%A9e&amp;dates=20261031T180000/20261101T020000&amp;ctz=Europe%2FBerlin&amp;details=Private%20Halloween%20soir%C3%A9e.%20%E2%82%AC20%20cash%20at%20the%20door%2C%20including%20one%20welcome%20drink.%20Event%20details%20and%20guest%20list%3A%20https%3A%2F%2Fexp-vip.github.io%2Fhalloween-rsvp%2F&amp;location=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" id="googleCalendarLink" target="_blank" rel="noopener noreferrer" class="calendar-option-btn w-full sm:w-auto"><i class="fa-brands fa-google"></i> Add Calendar Reminder</a>
+                                <button type="button" id="calendarDownloadBtn" class="calendar-option-btn w-full sm:w-auto"><i class="fa-solid fa-calendar-plus"></i> Other calendars (.ics)</button>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_235px] items-center gap-4 rounded-lg border border-yellow-500/20 bg-black/20 p-4">
-                                <div>
-                                    <h4 class="font-semibold text-sm text-white mb-1">Calendar reminder</h4>
-                                    <p class="text-xs sm:text-sm text-gray-200 leading-relaxed">Prefer not to use WhatsApp? Add the party to Google Calendar or download the .ics file for another calendar app. The file includes the venue, event details and a reminder three days before the party.</p>
-                                </div>
-                                <div class="flex flex-col gap-3 w-full">
-                                    <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=The%20Dean%20After%20Dark%20%E2%80%93%20Halloween%20Soir%C3%A9e&amp;dates=20261031T180000/20261101T020000&amp;ctz=Europe%2FBerlin&amp;details=Private%20Halloween%20soir%C3%A9e.%20%E2%82%AC20%20cash%20at%20the%20door%2C%20including%20one%20welcome%20drink.%20Event%20details%20and%20guest%20list%3A%20https%3A%2F%2Fexp-vip.github.io%2Fhalloween-rsvp%2F&amp;location=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" id="googleCalendarLink" target="_blank" rel="noopener noreferrer" class="calendar-option-btn w-full"><i class="fa-brands fa-google"></i> Add Calendar Reminder</a>
-                                    <button type="button" id="calendarDownloadBtn" class="calendar-option-btn w-full"><i class="fa-solid fa-calendar-plus"></i> Other calendars (.ics)</button>
-                                </div>
-                            </div>
+                            <p class="text-xs text-emerald-100 leading-relaxed text-center">The calendar file includes the venue, event details and a reminder three days before the party.</p>
                         </div>
                     </section>
                     <button type="button" id="registerAnotherBtn" class="text-xs uppercase tracking-wider text-gray-200 underline underline-offset-4 hover:text-gold">Register another guest</button>
@@ -1199,7 +1188,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Build 2026.10.26.81</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Build 2026.10.26.82</p>
         </div>
     </footer>
 
