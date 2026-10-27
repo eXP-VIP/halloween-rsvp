@@ -690,8 +690,32 @@
 
         <section class="glass-panel rounded-2xl p-5 sm:p-7 mb-7 sm:mb-9 gold-border" aria-labelledby="dinner-before-party">
             <h2 id="dinner-before-party" class="font-serif text-xl text-white uppercase tracking-wider mb-3"><i class="fa-solid fa-utensils mr-2 text-gold"></i>Dinner before the party</h2>
-            <p class="text-gray-100 text-sm sm:text-base leading-relaxed font-light">Thinking of having something special to eat before the party? Ibasho, The Dean’s Japanese signature restaurant, serves refined Japanese cuisine, including sushi and other specialities. Enjoy some premium Japanese food before entering the party in the next room. Small bites will also be available at the bar during the evening. We’re arranging a special offer for party guests, with details to follow.</p>
+            <p class="text-gray-100 text-sm sm:text-base leading-relaxed font-light">Thinking of having something special to eat before the party? Ibasho, The Dean’s Japanese signature restaurant, offers a special 8-course dinner featuring fresh seafood and sushi, pumpkin specialities, robata-grilled beef and mochi. Small bites will also be available at the bar during the evening.</p>
+            <button type="button" onclick="openHalloweenDinnerMenu()" class="mt-4 inline-flex items-center rounded-lg border border-gold px-4 py-2 text-sm font-semibold text-gold hover:bg-gold hover:text-black transition-colors"><i class="fa-solid fa-book-open mr-2"></i>Discover the 8-course menu</button>
         </section>
+
+        <div id="halloween-dinner-menu" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="halloween-dinner-title" onclick="if(event.target===this) closeHalloweenDinnerMenu()">
+            <div class="glass-panel gold-border w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl p-5 sm:p-7 shadow-2xl">
+                <div class="flex items-start justify-between gap-4 mb-5">
+                    <h2 id="halloween-dinner-title" class="font-serif text-xl sm:text-2xl text-white uppercase tracking-wider">Halloween Dinner Menu</h2>
+                    <button type="button" onclick="closeHalloweenDinnerMenu()" aria-label="Close menu" class="text-gray-300 hover:text-white text-2xl leading-none">&times;</button>
+                </div>
+                <p class="text-gold font-semibold text-lg mb-1">€79 per person</p>
+                <p class="text-gray-300 text-sm mb-5">Including a welcome drink. This special price is exclusively for party guests.</p>
+                <ol class="space-y-3 text-gray-100 text-sm sm:text-base list-decimal list-inside">
+                    <li>Edamame</li>
+                    <li>Nashi Pear Salad with Goma Tofu Dressing</li>
+                    <li>Salmon · Yellowtail · Sea Bass with Yuzu Soy Sauce and Sesame Oil</li>
+                    <li>Kaisen Roll with Shiso Miso</li>
+                    <li>Pumpkin Gyoza</li>
+                    <li>Hokkaido Pumpkin Tempura with Butter Ponzu and Matcha Sea Salt</li>
+                    <li>Beef Skewer · Robata Yaki</li>
+                    <li>Mochi Selection</li>
+                </ol>
+                <a href="https://ibashomunich.com/" target="_blank" rel="noopener noreferrer" class="mt-6 inline-flex items-center justify-center rounded-lg bg-gold px-5 py-3 text-sm font-bold text-black hover:opacity-90"><i class="fa-solid fa-calendar-check mr-2"></i>Reserve a table</a>
+                <p class="text-gray-400 text-xs mt-3">Please mention that you are attending the party to receive the special price.</p>
+            </div>
+        </div>
 
         <!-- Event concept, space descriptions and venue imagery. -->
         <section class="glass-panel rounded-2xl p-5 sm:p-9 mb-7 sm:mb-9 gold-border">
@@ -1192,11 +1216,30 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.27.91</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.27.92</p>
         </div>
     </footer>
 
     <script>
+        function openHalloweenDinnerMenu() {
+            const modal = document.getElementById('halloween-dinner-menu');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+            const closeButton = modal.querySelector('button[aria-label="Close menu"]');
+            if (closeButton) closeButton.focus();
+        }
+        function closeHalloweenDinnerMenu() {
+            const modal = document.getElementById('halloween-dinner-menu');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') closeHalloweenDinnerMenu();
+        });
         // UI helpers are grouped by domain; Firestore security rules enforce staff permissions.
         // Existing Firebase web-app configuration. These values connect to the original project.
         const firebaseConfig = {
