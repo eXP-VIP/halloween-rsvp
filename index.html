@@ -690,8 +690,32 @@
 
         <section class="glass-panel rounded-2xl p-5 sm:p-7 mb-7 sm:mb-9 gold-border" aria-labelledby="dinner-before-party">
             <h2 id="dinner-before-party" class="font-serif text-xl text-white uppercase tracking-wider mb-3"><i class="fa-solid fa-utensils mr-2 text-gold"></i>Dinner before the party</h2>
-            <p class="text-gray-100 text-sm sm:text-base leading-relaxed font-light">Thinking of having something special to eat before the party? Ibasho, The Dean’s Japanese signature restaurant, serves refined Japanese cuisine, including sushi and other specialities. Enjoy some premium Japanese food before entering the party in the next room. Small bites will also be available at the bar during the evening. We’re arranging a special offer for party guests, with details to follow.</p>
+            <p class="text-gray-100 text-sm sm:text-base leading-relaxed font-light">Thinking of making your evening extra special? Start the night with a Japanese culinary experience at Ibasho, The Dean’s signature restaurant. Especially curated for our party guests, this 8-course dinner features fresh seafood and sushi, seasonal pumpkin specialities, robata-grilled beef and mochi.</p>
+            <button type="button" onclick="openHalloweenDinnerMenu()" class="mt-4 inline-flex items-center rounded-lg border border-gold px-4 py-2 text-sm font-semibold text-gold hover:bg-gold hover:text-black transition-colors"><i class="fa-solid fa-book-open mr-2"></i>Discover the 8-course menu</button>
         </section>
+
+        <div id="halloween-dinner-menu" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="halloween-dinner-title" onclick="if(event.target===this) closeHalloweenDinnerMenu()">
+            <div class="glass-panel gold-border w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl p-5 sm:p-7 shadow-2xl">
+                <div class="flex items-start justify-between gap-4 mb-5">
+                    <h2 id="halloween-dinner-title" class="font-serif text-xl sm:text-2xl text-white uppercase tracking-wider">Halloween Dinner Menu</h2>
+                    <button type="button" onclick="closeHalloweenDinnerMenu()" aria-label="Close menu" class="text-gray-300 hover:text-white text-2xl leading-none">&times;</button>
+                </div>
+                <p class="text-gold font-semibold text-lg mb-1">€79 per person</p>
+                <p class="text-gray-300 text-sm mb-5">Including a welcome drink. This special price is exclusively for party guests.</p>
+                <ol class="space-y-3 text-gray-100 text-sm sm:text-base list-decimal list-inside">
+                    <li>Edamame</li>
+                    <li>Nashi Pear Salad with Goma Tofu Dressing</li>
+                    <li>Salmon · Yellowtail · Sea Bass with Yuzu Soy Sauce and Sesame Oil</li>
+                    <li>Kaisen Roll with Shiso Miso</li>
+                    <li>Pumpkin Gyoza</li>
+                    <li>Hokkaido Pumpkin Tempura with Butter Ponzu and Matcha Sea Salt</li>
+                    <li>Beef Skewer · Robata Yaki</li>
+                    <li>Mochi Selection</li>
+                </ol>
+                <a href="https://ibashomunich.com/" target="_blank" rel="noopener noreferrer" class="mt-6 inline-flex items-center justify-center rounded-lg bg-gold px-5 py-3 text-sm font-bold text-black hover:opacity-90"><i class="fa-solid fa-calendar-check mr-2"></i>Reserve a table</a>
+                <p class="text-gray-400 text-xs mt-3"></p>
+            </div>
+        </div>
 
         <!-- Event concept, space descriptions and venue imagery. -->
         <section class="glass-panel rounded-2xl p-5 sm:p-9 mb-7 sm:mb-9 gold-border">
@@ -746,16 +770,13 @@
                     <section id="postRegistrationActions" class="hidden w-full max-w-xl rounded-xl border-2 border-emerald-500/50 bg-emerald-950/40 p-5 sm:p-6 text-center shadow-lg shadow-black/20" aria-labelledby="futurePartyHeading">
                         <p class="text-emerald-300 text-xs font-bold uppercase tracking-[0.2em] mb-2"><i class="fa-solid fa-calendar-check mr-2"></i>Keep the date</p>
                         <h3 id="futurePartyHeading" class="font-serif text-base sm:text-lg uppercase tracking-wider text-white mb-3">Want a reminder and future invitations?</h3>
-                        <div class="mt-5 flex flex-col items-center gap-4">
-                            <p class="text-sm text-gray-100 leading-relaxed">Join the private Exclusive Parties (eXP) WhatsApp group for a reminder a few days before the party and invitations to future events. Leave anytime. Admin-only announcements, maximum 2 per month, no chat and hidden members.</p>
+                        <p class="text-sm text-gray-100 leading-relaxed">Join the private Exclusive Parties (eXP) WhatsApp group for a reminder a few days before the party and invitations to future events. Leave anytime. Admin-only announcements, maximum 2 posts per month, no chat and a hidden members list. No WhatsApp? Add a calendar reminder instead.</p>
+                        <div class="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 mt-5">
                             <a href="#" id="groupInviteLink" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn hidden inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg uppercase font-serif text-xs tracking-wider"><i class="fa-brands fa-whatsapp"></i> Join WhatsApp Group</a>
-                            <p class="text-sm text-gray-100 leading-relaxed mt-2">No WhatsApp? Add a calendar reminder instead.</p>
-                            <div class="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
-                                <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=The%20Dean%20After%20Dark%20%E2%80%93%20Halloween%20Soir%C3%A9e&amp;dates=20261031T180000/20261101T020000&amp;ctz=Europe%2FBerlin&amp;details=Private%20Halloween%20soir%C3%A9e.%20%E2%82%AC20%20cash%20at%20the%20door%2C%20including%20one%20welcome%20drink.%20Event%20details%20and%20guest%20list%3A%20https%3A%2F%2Fexp-vip.github.io%2Fhalloween-rsvp%2F&amp;location=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" id="googleCalendarLink" target="_blank" rel="noopener noreferrer" class="calendar-option-btn w-full sm:w-auto"><i class="fa-brands fa-google"></i> Add Calendar Reminder</a>
-                                <button type="button" id="calendarDownloadBtn" class="calendar-option-btn w-full sm:w-auto"><i class="fa-solid fa-calendar-plus"></i> Other calendars (.ics)</button>
-                            </div>
-                            <p class="text-xs text-emerald-100 leading-relaxed text-center">The calendar file includes the venue, event details and a reminder three days before the party.</p>
+                            <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=The%20Dean%20After%20Dark%20%E2%80%93%20Halloween%20Soir%C3%A9e&amp;dates=20261031T180000/20261101T020000&amp;ctz=Europe%2FBerlin&amp;details=Private%20Halloween%20soir%C3%A9e.%20%E2%82%AC20%20cash%20at%20the%20door%2C%20including%20one%20welcome%20drink.%20Event%20details%20and%20guest%20list%3A%20https%3A%2F%2Fexp-vip.github.io%2Fhalloween-rsvp%2F&amp;location=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" id="googleCalendarLink" target="_blank" rel="noopener noreferrer" class="calendar-option-btn"><i class="fa-brands fa-google"></i> Add Calendar Reminder</a>
+                            <button type="button" id="calendarDownloadBtn" class="calendar-option-btn"><i class="fa-solid fa-calendar-plus"></i> Other calendars (.ics)</button>
                         </div>
+                        <p class="text-xs text-emerald-100 leading-relaxed mt-4">The calendar file includes the venue, event details and a reminder three days before the party.</p>
                     </section>
                     <button type="button" id="registerAnotherBtn" class="text-xs uppercase tracking-wider text-gray-200 underline underline-offset-4 hover:text-gold">Register another guest</button>
                 </div>
@@ -1064,6 +1085,14 @@
 
 
                     <div id="guestManagementPage" class="hidden">
+                        <section id="cancellationRequestsPanel" class="staff-panel mb-4" aria-labelledby="cancellationRequestsHeading">
+                            <div class="staff-panel__header">
+                                <h4 id="cancellationRequestsHeading" class="staff-panel__title">RSVP cancellation requests</h4>
+                                <span id="cancellationRequestsCount" class="staff-panel__meta">Loading…</span>
+                            </div>
+                            <p class="text-xs text-gray-300 mb-3">Guests have been told their RSVP is cancelled. Review each request here and remove the matching website registration when appropriate.</p>
+                            <div id="cancellationRequestsList" class="space-y-3"><p class="text-xs text-gray-400">Loading cancellation requests…</p></div>
+                        </section>
                         <section id="duplicateReviewPanel" class="staff-panel mb-4" aria-labelledby="duplicateReviewHeading">
                             <div class="staff-panel__header">
                                 <h4 id="duplicateReviewHeading" class="staff-panel__title">Possible duplicate guests</h4>
@@ -1108,7 +1137,7 @@
                         <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules, referral eligibility and the admission workflow. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid.</p>
                         <p id="pricingSaveStatus" class="text-xs text-gray-300 mb-3 min-h-[1rem]" role="status" aria-live="polite"></p>
                         <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
-                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="eventCheckInActive" type="checkbox" class="mt-1 accent-amber-300"><span><strong>Event check-in active (live mode)</strong><span class="block text-xs text-gray-400 mt-1">Inactive: check-in, payment, drink-upgrade and chip actions are temporary in this tab and cleared on sign-out, reload or mode switch. Guest additions and deletions are always permanent. Check-ins, payments, drink upgrades and chip actions are temporary in test mode. Public registrations are always permanent.</span></span></label>
+                            <label class="flex items-start gap-3 text-sm text-gray-100"><input id="eventCheckInActive" type="checkbox" class="mt-1 accent-amber-300"><span><strong>Event check-in active (live mode)</strong><span class="block text-xs text-gray-400 mt-1">Inactive: check-in, payment, drink-upgrade and chip actions are temporary in this tab and cleared on sign-out, reload or mode switch. The first live activation clears legacy operational test statuses but preserves every guest registration, member detail and date. Public registrations are always permanent.</span></span></label>
                             <p id="eventCheckInActiveStatus" role="status" aria-live="polite" class="text-xs text-amber-100 mt-2">Event check-in is inactive. Testing changes are session-only.</p>
                         </div>
                         <div class="rounded-lg border border-gold/25 bg-black/30 p-3 mb-4">
@@ -1188,11 +1217,30 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Build 2026.10.26.85</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.27.95</p>
         </div>
     </footer>
 
     <script>
+        function openHalloweenDinnerMenu() {
+            const modal = document.getElementById('halloween-dinner-menu');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+            const closeButton = modal.querySelector('button[aria-label="Close menu"]');
+            if (closeButton) closeButton.focus();
+        }
+        function closeHalloweenDinnerMenu() {
+            const modal = document.getElementById('halloween-dinner-menu');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') closeHalloweenDinnerMenu();
+        });
         // UI helpers are grouped by domain; Firestore security rules enforce staff permissions.
         // Existing Firebase web-app configuration. These values connect to the original project.
         const firebaseConfig = {
@@ -1419,6 +1467,8 @@
             } else {
                 loadLiveGuestlist();
             }
+            // The cancellation queue is independent of the cached guest-list render.
+            loadCancellationRequests();
         }
         /** Use Firestore timestamps in live mode and serializable local timestamps in test mode. */
         function guestActionTimestamp() {
@@ -2976,6 +3026,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         /** Return the interface to the staff login state and hide role-protected tools. */
         function showStaffLogin() {
             activeStaffUid = null;
+            if (cancellationRequestsUnsubscribe) { cancellationRequestsUnsubscribe(); cancellationRequestsUnsubscribe = null; }
             currentStaffRole = null;
             activeStaffPage = 'overview';
             // Discard all simulated check-in/payment/drink changes when the staff session ends.
@@ -3031,6 +3082,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 document.getElementById('guestlistSection').classList.remove('hidden');
                 document.getElementById('staffLoginError').classList.add('hidden');
                 loadLiveGuestlist();
+                // Start the cancellation queue after the verified staff role is known.
+                loadCancellationRequests();
             })();
             staffActivationPromise = activation;
             try { await activation; }
@@ -3438,6 +3491,258 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
         /** Subscribe to workflow settings, pricing settings and guest changes, caching snapshots for consistent renders. */
         // Live subscriptions retain unsubscribe handles so they can be stopped when a staff session ends.
+
+        let cancellationRequestsUnsubscribe = null;
+
+        /** Subscribe to the public cancellation queue for verified Admin staff only. */
+        function loadCancellationRequests() {
+            const list = document.getElementById('cancellationRequestsList');
+            const count = document.getElementById('cancellationRequestsCount');
+            if (!db || currentStaffRole !== 'admin') {
+                if (count) count.textContent = 'Admin only';
+                if (list) list.textContent = 'Cancellation requests are visible to Admin staff only.';
+                return;
+            }
+            if (cancellationRequestsUnsubscribe) return;
+            cancellationRequestsUnsubscribe = db.collection('cancellation_requests').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+                const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const pending = requests.filter(item => item.status !== 'completed' && item.status !== 'dismissed');
+                if (count) count.textContent = pending.length + ' pending · ' + requests.length + ' total';
+                if (!list) return;
+                list.replaceChildren();
+                if (!requests.length) { list.textContent = 'No cancellation requests yet.'; return; }
+
+                const candidatesByKey = new Map();
+                cachedGuestDocs.forEach(doc => {
+                    const data = doc.data() || {};
+                    const name = sanitizeGuestDisplayName(data.name);
+                    const key = normalizeGuestName(name);
+                    if (!key || !name) return;
+                    if (!candidatesByKey.has(key)) candidatesByKey.set(key, { key, name, docs: [] });
+                    candidatesByKey.get(key).docs.push(doc);
+                });
+                const candidates = Array.from(candidatesByKey.values()).sort((a, b) => a.name.localeCompare(b.name));
+                const levenshteinDistance = (a, b) => {
+                    const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+                    for (let i = 1; i <= a.length; i++) {
+                        let diagonal = previous[0]; previous[0] = i;
+                        for (let j = 1; j <= b.length; j++) {
+                            const above = previous[j];
+                            previous[j] = Math.min(previous[j] + 1, previous[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1));
+                            diagonal = above;
+                        }
+                    }
+                    return previous[b.length];
+                };
+
+                requests.forEach((item) => {
+                    const card = document.createElement('div');
+                    card.className = 'rounded-lg border border-gray-700 bg-black/20 p-3 space-y-3';
+                    const heading = document.createElement('div');
+                    heading.className = 'flex flex-wrap items-center justify-between gap-2 font-semibold text-white';
+                    const name = document.createElement('span'); name.textContent = item.name || '(No name supplied)';
+                    const state = document.createElement('span');
+                    state.className = item.status === 'completed' || item.status === 'dismissed' ? 'text-xs text-green-300' : 'text-xs text-amber-200';
+                    state.textContent = item.status === 'completed' ? 'Completed' : item.status === 'dismissed' ? 'Dismissed' : 'Pending deletion';
+                    heading.append(name, state); card.appendChild(heading);
+                    const details = document.createElement('p'); details.className = 'text-xs text-gray-400';
+                    const created = item.createdAt && typeof item.createdAt.toDate === 'function' ? item.createdAt.toDate().toLocaleString() : 'Date unavailable';
+                    details.textContent = 'Requested: ' + created; card.appendChild(details);
+                    if (item.status === 'completed' || item.status === 'dismissed') { list.appendChild(card); return; }
+
+                    const requestKey = normalizeGuestName(item.name);
+                    const ranked = candidates.map(candidate => {
+                        const distance = levenshteinDistance(requestKey, candidate.key);
+                        const similarity = 1 - distance / Math.max(requestKey.length, candidate.key.length, 1);
+                        const aWords = requestKey.split(/\s+/).filter(Boolean);
+                        const bWords = candidate.key.split(/\s+/).filter(Boolean);
+                        const sharedWord = aWords.some(word => bWords.includes(word));
+                        return { ...candidate, similarity, plausible: candidate.key === requestKey || similarity >= 0.68 || (sharedWord && similarity >= 0.48) };
+                    }).filter(candidate => candidate.plausible)
+                      .sort((a, b) => (b.key === requestKey) - (a.key === requestKey) || b.similarity - a.similarity || a.name.localeCompare(b.name));
+
+                    const matchConfirmation = document.createElement('div');
+                    matchConfirmation.className = 'hidden rounded-lg border border-amber-300/40 bg-amber-950/30 p-3 space-y-2';
+                    const matchQuestion = document.createElement('p');
+                    matchQuestion.className = 'text-sm font-medium text-amber-100';
+                    const matchActions = document.createElement('div');
+                    matchActions.className = 'flex flex-wrap gap-2';
+                    const confirmMatch = document.createElement('button');
+                    confirmMatch.type = 'button';
+                    confirmMatch.className = 'rounded-md bg-amber-300 px-3 py-2 text-sm font-semibold text-black';
+                    confirmMatch.textContent = 'Yes, this is the correct RSVP';
+                    const rejectMatch = document.createElement('button');
+                    rejectMatch.type = 'button';
+                    rejectMatch.className = 'rounded-md border border-gray-500 px-3 py-2 text-sm text-gray-100';
+                    rejectMatch.textContent = 'No, choose another';
+                    matchActions.append(confirmMatch, rejectMatch);
+                    matchConfirmation.append(matchQuestion, matchActions);
+                    card.appendChild(matchConfirmation);
+
+                    const manual = document.createElement('div');
+                    manual.className = 'space-y-2';
+                    const manualHeading = document.createElement('p');
+                    manualHeading.className = 'text-sm font-semibold text-gray-100';
+                    manualHeading.textContent = 'Match manually to any RSVP';
+                    const manualHelp = document.createElement('p');
+                    manualHelp.className = 'text-xs text-gray-400';
+                    manualHelp.textContent = ranked.length
+                        ? 'Review full and partial suggestions below. No match is selected automatically. Search all registrations if needed.'
+                        : 'No full or partial match suggested. Search all registrations to find the correct person.';
+                    const suggestions = document.createElement('div');
+                    suggestions.className = 'flex max-h-48 flex-col gap-1 overflow-y-auto';
+                    if (ranked.length) {
+                        const exact = ranked.filter(candidate => candidate.key === requestKey);
+                        const partial = ranked.filter(candidate => candidate.key !== requestKey);
+                        const appendSuggestionGroup = (label, group) => {
+                            if (!group.length) return;
+                            const groupLabel = document.createElement('p');
+                            groupLabel.className = 'text-xs font-semibold text-gray-300 pt-1';
+                            groupLabel.textContent = label;
+                            suggestions.appendChild(groupLabel);
+                            group.slice(0, 5).forEach(candidate => {
+                                const button = document.createElement('button');
+                                button.type = 'button';
+                                button.className = 'w-full rounded-md border border-gray-600 px-3 py-2 text-left text-sm text-gray-100 hover:bg-white/10';
+                                button.textContent = candidate.name + (candidate.docs.length > 1 ? ' · ' + candidate.docs.length + ' records' : '');
+                                button.addEventListener('click', () => showCandidateConfirmation(candidate));
+                                suggestions.appendChild(button);
+                            });
+                        };
+                        appendSuggestionGroup('Full match', exact);
+                        appendSuggestionGroup('Partial matches', partial);
+                    } else {
+                        const noSuggestion = document.createElement('p');
+                        noSuggestion.className = 'text-xs text-gray-400';
+                        noSuggestion.textContent = 'No full or partial matches suggested.';
+                        suggestions.appendChild(noSuggestion);
+                    }
+                    const search = document.createElement('input');
+                    search.type = 'search';
+                    search.placeholder = 'Search registered names…';
+                    search.className = 'w-full rounded-md border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white';
+                    search.setAttribute('aria-label', 'Search all registrations for cancellation request ' + (item.name || 'unnamed guest'));
+                    const results = document.createElement('div');
+                    results.className = 'flex max-h-48 flex-col gap-1 overflow-y-auto';
+                    manual.append(manualHeading, manualHelp, suggestions, search, results);
+                    card.appendChild(manual);
+
+                    const deleteArea = document.createElement('div');
+                    deleteArea.className = 'hidden space-y-2';
+                    const deleteButton = document.createElement('button');
+                    deleteButton.type = 'button';
+                    deleteButton.className = 'sort-option';
+                    deleteButton.textContent = 'Delete matching registration';
+                    const deleteNote = document.createElement('p');
+                    deleteNote.className = 'text-xs text-amber-100';
+                    deleteArea.append(deleteButton, deleteNote);
+                    card.appendChild(deleteArea);
+
+                    let selectedCandidate = null;
+                    let confirmedCandidate = null;
+                    const showCandidateConfirmation = candidate => {
+                        selectedCandidate = candidate;
+                        confirmedCandidate = null;
+                        matchQuestion.textContent = 'Is "' + candidate.name + '" the correct RSVP for cancellation request "' + (item.name || '(No name supplied)') + '"?';
+                        matchConfirmation.classList.remove('hidden');
+                        deleteArea.classList.add('hidden');
+                    };
+                    const renderSearch = () => {
+                        results.replaceChildren();
+                        const rawQuery = search.value.trim();
+                        const query = normalizeGuestName(rawQuery);
+                        if (!rawQuery) return;
+                        const filtered = candidates.filter(candidate => candidate.key.includes(query) || candidate.name.toLocaleLowerCase().includes(rawQuery.toLocaleLowerCase()));
+                        const matches = filtered.slice(0, 40);
+                        if (!matches.length) {
+                            const empty = document.createElement('p');
+                            empty.className = 'text-xs text-gray-400 py-2';
+                            empty.textContent = 'No registrations match this search.';
+                            results.appendChild(empty);
+                            const dismissButton = document.createElement('button');
+                            dismissButton.type = 'button';
+                            dismissButton.className = 'rounded-md border border-gray-500 px-3 py-2 text-left text-sm text-gray-100 hover:bg-white/10';
+                            dismissButton.textContent = 'Dismiss cancellation request';
+                            dismissButton.addEventListener('click', async () => {
+                                if (currentStaffRole !== 'admin' || !db) return;
+                                if (!window.confirm('No matching registration was found. Dismiss the cancellation request for "' + (item.name || '(No name supplied)') + '" without deleting any RSVP?')) return;
+                                dismissButton.disabled = true;
+                                dismissButton.textContent = 'Dismissing…';
+                                try {
+                                    await db.collection('cancellation_requests').doc(item.id).update({
+                                        status: 'dismissed',
+                                        dismissedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                        dismissedBy: activeStaffUid || ''
+                                    });
+                                } catch (error) {
+                                    console.error('Cancellation request dismissal failed:', error);
+                                    window.alert('Could not dismiss the cancellation request. Check Firestore permissions and try again.');
+                                    dismissButton.disabled = false;
+                                    dismissButton.textContent = 'Dismiss cancellation request';
+                                }
+                            });
+                            results.appendChild(dismissButton);
+                            return;
+                        }
+                        matches.forEach(candidate => {
+                            const button = document.createElement('button');
+                            button.type = 'button';
+                            button.className = 'w-full rounded-md border border-gray-600 px-3 py-2 text-left text-sm text-gray-100 hover:bg-white/10';
+                            const isSuggested = ranked.some(entry => entry.key === candidate.key);
+                            const label = candidate.name + (candidate.docs.length > 1 ? ' · ' + candidate.docs.length + ' records' : '') +
+                                (isSuggested && !query ? (candidate.key === requestKey ? ' · exact match' : ' · possible match') : '');
+                            button.textContent = label;
+                            button.addEventListener('click', () => showCandidateConfirmation(candidate));
+                            results.appendChild(button);
+                        });
+                    };
+                    search.addEventListener('input', renderSearch);
+                    confirmMatch.addEventListener('click', () => {
+                        if (!selectedCandidate) return;
+                        confirmedCandidate = selectedCandidate;
+                        matchQuestion.textContent = 'Match confirmed: "' + confirmedCandidate.name + '" (' + confirmedCandidate.docs.length + ' registration record' + (confirmedCandidate.docs.length === 1 ? '' : 's') + ').';
+                        matchActions.classList.add('hidden');
+                        deleteNote.textContent = 'The match has been confirmed. Delete only after checking the selected name.';
+                        deleteArea.classList.remove('hidden');
+                    });
+                    rejectMatch.addEventListener('click', () => {
+                        selectedCandidate = null;
+                        confirmedCandidate = null;
+                        matchConfirmation.classList.add('hidden');
+                        matchActions.classList.remove('hidden');
+                        deleteArea.classList.add('hidden');
+                    });
+                    deleteButton.addEventListener('click', async () => {
+                        if (currentStaffRole !== 'admin' || !db || !confirmedCandidate) return;
+                        const candidate = confirmedCandidate;
+                        const message = 'Delete the website registration for "' + candidate.name + '" (' + candidate.docs.length + ' matching record' + (candidate.docs.length === 1 ? '' : 's') + ') in response to cancellation request "' + (item.name || '(No name supplied)') + '"? This cannot be undone.';
+                        if (!window.confirm(message)) return;
+                        deleteButton.disabled = true; deleteButton.textContent = 'Deleting…';
+                        try {
+                            const batch = db.batch();
+                            candidate.docs.forEach(doc => batch.delete(db.collection('halloween_guests').doc(doc.id)));
+                            batch.update(db.collection('cancellation_requests').doc(item.id), {
+                                status: 'completed',
+                                completedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                completedBy: activeStaffUid || ''
+                            });
+                            await batch.commit();
+                        } catch (error) {
+                            console.error('Cancellation registration deletion failed:', error);
+                            window.alert('Could not delete the selected registration. Check Firestore permissions and try again.');
+                            deleteButton.disabled = false; deleteButton.textContent = 'Delete matching registration';
+                        }
+                    });
+                    renderSearch();
+                    list.appendChild(card);
+                });
+            }, (error) => {
+                console.error('Cancellation request subscription failed:', error);
+                if (count) count.textContent = 'Unavailable';
+                if (list) list.textContent = 'Could not load cancellation requests. Check Firestore rules and your Admin access.';
+            });
+        }
+
         function loadLiveGuestlist() {
             const listError = document.getElementById('guestlistError');
             if (!db) {
@@ -3516,6 +3821,14 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 cachedGuestSnapshot = snapshot;
                 const effectiveGuestDocs = snapshot.docs.map(makeEffectiveGuestDoc);
                 cachedGuestDocs = effectiveGuestDocs;
+                // Rebuild cancellation matches whenever the authoritative guest snapshot changes.
+                // The cancellation queue can load before the guest list; without this refresh, its
+                // first render may incorrectly show no exact or close matches.
+                if (cancellationRequestsUnsubscribe && currentStaffRole === 'admin') {
+                    cancellationRequestsUnsubscribe();
+                    cancellationRequestsUnsubscribe = null;
+                    loadCancellationRequests();
+                }
                 renderDuplicateReviewList();
                 // Build once per snapshot; many per-card pricing/referral helpers need this membership lookup.
                 cachedImportedMemberByNameKey = new Map();
@@ -4642,7 +4955,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 listError.classList.remove('hidden');
                 return;
             }
-            // Guest-list management is always permanent, even while operational actions are in test mode.
+            if (!eventCheckInActive) {
+                const listError = document.getElementById('guestlistError');
+                listError.textContent = 'Guest deletion is disabled in test mode so the real sign-up list cannot be changed.';
+                listError.classList.remove('hidden');
+                return;
+            }
             const selected = cachedGuestDocs.find((doc) => doc.id === id);
             const selectedName = selected ? (selected.data() || {}).name : guestName;
             const key = normalizeGuestName(selectedName);
@@ -5288,10 +5606,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
             const previousActive = eventCheckInActive;
             const requested = eventCheckInActiveCheckbox.checked;
-            // Do not make live-mode activation depend on a bulk guest-status reset.
-            // Firestore rules may reject that batch and prevent the mode setting from being saved.
-            // Existing operational states are retained; any cleanup must be a separate admin action.
-            const needsLegacyStatusReset = false;
+            const needsLegacyStatusReset = requested && !previousActive &&
+                operationalStateBaselineVersion !== EVENT_CHECKIN_MODE_VERSION;
             if (requested && !previousActive) {
                 const resetWarning = needsLegacyStatusReset
                     ? 'This first activation also clears previously saved check-in, payment, upgrade and chip test statuses. Guest registrations, member details, inviters and dates are preserved.'
