@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-build-target" content="prod">
+    <meta name="app-build-target" content="dev">
     <meta name="theme-color" content="#08080a">
     <meta name="description" content="A private, guest-list-only Halloween soirée at The Dean Munich, Autograph Collection by Marriott. A hidden event space, two rooms, twin DJ setups and a dedicated bar. Saturday, 31 October 2026, from 20:00, open end; music winds down at 01:00.">
 
@@ -754,7 +754,6 @@
                     <input id="guestInviter" type="text" name="Invited By" class="form-field" placeholder="Name of your inviter">
                 </div>
                 <button type="submit" id="submitBtn" class="gold-btn w-full py-4 rounded-lg uppercase font-serif text-sm tracking-widest mt-3">Add me to the Guest List</button>
-                <p class="text-center text-xs text-gray-400 mt-3">Already registered? <a id="removeRsvpLink" href="/remove.html" class="text-gold underline underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold">Remove your name here</a>.</p>
                 <p class="text-gray-400 text-xs text-center leading-relaxed">Your name is only used to confirm your identity and grant access to the party.</p>
             </form>
             <div id="statusMessage" role="status" aria-live="polite" class="hidden mt-6 p-5 sm:p-6 rounded-lg bg-gold/10 border border-gold/40 text-center">
@@ -1090,7 +1089,7 @@
                                 <h4 id="cancellationRequestsHeading" class="staff-panel__title">RSVP cancellation requests</h4>
                                 <span id="cancellationRequestsCount" class="staff-panel__meta">Loading…</span>
                             </div>
-                            <p class="text-xs text-gray-300 mb-3">Guests have been told their RSVP is cancelled. Review each request here and remove the matching website registration when appropriate.</p>
+                            <p class="text-xs text-gray-300 mb-3">Review each request and remove the matching website registration when appropriate. Completed or dismissed requests no longer appear in this queue.</p>
                             <div id="cancellationRequestsList" class="space-y-3"><p class="text-xs text-gray-400">Loading cancellation requests…</p></div>
                         </section>
                         <section id="duplicateReviewPanel" class="staff-panel mb-4" aria-labelledby="duplicateReviewHeading">
@@ -1217,7 +1216,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.27.95</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.27.97</p>
         </div>
     </footer>
 
@@ -3507,10 +3506,10 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             cancellationRequestsUnsubscribe = db.collection('cancellation_requests').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
                 const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 const pending = requests.filter(item => item.status !== 'completed' && item.status !== 'dismissed');
-                if (count) count.textContent = pending.length + ' pending · ' + requests.length + ' total';
+                if (count) count.textContent = pending.length + ' pending';
                 if (!list) return;
                 list.replaceChildren();
-                if (!requests.length) { list.textContent = 'No cancellation requests yet.'; return; }
+                if (!pending.length) { list.textContent = 'No pending cancellation requests.'; return; }
 
                 const candidatesByKey = new Map();
                 cachedGuestDocs.forEach(doc => {
@@ -3535,7 +3534,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     return previous[b.length];
                 };
 
-                requests.forEach((item) => {
+                pending.forEach((item) => {
                     const card = document.createElement('div');
                     card.className = 'rounded-lg border border-gray-700 bg-black/20 p-3 space-y-3';
                     const heading = document.createElement('div');
