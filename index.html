@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-build-target" content="dev">
     <meta name="theme-color" content="#08080a">
     <meta name="description" content="A private, guest-list-only Halloween soirée at The Dean Munich, Autograph Collection by Marriott. A hidden event space, two rooms, twin DJ setups and a dedicated bar. Saturday, 31 October 2026, from 20:00, open end; music winds down at 01:00.">
 
@@ -18,7 +17,7 @@
     <meta property="og:image:width" content="1689" />
     <meta property="og:image:height" content="1399" />
 
-    <title>The Dean After Dark | RSVP &amp; Staff Tools (DEV)</title>
+    <title>The Dean After Dark | RSVP &amp; Staff Tools</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -691,7 +690,9 @@
         <section class="glass-panel rounded-2xl p-5 sm:p-7 mb-7 sm:mb-9 gold-border" aria-labelledby="dinner-before-party">
             <h2 id="dinner-before-party" class="font-serif text-xl text-white uppercase tracking-wider mb-3"><i class="fa-solid fa-utensils mr-2 text-gold"></i>Dinner before the party</h2>
             <p class="text-gray-100 text-sm sm:text-base leading-relaxed font-light">Thinking of making your evening extra special? Start the night with a Japanese culinary experience at Ibasho, The Dean’s signature restaurant. Especially curated for our party guests, this 8-course dinner features fresh seafood and sushi, seasonal pumpkin specialities, robata-grilled beef and mochi.</p>
-            <button type="button" onclick="openHalloweenDinnerMenu()" class="mt-4 inline-flex items-center rounded-lg border border-gold px-4 py-2 text-sm font-semibold text-gold hover:bg-gold hover:text-black transition-colors"><i class="fa-solid fa-book-open mr-2"></i>Discover the 8-course menu</button>
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+                <button type="button" onclick="openHalloweenDinnerMenu()" class="inline-flex items-center rounded-lg border border-gold px-4 py-2 text-sm font-semibold text-gold hover:bg-gold hover:text-black transition-colors"><i class="fa-solid fa-book-open mr-2"></i>View the 8-course menu &amp; join us for dinner</button>
+            </div>
         </section>
 
         <div id="halloween-dinner-menu" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="halloween-dinner-title" onclick="if(event.target===this) closeHalloweenDinnerMenu()">
@@ -701,7 +702,9 @@
                     <button type="button" onclick="closeHalloweenDinnerMenu()" aria-label="Close menu" class="text-gray-300 hover:text-white text-2xl leading-none">&times;</button>
                 </div>
                 <p class="text-gold font-semibold text-lg mb-1">€79 per person</p>
-                <p class="text-gray-300 text-sm mb-5">Including a welcome drink. This special price is exclusively for party guests.</p>
+                <p class="text-gray-300 text-sm mb-2">Including a welcome drink. This discounted price is exclusively for party guests.</p>
+                <p class="text-gray-200 text-sm mb-3"><i class="fa-regular fa-clock mr-2 text-gold"></i>Dinner starts at 19:00, one hour before the party begins at 20:00.</p>
+                <p class="text-gray-200 text-sm mb-5">Prefer to order à la carte? <a href="https://ibashomunich.com/menus" target="_blank" rel="noopener noreferrer" class="text-gold underline underline-offset-4 hover:text-white">View Ibasho’s full menu</a>.</p>
                 <ol class="space-y-3 text-gray-100 text-sm sm:text-base list-decimal list-inside">
                     <li>Edamame</li>
                     <li>Nashi Pear Salad with Goma Tofu Dressing</li>
@@ -712,8 +715,7 @@
                     <li>Beef Skewer · Robata Yaki</li>
                     <li>Mochi Selection</li>
                 </ol>
-                <a href="https://ibashomunich.com/" target="_blank" rel="noopener noreferrer" class="mt-6 inline-flex items-center justify-center rounded-lg bg-gold px-5 py-3 text-sm font-bold text-black hover:opacity-90"><i class="fa-solid fa-calendar-check mr-2"></i>Reserve a table</a>
-                <p class="text-gray-400 text-xs mt-3"></p>
+                <a href="https://wa.me/4917681117359" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn mt-6"><i class="fa-brands fa-whatsapp"></i> To join our reserved table, message Ari</a>
             </div>
         </div>
 
@@ -1216,7 +1218,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.27.97</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.28.104</p>
         </div>
     </footer>
 
@@ -1255,9 +1257,8 @@
         // Staff access uses Firebase Authentication plus a server-enforced event_users/{uid} role record.
         const WHATSAPP_GROUP_INVITE_URL = "https://chat.whatsapp.com/IwHZlKlyiKx40lMygnOZ58";
         const STAFF_ROLES = ['admin', 'hotel', 'internations'];
-        // DEV reads independent workflow settings and is always locked to session-only operational testing.
-        const IS_DEVELOPMENT_BUILD = document.querySelector('meta[name="app-build-target"]')?.content === 'dev';
-        const WORKFLOW_SETTINGS_DOC_ID = IS_DEVELOPMENT_BUILD ? 'workflow_dev' : 'workflow';
+        // Both pages use the same workflow settings and operational rules.
+        const WORKFLOW_SETTINGS_DOC_ID = 'workflow';
         let currentStaffRole = null;
         let activeStaffPage = 'overview';
         let currentAuthUser = null;
@@ -1272,7 +1273,7 @@
         const SIGNUP_ALERT_STORAGE_PREFIX = 'halloween-signup-alert-last-login-v1:';
         // DEV and LIVE share an origin, so keep their local alert history separate.
         function signupAlertStorageKey(uid) {
-            return SIGNUP_ALERT_STORAGE_PREFIX + (IS_DEVELOPMENT_BUILD ? 'dev:' : 'live:') + uid;
+            return SIGNUP_ALERT_STORAGE_PREFIX + uid;
         }
         let signupAlertSessionUid = null;
         let signupAlertSessionStartedAt = 0;
@@ -1546,14 +1547,12 @@
             const checkbox = document.getElementById('eventCheckInActive');
             if (checkbox) {
                 checkbox.checked = active;
-                checkbox.disabled = IS_DEVELOPMENT_BUILD || eventModeChangeInProgress;
+                checkbox.disabled = eventModeChangeInProgress;
             }
             const status = document.getElementById('eventCheckInActiveStatus');
-            if (status) status.textContent = IS_DEVELOPMENT_BUILD
-                ? 'DEV PREVIEW: operational actions are always session-only. Public registrations remain permanent.'
-                : active
-                    ? 'ACTIVE: check-ins, payments, upgrades and chip actions are saved permanently to the real guest records.'
-                    : 'INACTIVE: staff actions are simulated in this browser tab only. Public registrations remain permanent.';
+            if (status) status.textContent = active
+                ? 'ACTIVE: check-ins, payments, upgrades and chip actions are saved permanently to the real guest records.'
+                : 'INACTIVE: staff actions are simulated in this browser tab only. Public registrations remain permanent.';
             const banner = document.getElementById('eventCheckInModeBanner');
             const title = document.getElementById('eventCheckInModeTitle');
             const message = document.getElementById('eventCheckInModeMessage');
@@ -1566,13 +1565,11 @@
             if (title) {
                 title.classList.toggle('text-amber-100', !active);
                 title.classList.toggle('text-emerald-100', active);
-                title.textContent = IS_DEVELOPMENT_BUILD ? 'DEV PREVIEW · TEST MODE' : (active ? 'EVENT CHECK-IN ACTIVE · LIVE MODE' : 'EVENT CHECK-IN INACTIVE · TEST MODE');
+                title.textContent = active ? 'EVENT CHECK-IN ACTIVE · LIVE MODE' : 'EVENT CHECK-IN INACTIVE · TEST MODE';
             }
             if (message) {
                 if (!visibleActions) {
                     message.textContent = 'No operational actions are available to this role in the current workflow. Public guest registrations remain saved.';
-                } else if (IS_DEVELOPMENT_BUILD) {
-                    message.textContent = `This DEV preview is always test-only. ${visibleActions} are temporary in this browser tab and clear on sign-out or reload; public guest registrations remain saved.`;
                 } else if (active) {
                     message.textContent = `${visibleActions} are saved permanently to the real guest records.`;
                 } else {
@@ -3757,7 +3754,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     operationalStateBaselineVersion = typeof value.operationalStateBaselineVersion === 'string'
                         ? value.operationalStateBaselineVersion : null;
                     twoStepCheckInEnabled = value.twoStepCheckInEnabled !== false;
-                    eventCheckInActive = !IS_DEVELOPMENT_BUILD && value.eventCheckInActive === true &&
+                    eventCheckInActive = value.eventCheckInActive === true &&
                         value.eventCheckInModeVersion === EVENT_CHECKIN_MODE_VERSION;
                     if (previousEventCheckInActive !== eventCheckInActive) clearSessionGuestOverrides();
                     updateEventCheckInModeUI();
@@ -4892,11 +4889,6 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         const dismissedDuplicatePairs = new Set();
         async function mergeStrongDuplicate(primaryId, duplicateId) {
             if (!db || currentStaffRole !== 'admin') return;
-            if (!IS_DEVELOPMENT_BUILD) {
-                const e=document.getElementById('guestlistError');
-                if(e){e.textContent='Duplicate merging is enabled in DEV only until tested.';e.classList.remove('hidden');}
-                return;
-            }
             const a=(cachedGuestDocs||[]).find(d=>d.id===primaryId), b=(cachedGuestDocs||[]).find(d=>d.id===duplicateId);
             if(!a||!b)return;
             const ad=a.data()||{}, bd=b.data()||{};
@@ -4954,12 +4946,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 listError.classList.remove('hidden');
                 return;
             }
-            if (!eventCheckInActive) {
-                const listError = document.getElementById('guestlistError');
-                listError.textContent = 'Guest deletion is disabled in test mode so the real sign-up list cannot be changed.';
-                listError.classList.remove('hidden');
-                return;
-            }
+            // Guest-list maintenance is always permanent, regardless of operational check-in mode.
+            // Only check-in, payment, upgrade and chip statuses are simulated in test mode.
             const selected = cachedGuestDocs.find((doc) => doc.id === id);
             const selectedName = selected ? (selected.data() || {}).name : guestName;
             const key = normalizeGuestName(selectedName);
@@ -5589,15 +5577,10 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
         }
 
-        // Production mode is Admin-controlled; the DEV preview is permanently test-only.
+        // Event mode is Admin-controlled and works the same on both pages.
         const eventCheckInActiveCheckbox = document.getElementById('eventCheckInActive');
         if (eventCheckInActiveCheckbox) eventCheckInActiveCheckbox.addEventListener('change', async () => {
             const status = document.getElementById('eventCheckInActiveStatus');
-            if (IS_DEVELOPMENT_BUILD) {
-                eventCheckInActiveCheckbox.checked = false;
-                if (status) status.textContent = 'DEV preview is locked to test mode. Activate live operations only on the production site.';
-                return;
-            }
             if (currentStaffRole !== 'admin' || !db) {
                 eventCheckInActiveCheckbox.checked = eventCheckInActive;
                 if (status) status.textContent = 'Only an authenticated Admin can change this setting.';
@@ -5649,7 +5632,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 if (status) status.textContent = 'Could not save the event mode. Check Firestore permissions and try again.';
             } finally {
                 eventModeChangeInProgress = false;
-                eventCheckInActiveCheckbox.disabled = IS_DEVELOPMENT_BUILD;
+                eventCheckInActiveCheckbox.disabled = false;
             }
         });
 
