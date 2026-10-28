@@ -1224,7 +1224,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.28.108</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.28.109</p>
         </div>
     </footer>
 
@@ -3572,7 +3572,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     const confirmMatch = document.createElement('button');
                     confirmMatch.type = 'button';
                     confirmMatch.className = 'rounded-md bg-amber-300 px-3 py-2 text-sm font-semibold text-black';
-                    confirmMatch.textContent = 'Yes, this is the correct RSVP';
+                    confirmMatch.textContent = 'Confirm match and delete RSVP';
                     const rejectMatch = document.createElement('button');
                     rejectMatch.type = 'button';
                     rejectMatch.className = 'rounded-md border border-gray-500 px-3 py-2 text-sm text-gray-100';
@@ -3699,27 +3699,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         });
                     };
                     search.addEventListener('input', renderSearch);
-                    confirmMatch.addEventListener('click', () => {
-                        if (!selectedCandidate) return;
-                        confirmedCandidate = selectedCandidate;
-                        matchQuestion.textContent = 'Match confirmed: "' + confirmedCandidate.name + '" (' + confirmedCandidate.docs.length + ' registration record' + (confirmedCandidate.docs.length === 1 ? '' : 's') + '). Click “Delete matching registration” below to remove it and close this request.';
-                        matchActions.classList.add('hidden');
-                        deleteNote.textContent = 'The match is confirmed, but the registration has not been deleted yet. Use the button below to delete it and mark this request completed.';
-                        deleteArea.classList.remove('hidden');
-                    });
-                    rejectMatch.addEventListener('click', () => {
-                        selectedCandidate = null;
-                        confirmedCandidate = null;
-                        matchConfirmation.classList.add('hidden');
-                        matchActions.classList.remove('hidden');
-                        deleteArea.classList.add('hidden');
-                    });
-                    deleteButton.addEventListener('click', async () => {
-                        if (currentStaffRole !== 'admin' || !db || !confirmedCandidate) return;
-                        const candidate = confirmedCandidate;
-                        const message = 'Delete the website registration for "' + candidate.name + '" (' + candidate.docs.length + ' matching record' + (candidate.docs.length === 1 ? '' : 's') + ') in response to cancellation request "' + (item.name || '(No name supplied)') + '"? This cannot be undone.';
-                        if (!window.confirm(message)) return;
-                        deleteButton.disabled = true; deleteButton.textContent = 'Deleting…';
+                    confirmMatch.addEventListener('click', async () => {
+                        if (currentStaffRole !== 'admin' || !db || !selectedCandidate || confirmMatch.disabled) return;
+                        const candidate = selectedCandidate;
+                        confirmMatch.disabled = true;
+                        rejectMatch.disabled = true;
+                        matchQuestion.textContent = 'Deleting "' + candidate.name + '" and completing this cancellation request…';
                         try {
                             const batch = db.batch();
                             candidate.docs.forEach(doc => batch.delete(db.collection('halloween_guests').doc(doc.id)));
@@ -3732,9 +3717,19 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         } catch (error) {
                             console.error('Cancellation registration deletion failed:', error);
                             window.alert('Could not delete the selected registration (' + (error && error.code ? error.code : 'unknown error') + '). The request remains pending. Check that the latest Firestore rules are published and your Admin role is active.');
-                            deleteButton.disabled = false; deleteButton.textContent = 'Delete matching registration';
+                            confirmMatch.disabled = false;
+                            rejectMatch.disabled = false;
+                            matchQuestion.textContent = 'Deletion failed. Please verify the selected RSVP and try again.';
                         }
                     });
+                    rejectMatch.addEventListener('click', () => {
+                        selectedCandidate = null;
+                        confirmedCandidate = null;
+                        matchConfirmation.classList.add('hidden');
+                        matchActions.classList.remove('hidden');
+                        deleteArea.classList.add('hidden');
+                    });
+
                     renderSearch();
                     list.appendChild(card);
                 });
@@ -4837,6 +4832,10 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 docs.forEach(other => {
                     if (other.id === item.id) return;
                     const otherData = other.data() || {};
+                    const itemIsMember = isImportedMemberRecord(data), otherIsMember = isImportedMemberRecord(otherData);
+                    const itemIsRsvp = !itemIsMember && (data.rsvpSubmitted === true || data.rsvpSource === 'website' || data.source === 'website' || Boolean(String(data.invitedBy || '').trim()));
+                    const otherIsRsvp = !otherIsMember && (otherData.rsvpSubmitted === true || otherData.rsvpSource === 'website' || otherData.source === 'website' || Boolean(String(otherData.invitedBy || '').trim()));
+                    if ((itemIsMember && otherIsMember) || (!itemIsRsvp && !otherIsRsvp)) return;
                     if (!duplicateSimilarity(data.name, otherData.name)) return;
                     const pairKey = [item.id, other.id].sort().join('::');
                     if (seen.has(pairKey)) return;
