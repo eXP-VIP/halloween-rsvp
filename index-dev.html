@@ -1224,7 +1224,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.28.107</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.28.108</p>
         </div>
     </footer>
 
@@ -3633,7 +3633,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     deleteArea.className = 'hidden space-y-2';
                     const deleteButton = document.createElement('button');
                     deleteButton.type = 'button';
-                    deleteButton.className = 'sort-option';
+                    deleteButton.className = 'gold-btn rounded-lg px-4 py-3 text-xs uppercase tracking-wider';
                     deleteButton.textContent = 'Delete matching registration';
                     const deleteNote = document.createElement('p');
                     deleteNote.className = 'text-xs text-amber-100';
@@ -3702,9 +3702,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     confirmMatch.addEventListener('click', () => {
                         if (!selectedCandidate) return;
                         confirmedCandidate = selectedCandidate;
-                        matchQuestion.textContent = 'Match confirmed: "' + confirmedCandidate.name + '" (' + confirmedCandidate.docs.length + ' registration record' + (confirmedCandidate.docs.length === 1 ? '' : 's') + ').';
+                        matchQuestion.textContent = 'Match confirmed: "' + confirmedCandidate.name + '" (' + confirmedCandidate.docs.length + ' registration record' + (confirmedCandidate.docs.length === 1 ? '' : 's') + '). Click “Delete matching registration” below to remove it and close this request.';
                         matchActions.classList.add('hidden');
-                        deleteNote.textContent = 'The match has been confirmed. Delete only after checking the selected name.';
+                        deleteNote.textContent = 'The match is confirmed, but the registration has not been deleted yet. Use the button below to delete it and mark this request completed.';
                         deleteArea.classList.remove('hidden');
                     });
                     rejectMatch.addEventListener('click', () => {
@@ -3731,7 +3731,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                             await batch.commit();
                         } catch (error) {
                             console.error('Cancellation registration deletion failed:', error);
-                            window.alert('Could not delete the selected registration. Check Firestore permissions and try again.');
+                            window.alert('Could not delete the selected registration (' + (error && error.code ? error.code : 'unknown error') + '). The request remains pending. Check that the latest Firestore rules are published and your Admin role is active.');
                             deleteButton.disabled = false; deleteButton.textContent = 'Delete matching registration';
                         }
                     });
@@ -4804,15 +4804,40 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             const docs = cachedGuestDocs || [];
             const seen = new Set();
             const pairs = [];
+            const duplicateSimilarity = (left, right) => {
+                const a = mergeCandidateNameKey(left);
+                const b = mergeCandidateNameKey(right);
+                if (!a || !b || a === b) return false;
+                const shorter = a.length <= b.length ? a : b;
+                const longer = a.length <= b.length ? b : a;
+                const shortTokens = shorter.split(' ').filter(Boolean);
+                const longTokens = longer.split(' ').filter(Boolean);
+                // Allow an initial/partial last name to match a fuller name, e.g. "Verena D" and "Verena Dittl".
+                if (shortTokens.length >= 2 && longTokens.length >= shortTokens.length &&
+                    shortTokens.every((token, index) => index === shortTokens.length - 1
+                        ? longTokens[index].startsWith(token)
+                        : token === longTokens[index])) return true;
+                // Conservative spelling-variant fallback for names of similar length.
+                if (Math.abs(a.length - b.length) > 2) return false;
+                const rows = Array.from({ length: a.length + 1 }, (_, i) => i);
+                for (let i = 1; i <= a.length; i++) {
+                    let diagonal = rows[0];
+                    rows[0] = i;
+                    for (let j = 1; j <= b.length; j++) {
+                        const above = rows[j];
+                        rows[j] = Math.min(rows[j] + 1, rows[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1));
+                        diagonal = above;
+                    }
+                }
+                return rows[b.length] <= 1 && Math.min(a.length, b.length) >= 8;
+            };
             docs.forEach(item => {
                 const data = item.data() || {};
-                const key = mergeCandidateNameKey(data.name);
-                if (!key) return;
+                if (!mergeCandidateNameKey(data.name)) return;
                 docs.forEach(other => {
                     if (other.id === item.id) return;
                     const otherData = other.data() || {};
-                    if (mergeCandidateNameKey(otherData.name) !== key ||
-                        normalizeGuestName(otherData.name) === normalizeGuestName(data.name)) return;
+                    if (!duplicateSimilarity(data.name, otherData.name)) return;
                     const pairKey = [item.id, other.id].sort().join('::');
                     if (seen.has(pairKey)) return;
                     seen.add(pairKey);
@@ -4926,6 +4951,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 if (!String(sd.invitedBy||'').trim() && rsvp && String(rsvp.invitedBy||'').trim()) update.invitedBy=rsvp.invitedBy;
                 if (!sd.createdAt && rsvp && rsvp.createdAt) update.createdAt=rsvp.createdAt;
                 if (member) {
+                    const nameParts = value => String(value || '').trim().split(/\s+/).filter(Boolean);
+                    const memberName = String(member.name || '').trim();
+                    const rsvpName = String(rsvp && rsvp.name || '').trim();
+                    const displayName = nameParts(rsvpName).length > nameParts(memberName).length ||
+                        (nameParts(rsvpName).length === nameParts(memberName).length && rsvpName.length > memberName.length)
+                        ? rsvpName : memberName;
                     update.guestType=member.guestType||'internations_member';
                     update.source='internations_import';
                     update.importNameKey=member.importNameKey||rd.importNameKey||sd.importNameKey||'';
@@ -4933,9 +4964,15 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     if(member.country)update.country=member.country;
                     if(member.interNationsStatus)update.interNationsStatus=member.interNationsStatus;
                     if(member.importedAt)update.importedAt=member.importedAt;
-                    if(member.name)update.name=member.name;
-                    if(member.firstName)update.firstName=member.firstName;
-                    if(member.lastName)update.lastName=member.lastName;
+                    if(displayName)update.name=displayName;
+                    const displayParts = nameParts(displayName);
+                    if(displayParts.length >= 2) {
+                        update.firstName = displayParts.slice(0, -1).join(' ');
+                        update.lastName = displayParts[displayParts.length - 1];
+                    } else {
+                        if(member.firstName)update.firstName=member.firstName;
+                        if(member.lastName)update.lastName=member.lastName;
+                    }
                 }
                 await survivor.ref.update(update);
                 await remove.ref.delete();
