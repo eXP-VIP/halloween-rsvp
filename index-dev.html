@@ -1100,6 +1100,28 @@
                             <p class="text-xs text-gray-300 mb-3">Review each request and remove the matching website registration when appropriate. Completed or dismissed requests no longer appear in this queue.</p>
                             <div id="cancellationRequestsList" class="space-y-3"><p class="text-xs text-gray-400">Loading cancellation requests…</p></div>
                         </section>
+                        <section id="guestRenamePanel" class="staff-panel mb-4" aria-labelledby="guestRenameHeading">
+                            <div class="staff-panel__header">
+                                <h4 id="guestRenameHeading" class="staff-panel__title">Rename guest</h4>
+                                <span class="staff-panel__meta">Admin only</span>
+                            </div>
+                            <p class="text-xs text-gray-300 mb-3">Search for the current name, select the correct guest, then enter the corrected name. Existing guest details and operational statuses are preserved.</p>
+                            <label for="guestRenameSearch" class="form-label">Search registered guests and members</label>
+                            <input id="guestRenameSearch" type="search" autocomplete="off" placeholder="Type a guest name…" class="form-field text-sm mb-2">
+                            <div id="guestRenameResults" class="flex max-h-48 flex-col gap-1 overflow-y-auto mb-3" aria-live="polite">
+                                <p class="text-xs text-gray-400 py-2">Type at least one character to search.</p>
+                            </div>
+                            <div id="guestRenameEditor" class="hidden rounded-lg border border-gold/20 bg-black/25 p-3 space-y-3">
+                                <p class="text-xs text-gray-300">Selected guest: <strong id="guestRenameCurrentName" class="text-white"></strong></p>
+                                <label for="guestRenameNewName" class="form-label">New name</label>
+                                <input id="guestRenameNewName" type="text" autocomplete="off" maxlength="120" class="form-field text-sm" placeholder="Correct full name">
+                                <p id="guestRenameStatus" class="text-xs text-gray-300" role="status" aria-live="polite"></p>
+                                <div class="flex flex-wrap gap-2">
+                                    <button id="guestRenameSave" type="button" class="gold-btn rounded-lg px-4 py-2 text-xs uppercase tracking-widest">Save renamed guest</button>
+                                    <button id="guestRenameCancel" type="button" class="sort-option">Cancel</button>
+                                </div>
+                            </div>
+                        </section>
                         <section id="duplicateReviewPanel" class="staff-panel mb-4" aria-labelledby="duplicateReviewHeading">
                             <div class="staff-panel__header">
                                 <h4 id="duplicateReviewHeading" class="staff-panel__title">Possible duplicate guests</h4>
@@ -1224,7 +1246,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.28.111</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.28.113</p>
         </div>
     </footer>
 
@@ -3740,6 +3762,141 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             });
         }
 
+        let selectedGuestRename = null;
+
+        /** Search the current authoritative guest snapshot and let an Admin select a record to rename. */
+        function renderGuestRenameResults() {
+            const panel = document.getElementById('guestRenamePanel');
+            const search = document.getElementById('guestRenameSearch');
+            const results = document.getElementById('guestRenameResults');
+            if (!panel || !search || !results) return;
+            if (currentStaffRole !== 'admin') {
+                panel.classList.add('hidden');
+                return;
+            }
+            panel.classList.remove('hidden');
+            const query = normalizeGuestName(search.value);
+            results.replaceChildren();
+            if (!query) {
+                const hint = document.createElement('p');
+                hint.className = 'text-xs text-gray-400 py-2';
+                hint.textContent = 'Type at least one character to search.';
+                results.appendChild(hint);
+                return;
+            }
+            const matches = cachedGuestDocs
+                .map(doc => ({ doc, data: doc.data() || {} }))
+                .filter(item => String(item.data.name || '').trim() && normalizeGuestName(item.data.name).includes(query))
+                .sort((a, b) => String(a.data.name || '').localeCompare(String(b.data.name || ''), undefined, { sensitivity: 'base' }))
+                .slice(0, 40);
+            if (!matches.length) {
+                const empty = document.createElement('p');
+                empty.className = 'text-xs text-gray-400 py-2';
+                empty.textContent = 'No registered names match that search.';
+                results.appendChild(empty);
+                return;
+            }
+            matches.forEach(({ doc, data }) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'w-full rounded-md border border-gray-600 px-3 py-2 text-left text-sm text-gray-100 hover:bg-white/10';
+                const kind = isImportedMemberRecord(data) ? 'InterNations member' : 'RSVP guest';
+                button.textContent = String(data.name || '') + ' · ' + kind;
+                button.addEventListener('click', () => {
+                    selectedGuestRename = { id: doc.id, oldName: String(data.name || '').trim(), oldKey: normalizeGuestName(data.name) };
+                    document.getElementById('guestRenameCurrentName').textContent = selectedGuestRename.oldName;
+                    document.getElementById('guestRenameNewName').value = selectedGuestRename.oldName;
+                    document.getElementById('guestRenameStatus').textContent = '';
+                    document.getElementById('guestRenameEditor').classList.remove('hidden');
+                    document.getElementById('guestRenameNewName').focus();
+                });
+                results.appendChild(button);
+            });
+            if (matches.length === 40) {
+                const note = document.createElement('p');
+                note.className = 'text-[10px] text-gray-400';
+                note.textContent = 'Showing the first 40 matches. Refine your search for more specific results.';
+                results.appendChild(note);
+            }
+        }
+
+        function clearGuestRenameSelection() {
+            selectedGuestRename = null;
+            const editor = document.getElementById('guestRenameEditor');
+            if (editor) editor.classList.add('hidden');
+            const status = document.getElementById('guestRenameStatus');
+            if (status) status.textContent = '';
+        }
+
+        async function saveGuestRename() {
+            const status = document.getElementById('guestRenameStatus');
+            const saveButton = document.getElementById('guestRenameSave');
+            if (currentStaffRole !== 'admin') {
+                if (status) status.textContent = 'Only an Admin can rename guests.';
+                return;
+            }
+            if (!db || !selectedGuestRename) {
+                if (status) status.textContent = 'Select a guest first.';
+                return;
+            }
+            const newName = sanitizeGuestDisplayName(document.getElementById('guestRenameNewName').value).normalize('NFKC').trim();
+            if (!newName) {
+                if (status) status.textContent = 'Enter a valid name.';
+                return;
+            }
+            const newKey = normalizeGuestName(newName);
+            if (newKey === selectedGuestRename.oldKey) {
+                if (status) status.textContent = 'The new name is the same as the current name.';
+                return;
+            }
+            const colliding = cachedGuestDocs.some(doc => {
+                const data = doc.data() || {};
+                return normalizeGuestName(data.name) === newKey && normalizeGuestName(data.name) !== selectedGuestRename.oldKey;
+            });
+            if (colliding) {
+                if (status) status.textContent = 'A guest with that name already exists. Choose a more specific name to avoid combining separate people.';
+                return;
+            }
+            const nameParts = newName.split(/\s+/).filter(Boolean);
+            const update = {
+                name: newName,
+                firstName: nameParts.shift() || '',
+                lastName: nameParts.join(' ')
+            };
+            if (!window.confirm('Rename "' + selectedGuestRename.oldName + '" to "' + newName + '"? Existing guest details will be preserved.')) return;
+            saveButton.disabled = true;
+            saveButton.textContent = 'Saving…';
+            if (status) status.textContent = 'Saving name change…';
+            try {
+                // Keep duplicate records for the same normalized person in sync, without touching their other fields.
+                const matchingDocs = cachedGuestDocs.filter(doc => normalizeGuestName((doc.data() || {}).name) === selectedGuestRename.oldKey);
+                if (!matchingDocs.length) throw new Error('The selected guest is no longer in the current guest list. Refresh and try again.');
+                const batch = db.batch();
+                matchingDocs.forEach(doc => batch.update(db.collection('halloween_guests').doc(doc.id), update));
+                await batch.commit();
+                if (status) status.textContent = 'Name updated successfully.';
+                selectedGuestRename = null;
+                document.getElementById('guestRenameEditor').classList.add('hidden');
+                document.getElementById('guestRenameSearch').value = newName;
+                renderGuestRenameResults();
+            } catch (error) {
+                console.error('Guest rename failed:', error);
+                if (status) status.textContent = 'Could not rename this guest. Check the connection and Admin permissions, then try again.';
+            } finally {
+                saveButton.disabled = false;
+                saveButton.textContent = 'Save renamed guest';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const search = document.getElementById('guestRenameSearch');
+            const save = document.getElementById('guestRenameSave');
+            const cancel = document.getElementById('guestRenameCancel');
+            if (search) search.addEventListener('input', renderGuestRenameResults);
+            if (save) save.addEventListener('click', saveGuestRename);
+            if (cancel) cancel.addEventListener('click', clearGuestRenameSelection);
+        });
+
         function loadLiveGuestlist() {
             const listError = document.getElementById('guestlistError');
             if (!db) {
@@ -3818,6 +3975,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 cachedGuestSnapshot = snapshot;
                 const effectiveGuestDocs = snapshot.docs.map(makeEffectiveGuestDoc);
                 cachedGuestDocs = effectiveGuestDocs;
+                renderGuestRenameResults();
                 // Rebuild cancellation matches whenever the authoritative guest snapshot changes.
                 // The cancellation queue can load before the guest list; without this refresh, its
                 // first render may incorrectly show no exact or close matches.
