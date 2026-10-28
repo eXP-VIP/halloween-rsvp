@@ -1224,7 +1224,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.28.110</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.28.111</p>
         </div>
     </footer>
 
@@ -4926,16 +4926,19 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             const aIsMember=isImportedMemberRecord(ad), bIsMember=isImportedMemberRecord(bd);
             // Never merge two member records; at least one side must be an RSVP.
             if ((aIsMember && bIsMember) || (!isRsvp(ad) && !isRsvp(bd))) return;
-            // Membership identity takes precedence; RSVP facts are copied onto that surviving member record.
-            const memberDoc=isImportedMemberRecord(ad)?a:(isImportedMemberRecord(bd)?b:null);
+            // Keep the RSVP record as the surviving document whenever one is present; copy membership metadata onto it.
+            const memberDoc=aIsMember?a:(bIsMember?b:null);
             const rsvpDoc=isRsvp(ad)?a:(isRsvp(bd)?b:null);
-            const survivor=memberDoc|| (rsvpDoc||a);
+            const survivor=rsvpDoc||memberDoc||a;
             const remove=survivor.id===a.id?b:a;
             const sd=survivor.data()||{}, rd=remove.data()||{};
             const member=isImportedMemberRecord(sd)?sd:(isImportedMemberRecord(rd)?rd:null);
             const rsvp=isRsvp(sd)?sd:(isRsvp(rd)?rd:null);
             const aliases=Array.from(new Set([...(Array.isArray(sd.mergeAliases)?sd.mergeAliases:[]),...(Array.isArray(rd.mergeAliases)?rd.mergeAliases:[]),sd.name,rd.name,sd.importNameKey,rd.importNameKey].map(v=>String(v||'').trim()).filter(Boolean)));
-            if(!window.confirm('Merge “'+(rd.name||'duplicate')+'” into the InterNations member record when present? Membership identity takes precedence; RSVP details and both name variants are retained. The duplicate record will be deleted.'))return;
+            const mergePrompt = member && rsvp
+                ? 'Keep the RSVP record “' + (rsvp.name || 'RSVP guest') + '” as the main record and retain membership details such as country from “' + (member.name || 'InterNations member') + '”? The duplicate record will be deleted.'
+                : 'Merge “' + (rd.name || 'duplicate') + '” with the RSVP record kept as the main record. The duplicate record will be deleted.';
+            if(!window.confirm(mergePrompt))return;
             try {
                 const update={
                     mergeAliases:aliases,
@@ -4956,9 +4959,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     const nameParts = value => String(value || '').trim().split(/\s+/).filter(Boolean);
                     const memberName = String(member.name || '').trim();
                     const rsvpName = String(rsvp && rsvp.name || '').trim();
-                    const displayName = nameParts(rsvpName).length > nameParts(memberName).length ||
-                        (nameParts(rsvpName).length === nameParts(memberName).length && rsvpName.length > memberName.length)
-                        ? rsvpName : memberName;
+                    // RSVP display names are generally the better guest-facing names; use the RSVP name whenever available.
+                    const displayName = rsvpName || memberName;
                     update.guestType=member.guestType||'internations_member';
                     update.source='internations_import';
                     update.importNameKey=member.importNameKey||rd.importNameKey||sd.importNameKey||'';
