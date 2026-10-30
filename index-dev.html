@@ -2397,7 +2397,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 if (!seen.has(identityKey)) {
                     seen.set(identityKey, { ...parts, key });
                 } else {
-                    const existingEntry = seen.get(key);
+                    const existingEntry = seen.get(identityKey);
                     if (!existingEntry.membershipStatus && parts.membershipStatus) existingEntry.membershipStatus = parts.membershipStatus;
                     if (!existingEntry.country && parts.country) existingEntry.country = parts.country;
                 }
@@ -2416,13 +2416,15 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
             const result = getUniqueImportedNames();
             const inputKeys = new Set(result.entries.map(item => item.key));
+            const inputIds = new Set(result.entries.map(item => String(item.memberId || '')).filter(Boolean));
             const existingKeys = new Set(cachedGuestDocs.flatMap(doc => getStoredGuestNameKeys(doc.data() || {})));
-            const newNames = result.entries.filter(item => !existingKeys.has(item.key));
+            const existingIds = new Set(cachedGuestDocs.map(doc => String((doc.data() || {}).memberId || '')).filter(Boolean));
+            const newNames = result.entries.filter(item => !(item.memberId && existingIds.has(String(item.memberId))) && !existingKeys.has(item.key));
             const matchingNames = result.entries.length - newNames.length;
             const missingMembers = cachedGuestDocs.filter(doc => {
                 const data = doc.data() || {};
                 return isImportedMemberRecord(data) && getStoredGuestNameKeys(data).length > 0 &&
-                    !storedGuestMatchesInput(data, inputKeys);
+                    !(data.memberId && inputIds.has(String(data.memberId))) && !storedGuestMatchesInput(data, inputKeys);
             });
             const looksLikeRsvp = data => Boolean(
                 data.rsvpSubmitted === true ||
@@ -2491,7 +2493,11 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     if (capture.source !== 'InterNations event guest list' || !Array.isArray(capture.attending) || !Array.isArray(capture.waitingList)) {
                         throw new Error('This is not a supported InterNations guest-list capture.');
                     }
-                    if (capture.complete !== true) throw new Error('The capture is incomplete. Expand all four InterNations sections and capture again. No changes were made.');
+                    const expectedAttendees = Number(capture.expectedAttendeeCount || 0);
+                    const uniqueAttendingIds = new Set(capture.attending.map(member => String(member.id || '')).filter(Boolean));
+                    if (capture.complete !== true || !expectedAttendees || uniqueAttendingIds.size !== expectedAttendees) {
+                        throw new Error('The capture is not verified as complete. InterNations reports ' + (expectedAttendees || 'an unknown number of') + ' attendees, but this file contains ' + uniqueAttendingIds.size + ' unique attending members. No changes were made. Capture the full list again.');
+                    }
                     pendingInternationsHeaders = ['First Name','Last Name','Member ID','Membership Type','Country'];
                     pendingInternationsRows = capture.attending.map(member => {
                         const name = String(member.name || '').trim();
@@ -2557,10 +2563,11 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if (!result.entries.length) { status.textContent = 'No valid guest names found.'; return; }
 
             const inputKeys = new Set(result.entries.map(item => item.key));
+            const latestInputIdsForPreview = new Set(result.entries.map(entry => String(entry.memberId || '')).filter(Boolean));
             const latestPreview = cachedGuestDocs.filter(doc => {
                 const data = doc.data() || {};
                 return isImportedMemberRecord(data) && getStoredGuestNameKeys(data).length > 0 &&
-                    !storedGuestMatchesInput(data, inputKeys);
+                    !(data.memberId && latestInputIdsForPreview.has(String(data.memberId))) && !storedGuestMatchesInput(data, inputKeys);
             });
             const looksLikeRsvp = data => Boolean(
                 data.rsvpSubmitted === true ||
