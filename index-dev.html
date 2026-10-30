@@ -1271,7 +1271,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.30.119</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.30.120</p>
         </div>
     </footer>
 
@@ -2499,8 +2499,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         ? capture.sections.filter(section => !/waiting list/i.test(String(section.name || ''))).reduce((total, section) => total + Number(section.count || 0), 0)
                         : 0;
                     const capturedAttendeeCards = Number(capture.diagnostics && capture.diagnostics.attendingCardEntries || sectionCardEntries || capture.attending.length);
-                    if (capture.complete !== true || !expectedAttendees || capturedAttendeeCards !== expectedAttendees || !uniqueAttendingIds.size || uniqueAttendingIds.size > capturedAttendeeCards) {
-                        throw new Error('The capture is not verified as complete. InterNations reports ' + (expectedAttendees || 'an unknown number of') + ' attendees, but this file verifies ' + capturedAttendeeCards + ' attendee card entries and ' + uniqueAttendingIds.size + ' unique member IDs. No changes were made. Capture the full list again.');
+                    const remainingShowMore = Number(capture.diagnostics && capture.diagnostics.showMoreButtonsRemaining !== undefined
+                        ? capture.diagnostics.showMoreButtonsRemaining
+                        : (Array.isArray(capture.sections) ? capture.sections.reduce((total, section) => total + Number(section.showMore || 0), 0) : 0));
+                    const verifiedByCounts = !!expectedAttendees && capturedAttendeeCards === expectedAttendees && remainingShowMore === 0 && uniqueAttendingIds.size > 0 && uniqueAttendingIds.size <= capturedAttendeeCards;
+                    if (!verifiedByCounts) {
+                        throw new Error('The capture is not verified as complete. InterNations reports ' + (expectedAttendees || 'an unknown number of') + ' attendees, but this file verifies ' + capturedAttendeeCards + ' attendee card entries, ' + uniqueAttendingIds.size + ' unique member IDs and ' + remainingShowMore + ' remaining Show more buttons. No changes were made. Capture the full list again.');
                     }
                     pendingInternationsHeaders = ['First Name','Last Name','Member ID','Membership Type','Country'];
                     pendingInternationsRows = capture.attending.map(member => {
