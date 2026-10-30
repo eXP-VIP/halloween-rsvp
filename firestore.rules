@@ -185,10 +185,48 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Workflow and pricing settings are visible to active staff but writable only by an Admin.
+    // A public counter increment must be paired with a newly created website guest record in the same transaction.
+    function publicRegistrationGuestExistsAfter(registrationId) {
+      let guestPath = /databases/$(database)/documents/halloween_guests/$(registrationId);
+      return registrationId is string
+        && existsAfter(guestPath)
+        && getAfter(guestPath).data.source == 'website'
+        && getAfter(guestPath).data.createdAt == request.time;
+    }
+
+    function publicRegistrationCounterCreate() {
+      return request.resource.data.keys().hasOnly([
+          'enabled', 'capacity', 'count', 'lastRegistrationId', 'updatedAt'
+        ])
+        && request.resource.data.enabled == true
+        && request.resource.data.capacity == 0
+        && request.resource.data.count == 1
+        && request.resource.data.lastRegistrationId is string
+        && request.resource.data.updatedAt == request.time
+        && publicRegistrationGuestExistsAfter(request.resource.data.lastRegistrationId);
+    }
+
+    function publicRegistrationCounterUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'count', 'lastRegistrationId', 'updatedAt'
+        ])
+        && resource.data.enabled == true
+        && resource.data.count is int
+        && resource.data.capacity is int
+        && (resource.data.capacity == 0 || resource.data.count < resource.data.capacity)
+        && request.resource.data.count == resource.data.count + 1
+        && request.resource.data.lastRegistrationId is string
+        && request.resource.data.updatedAt == request.time
+        && publicRegistrationGuestExistsAfter(request.resource.data.lastRegistrationId);
+    }
+
+    // Registration availability is public; all other event settings remain staff-only.
     match /event_settings/{settingId} {
-      allow read: if isActiveStaff();
-      allow write: if isAdmin();
+      allow get: if isActiveStaff() || settingId == 'registration';
+      allow list: if isActiveStaff();
+      allow create: if isAdmin() || (settingId == 'registration' && publicRegistrationCounterCreate());
+      allow update: if isAdmin() || (settingId == 'registration' && publicRegistrationCounterUpdate());
+      allow delete: if isAdmin();
     }
 
     // Legacy unregistered-inviter reward records are retired: referral drinks are for members only.
