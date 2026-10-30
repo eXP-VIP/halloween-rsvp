@@ -4055,7 +4055,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     return;
                 }
             }
-            const nameParts = newName.split(/\\s+/).filter(Boolean);
+            const nameParts = newName.split(/\s+/).filter(Boolean);
             const update = {
                 name: newName,
                 firstName: nameParts.shift() || '',
@@ -4065,7 +4065,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             const changes = [];
             if (nameChanged) changes.push('name to "' + newName + '"');
             if (invitedByChanged) changes.push('Invited by to "' + (newInvitedBy || '(blank)') + '"');
-            if (!window.confirm('Save changes for "' + selectedGuestRename.oldName + '"?\\n\\n' + changes.join('\\n'))) return;
+            if (!window.confirm('Save changes for "' + selectedGuestRename.oldName + '"?\n\n' + changes.join('\n'))) return;
             saveButton.disabled = true;
             saveButton.textContent = 'Saving…';
             if (status) status.textContent = 'Saving guest details…';
