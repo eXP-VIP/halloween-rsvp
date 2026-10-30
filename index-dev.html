@@ -2369,10 +2369,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             // Retain the source-cell text in Firestore; normalize names for matching and display only.
             const firstName = firstHeader ? String(row[firstHeader] || '').trim() : '';
             const lastName = lastHeader ? String(row[lastHeader] || '').trim() : '';
+            const memberIdHeader = pendingInternationsHeaders.find((header) => /^(member|membership|internations)?\s*(id|member id)$/i.test(cleanHeader(header)));
             return {
                 name: [firstName, lastName].filter(Boolean).join(' ').trim(),
                 firstName,
                 lastName,
+                memberId: memberIdHeader ? String(row[memberIdHeader] || '').trim() : '',
                 membershipStatus: statusHeader ? sanitizeGuestDisplayName(row[statusHeader]) : '',
                 country: countryHeader ? sanitizeGuestDisplayName(row[countryHeader]) : ''
             };
@@ -2391,8 +2393,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const parts = readImportedNameParts(row);
                 const key = normalizeGuestName(parts.name);
                 if (!key) { blankRows++; return; }
-                if (!seen.has(key)) {
-                    seen.set(key, { ...parts, key });
+                const identityKey = parts.memberId ? 'id:' + parts.memberId : 'name:' + key;
+                if (!seen.has(identityKey)) {
+                    seen.set(identityKey, { ...parts, key });
                 } else {
                     const existingEntry = seen.get(key);
                     if (!existingEntry.membershipStatus && parts.membershipStatus) existingEntry.membershipStatus = parts.membershipStatus;
@@ -2483,6 +2486,31 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             status.textContent = '';
             if (!file) return;
             try {
+                if (file.name.toLowerCase().endsWith('.json')) {
+                    const capture = JSON.parse(await file.text());
+                    if (capture.source !== 'InterNations event guest list' || !Array.isArray(capture.attending) || !Array.isArray(capture.waitingList)) {
+                        throw new Error('This is not a supported InterNations guest-list capture.');
+                    }
+                    if (capture.complete !== true) throw new Error('The capture is incomplete. Expand all four InterNations sections and capture again. No changes were made.');
+                    pendingInternationsHeaders = ['First Name','Last Name','Member ID','Membership Type','Country'];
+                    pendingInternationsRows = capture.attending.map(member => {
+                        const name = String(member.name || '').trim();
+                        const split = name.indexOf(' ');
+                        return {
+                            'First Name': split < 0 ? name : name.slice(0, split),
+                            'Last Name': split < 0 ? '' : name.slice(split + 1),
+                            'Member ID': String(member.id || ''),
+                            'Membership Type': Array.isArray(member.badges) ? member.badges.join(' ') : '',
+                            'Country': Array.isArray(member.countries) ? member.countries.join(', ') : ''
+                        };
+                    }).filter(row => row['Member ID'] && row['First Name']);
+                    if (!pendingInternationsRows.length) throw new Error('The capture contains no valid attending members.');
+                    pendingInternationsNameColumn = '__combined_first_last__';
+                    options.classList.remove('hidden');
+                    renderInternationsImportPreview();
+                    status.textContent = 'Loaded ' + pendingInternationsRows.length + ' attending members and ' + capture.waitingList.length + ' waiting-list entries. Capture confirmed complete; waiting-list entries are not imported as attendees.';
+                    return;
+                }
                 if (!window.XLSX) throw new Error('Spreadsheet reader could not be loaded. Check the network connection and reload this page.');
                 const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -2558,9 +2586,11 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             try {
                 const current = await db.collection('halloween_guests').get();
                 const byName = new Map();
+                const byId = new Map();
                 const docsByName = new Map();
                 current.forEach(doc => {
                     const data = doc.data() || {};
+                    if (data.memberId) byId.set(String(data.memberId), doc);
                     getStoredGuestNameKeys(data).forEach((key) => {
                         if (!docsByName.has(key)) docsByName.set(key, []);
                         docsByName.get(key).push(doc);
@@ -2576,7 +2606,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const latestInputKeys = new Set(result.entries.map(item => item.key));
 
                 result.entries.forEach(entry => {
-                    const existing = byName.get(entry.key);
+                    const existing = (entry.memberId && byId.get(String(entry.memberId))) || byName.get(entry.key);
                     if (existing) {
                         matched++;
                         const prior = existing.data() || {};
@@ -2600,6 +2630,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                             source: 'internations_import',
                             rsvpSubmitted: wasRsvp,
                             importNameKey: entry.key,
+                            ...(entry.memberId ? { memberId: String(entry.memberId) } : {}),
                             firstName: entry.firstName,
                             lastName: entry.lastName,
                             membershipRemovedAt: firebase.firestore.FieldValue.delete()
@@ -2671,6 +2702,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                             source: 'internations_import',
                             rsvpSubmitted: false,
                             importNameKey: entry.key,
+                            ...(entry.memberId ? { memberId: String(entry.memberId) } : {}),
                             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                             importedAt: firebase.firestore.FieldValue.serverTimestamp(),
                             welcomeDrinkChipIssued: false,
@@ -2680,9 +2712,11 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     }
                 });
 
+                const latestInputIds = new Set(result.entries.map(entry => String(entry.memberId || '')).filter(Boolean));
                 current.forEach(doc => {
                     const data = doc.data() || {};
                     if (!isImportedMemberRecord(data) || !getStoredGuestNameKeys(data).length ||
+                        (data.memberId && latestInputIds.has(String(data.memberId))) ||
                         storedGuestMatchesInput(data, latestInputKeys)) return;
                     currentMissing.push({ doc, data });
                 });
