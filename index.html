@@ -746,6 +746,14 @@
                 <h2 class="font-serif text-2xl sm:text-3xl text-white uppercase tracking-wider mb-3">Join the Guest List</h2>
                 <p class="text-gray-200 text-sm leading-relaxed max-w-2xl mx-auto">This is a private, guest-list-only event, so please register in advance. The hostess will welcome you and check your name at the entrance.</p>
             </div>
+            <div id="registrationClosedPanel" class="hidden rounded-xl border-2 border-gold/60 bg-black/55 p-5 sm:p-6 text-center shadow-lg shadow-black/30" role="status" aria-live="polite">
+                <p id="registrationClosedTitle" class="font-serif text-xl sm:text-2xl uppercase tracking-wider text-gold-light mb-2">We're currently full!</p>
+                <p id="registrationClosedMessage" class="text-sm text-gray-100 leading-relaxed mb-4">Our guest list has reached capacity, but places may become available if someone cancels. Check back later!</p>
+                <a href="remove.html" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-lg border-2 border-gold bg-gold px-5 py-3 text-xs font-bold uppercase tracking-wider text-black hover:bg-gold-light">
+                    <i class="fa-solid fa-user-minus" aria-hidden="true"></i> Cancel your registration
+                </a>
+                <p class="text-xs text-gray-300 mt-3">Cancelling your place gives someone on the waiting list a chance to join.</p>
+            </div>
             <form id="rsvpForm" class="space-y-5">
                 <div>
                     <label for="guestName" class="form-label">Full name</label>
@@ -1099,6 +1107,28 @@
                             <p class="text-xs text-gray-300 mb-3">Review each request and remove the matching website registration when appropriate. Completed or dismissed requests no longer appear in this queue.</p>
                             <div id="cancellationRequestsList" class="space-y-3"><p class="text-xs text-gray-400">Loading cancellation requests…</p></div>
                         </section>
+                        <section id="guestRenamePanel" class="staff-panel mb-4" aria-labelledby="guestRenameHeading">
+                            <div class="staff-panel__header">
+                                <h4 id="guestRenameHeading" class="staff-panel__title">Rename guest</h4>
+                                <span class="staff-panel__meta">Admin only</span>
+                            </div>
+                            <p class="text-xs text-gray-300 mb-3">Search for the current name, select the correct guest, then enter the corrected name. Existing guest details and operational statuses are preserved.</p>
+                            <label for="guestRenameSearch" class="form-label">Search registered guests and members</label>
+                            <input id="guestRenameSearch" type="search" autocomplete="off" placeholder="Type a guest name…" class="form-field text-sm mb-2">
+                            <div id="guestRenameResults" class="flex max-h-48 flex-col gap-1 overflow-y-auto mb-3" aria-live="polite">
+                                <p class="text-xs text-gray-400 py-2">Type at least one character to search.</p>
+                            </div>
+                            <div id="guestRenameEditor" class="hidden rounded-lg border border-gold/20 bg-black/25 p-3 space-y-3">
+                                <p class="text-xs text-gray-300">Selected guest: <strong id="guestRenameCurrentName" class="text-white"></strong></p>
+                                <label for="guestRenameNewName" class="form-label">New name</label>
+                                <input id="guestRenameNewName" type="text" autocomplete="off" maxlength="120" class="form-field text-sm" placeholder="Correct full name">
+                                <p id="guestRenameStatus" class="text-xs text-gray-300" role="status" aria-live="polite"></p>
+                                <div class="flex flex-wrap gap-2">
+                                    <button id="guestRenameSave" type="button" class="gold-btn rounded-lg px-4 py-2 text-xs uppercase tracking-widest">Save renamed guest</button>
+                                    <button id="guestRenameCancel" type="button" class="sort-option">Cancel</button>
+                                </div>
+                            </div>
+                        </section>
                         <section id="duplicateReviewPanel" class="staff-panel mb-4" aria-labelledby="duplicateReviewHeading">
                             <div class="staff-panel__header">
                                 <h4 id="duplicateReviewHeading" class="staff-panel__title">Possible duplicate guests</h4>
@@ -1139,6 +1169,22 @@
                     </section>
                     </div>
                     <div id="eventSettingsPage" class="hidden">
+                        <section id="registrationSettingsPanel" class="staff-panel" aria-labelledby="registrationSettingsHeading">
+                            <div class="staff-panel__header">
+                                <h4 id="registrationSettingsHeading" class="staff-panel__title">Public registration</h4>
+                                <span class="staff-panel__meta">Admin only</span>
+                            </div>
+                            <p class="text-xs text-gray-300 mb-3">Control whether the public sign-up page accepts registrations and set an optional guest-list capacity. The page closes automatically when the limit is reached. Current count includes all guest-list records.</p>
+                            <label class="flex items-start gap-3 text-sm text-gray-100 mb-3">
+                                <input id="registrationOpen" type="checkbox" class="mt-1 accent-amber-300" checked>
+                                <span><strong>Accept new registrations</strong><span class="block text-xs text-gray-400 mt-1">Switch off to close registration manually, regardless of the capacity.</span></span>
+                            </label>
+                            <label for="registrationCapacity" class="form-label">Maximum guest-list capacity (0 = unlimited)</label>
+                            <input id="registrationCapacity" type="number" min="0" step="1" inputmode="numeric" class="form-field mb-3" value="0">
+                            <p id="registrationCountSummary" class="text-xs text-gray-300 mb-3" role="status" aria-live="polite">Current guest-list count: loading…</p>
+                            <button type="button" id="saveRegistrationSettingsBtn" class="sort-option">Save registration settings</button>
+                            <p id="registrationSettingsStatus" class="text-xs text-gray-300 mt-3 min-h-[1rem]" role="status" aria-live="polite">Save once to initialise the registration counter from the current guest list.</p>
+                        </section>
                         <section id="adminPricingPanel" class="staff-panel">
                         <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules, referral eligibility and the admission workflow. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid.</p>
                         <p id="pricingSaveStatus" class="text-xs text-gray-300 mb-3 min-h-[1rem]" role="status" aria-live="polite"></p>
@@ -1223,7 +1269,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Live build 2026.10.28.112</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.30.114</p>
         </div>
     </footer>
 
@@ -1264,6 +1310,13 @@
         const STAFF_ROLES = ['admin', 'hotel', 'internations'];
         // Both pages use the same workflow settings and operational rules.
         const WORKFLOW_SETTINGS_DOC_ID = 'workflow';
+        const REGISTRATION_SETTINGS_DOC_ID = 'registration';
+        let registrationSettings = { enabled: true, capacity: 0, count: 0 };
+        let registrationSettingsLoaded = false;
+        let registrationSettingsExists = false;
+        let registrationSettingsLoadError = false;
+        let registrationSettingsUnsubscribe = null;
+        let registrationCountSyncInProgress = false;
         let currentStaffRole = null;
         let activeStaffPage = 'overview';
         let currentAuthUser = null;
@@ -2779,6 +2832,133 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         const errorMessage = document.getElementById('errorMessage');
         let lastSubmittedGuest = null;
 
+        function currentGuestListCount() {
+            return new Set(cachedGuestDocs.map((guestDoc) => {
+                const data = guestDoc.data() || {};
+                return normalizeGuestName(data.name) || guestDoc.id;
+            })).size;
+        }
+
+        function registrationIsFull(settings = registrationSettings) {
+            const capacity = Number(settings.capacity) || 0;
+            return capacity > 0 && Number(settings.count || 0) >= capacity;
+        }
+
+        function renderRegistrationAvailability() {
+            const closedPanel = document.getElementById('registrationClosedPanel');
+            const intro = document.getElementById('rsvpIntro');
+            const introTitle = intro ? intro.querySelector('h2') : null;
+            const introDescription = intro ? intro.querySelector('p:last-child') : null;
+            if (!closedPanel || !form) return;
+
+            const unavailable = registrationSettingsLoadError || (registrationSettingsLoaded &&
+                (registrationSettings.enabled === false || registrationIsFull()));
+            form.classList.toggle('hidden', unavailable);
+            closedPanel.classList.toggle('hidden', !unavailable);
+
+            if (registrationSettingsLoadError) {
+                document.getElementById('registrationClosedTitle').textContent = 'Registration temporarily unavailable';
+                document.getElementById('registrationClosedMessage').textContent = 'We cannot verify registration availability at the moment. Please try again shortly.';
+                closedPanel.querySelector('a').classList.add('hidden');
+                if (introTitle) introTitle.textContent = 'Registration status';
+                if (introDescription) introDescription.textContent = 'Please check back in a moment.';
+                return;
+            }
+
+            const manuallyClosed = registrationSettings.enabled === false;
+            const full = registrationIsFull();
+            if (unavailable) {
+                document.getElementById('registrationClosedTitle').textContent = full ? "We're currently full!" : 'Registration is currently closed';
+                document.getElementById('registrationClosedMessage').textContent = full
+                    ? 'Our guest list has reached capacity, but places may become available if someone cancels. Check back later!'
+                    : 'Registration is temporarily closed. Please check back later in case it reopens.';
+                closedPanel.querySelector('a').classList.remove('hidden');
+                if (introTitle) introTitle.textContent = full ? 'Guest List Full' : 'Registration Closed';
+                if (introDescription) introDescription.textContent = full
+                    ? 'The guest list has reached its current limit.'
+                    : 'New registrations are not being accepted at the moment.';
+            } else {
+                if (introTitle) introTitle.textContent = 'Join the Guest List';
+                if (introDescription) introDescription.textContent = 'This is a private, guest-list-only event, so please register in advance. The hostess will welcome you and check your name at the entrance.';
+            }
+        }
+
+        function updateRegistrationAdminControls() {
+            const open = document.getElementById('registrationOpen');
+            const capacity = document.getElementById('registrationCapacity');
+            const count = document.getElementById('registrationCountSummary');
+            if (open && registrationSettingsLoaded && document.activeElement !== open) open.checked = registrationSettings.enabled !== false;
+            if (capacity && registrationSettingsLoaded && document.activeElement !== capacity) capacity.value = String(Number(registrationSettings.capacity) || 0);
+            if (count) {
+                const current = registrationSettingsLoaded && registrationSettingsExists
+                    ? Number(registrationSettings.count) || 0 : currentGuestListCount();
+                const limit = Number(registrationSettings.capacity) || 0;
+                count.textContent = 'Current guest-list count: ' + current + (limit > 0 ? ' / ' + limit : ' · No capacity limit');
+            }
+        }
+
+        async function saveRegistrationSettings() {
+            const status = document.getElementById('registrationSettingsStatus');
+            const button = document.getElementById('saveRegistrationSettingsBtn');
+            const open = document.getElementById('registrationOpen');
+            const capacityInput = document.getElementById('registrationCapacity');
+            if (currentStaffRole !== 'admin' || !db || !open || !capacityInput) {
+                if (status) status.textContent = 'Only an authenticated Admin can change registration settings.';
+                return;
+            }
+            const capacity = Number(capacityInput.value);
+            if (!Number.isInteger(capacity) || capacity < 0) {
+                if (status) status.textContent = 'Enter a whole number of 0 or more. Use 0 for unlimited capacity.';
+                return;
+            }
+            if (button) button.disabled = true;
+            if (status) status.textContent = 'Saving registration settings…';
+            try {
+                const currentCount = currentGuestListCount();
+                await db.collection('event_settings').doc(REGISTRATION_SETTINGS_DOC_ID).set({
+                    enabled: open.checked,
+                    capacity,
+                    count: currentCount,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedBy: activeStaffUid || null
+                }, { merge: true });
+                if (status) status.textContent = 'Registration settings saved. The public sign-up page will update automatically.';
+            } catch (error) {
+                console.error('Registration settings save failed:', error);
+                if (status) status.textContent = 'Could not save registration settings. Check Firestore permissions and try again.';
+            } finally {
+                if (button) button.disabled = false;
+            }
+        }
+
+        const saveRegistrationSettingsButton = document.getElementById('saveRegistrationSettingsBtn');
+        if (saveRegistrationSettingsButton) saveRegistrationSettingsButton.addEventListener('click', saveRegistrationSettings);
+
+        if (db) {
+            registrationSettingsUnsubscribe = db.collection('event_settings').doc(REGISTRATION_SETTINGS_DOC_ID).onSnapshot((doc) => {
+                registrationSettingsLoaded = true;
+                registrationSettingsExists = doc.exists;
+                registrationSettingsLoadError = false;
+                const value = doc.exists ? doc.data() || {} : {};
+                registrationSettings = {
+                    enabled: value.enabled !== false,
+                    capacity: Math.max(0, Number(value.capacity) || 0),
+                    count: Math.max(0, Number(value.count) || 0)
+                };
+                renderRegistrationAvailability();
+                updateRegistrationAdminControls();
+            }, (error) => {
+                console.error('Public registration settings could not be read:', error);
+                registrationSettingsLoaded = false;
+                registrationSettingsExists = false;
+                registrationSettingsLoadError = true;
+                renderRegistrationAvailability();
+            });
+        } else {
+            registrationSettingsLoadError = true;
+            renderRegistrationAvailability();
+        }
+
         /** Render the in-place RSVP confirmation using the submitted guest details. */
         function showSubmittedGuest(guest) {
             document.getElementById('summaryName').textContent = guest.name;
@@ -2822,9 +3002,34 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
 
             try {
-                await db.collection('halloween_guests').add({
-                    ...guest,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                const settingsRef = db.collection('event_settings').doc(REGISTRATION_SETTINGS_DOC_ID);
+                const guestRef = db.collection('halloween_guests').doc();
+                await db.runTransaction(async (transaction) => {
+                    const settingsSnapshot = await transaction.get(settingsRef);
+                    const settings = settingsSnapshot.exists ? settingsSnapshot.data() || {} : { enabled: true, capacity: 0, count: 0 };
+                    const currentCount = Math.max(0, Number(settings.count) || 0);
+                    const capacity = Math.max(0, Number(settings.capacity) || 0);
+                    if (settings.enabled === false || (capacity > 0 && currentCount >= capacity)) {
+                        const fullError = new Error(settings.enabled === false ? 'closed' : 'full');
+                        fullError.code = 'registration/full';
+                        throw fullError;
+                    }
+                    const nextCount = currentCount + 1;
+                    const counterUpdate = {
+                        count: nextCount,
+                        lastRegistrationId: guestRef.id,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    if (settingsSnapshot.exists) transaction.update(settingsRef, counterUpdate);
+                    else transaction.set(settingsRef, {
+                        enabled: true,
+                        capacity: 0,
+                        ...counterUpdate
+                    });
+                    transaction.set(guestRef, {
+                        ...guest,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
                 });
                 lastSubmittedGuest = guest;
                 showSubmittedGuest(guest);
@@ -2836,8 +3041,16 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 form.classList.add('hidden');
                 document.getElementById('registerAnotherBtn').textContent = 'Register another guest';
             } catch (error) {
-                console.error('Guest-list database save failed:', error);
-                errorMessage.textContent = 'Registration could not be saved. Your entries are still in the form; please retry or contact Ari.';
+                if (error && error.code === 'registration/full') {
+                    if (error.message === 'closed') registrationSettings.enabled = false;
+                    else if (Number(registrationSettings.capacity) > 0) registrationSettings.count = registrationSettings.capacity;
+                    registrationSettingsLoaded = true;
+                    renderRegistrationAvailability();
+                    errorMessage.textContent = 'The guest list has just filled up or registration has closed. Please check back later; places may become available if someone cancels.';
+                } else {
+                    console.error('Guest-list database save failed:', error);
+                    errorMessage.textContent = 'Registration could not be saved. Your entries are still in the form; please retry or contact Ari.';
+                }
                 errorMessage.classList.remove('hidden');
             } finally {
                 submitBtn.disabled = false;
@@ -3739,6 +3952,141 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             });
         }
 
+        let selectedGuestRename = null;
+
+        /** Search the current authoritative guest snapshot and let an Admin select a record to rename. */
+        function renderGuestRenameResults() {
+            const panel = document.getElementById('guestRenamePanel');
+            const search = document.getElementById('guestRenameSearch');
+            const results = document.getElementById('guestRenameResults');
+            if (!panel || !search || !results) return;
+            if (currentStaffRole !== 'admin') {
+                panel.classList.add('hidden');
+                return;
+            }
+            panel.classList.remove('hidden');
+            const query = normalizeGuestName(search.value);
+            results.replaceChildren();
+            if (!query) {
+                const hint = document.createElement('p');
+                hint.className = 'text-xs text-gray-400 py-2';
+                hint.textContent = 'Type at least one character to search.';
+                results.appendChild(hint);
+                return;
+            }
+            const matches = cachedGuestDocs
+                .map(doc => ({ doc, data: doc.data() || {} }))
+                .filter(item => String(item.data.name || '').trim() && normalizeGuestName(item.data.name).includes(query))
+                .sort((a, b) => String(a.data.name || '').localeCompare(String(b.data.name || ''), undefined, { sensitivity: 'base' }))
+                .slice(0, 40);
+            if (!matches.length) {
+                const empty = document.createElement('p');
+                empty.className = 'text-xs text-gray-400 py-2';
+                empty.textContent = 'No registered names match that search.';
+                results.appendChild(empty);
+                return;
+            }
+            matches.forEach(({ doc, data }) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'w-full rounded-md border border-gray-600 px-3 py-2 text-left text-sm text-gray-100 hover:bg-white/10';
+                const kind = isImportedMemberRecord(data) ? 'InterNations member' : 'RSVP guest';
+                button.textContent = String(data.name || '') + ' · ' + kind;
+                button.addEventListener('click', () => {
+                    selectedGuestRename = { id: doc.id, oldName: String(data.name || '').trim(), oldKey: normalizeGuestName(data.name) };
+                    document.getElementById('guestRenameCurrentName').textContent = selectedGuestRename.oldName;
+                    document.getElementById('guestRenameNewName').value = selectedGuestRename.oldName;
+                    document.getElementById('guestRenameStatus').textContent = '';
+                    document.getElementById('guestRenameEditor').classList.remove('hidden');
+                    document.getElementById('guestRenameNewName').focus();
+                });
+                results.appendChild(button);
+            });
+            if (matches.length === 40) {
+                const note = document.createElement('p');
+                note.className = 'text-[10px] text-gray-400';
+                note.textContent = 'Showing the first 40 matches. Refine your search for more specific results.';
+                results.appendChild(note);
+            }
+        }
+
+        function clearGuestRenameSelection() {
+            selectedGuestRename = null;
+            const editor = document.getElementById('guestRenameEditor');
+            if (editor) editor.classList.add('hidden');
+            const status = document.getElementById('guestRenameStatus');
+            if (status) status.textContent = '';
+        }
+
+        async function saveGuestRename() {
+            const status = document.getElementById('guestRenameStatus');
+            const saveButton = document.getElementById('guestRenameSave');
+            if (currentStaffRole !== 'admin') {
+                if (status) status.textContent = 'Only an Admin can rename guests.';
+                return;
+            }
+            if (!db || !selectedGuestRename) {
+                if (status) status.textContent = 'Select a guest first.';
+                return;
+            }
+            const newName = sanitizeGuestDisplayName(document.getElementById('guestRenameNewName').value).normalize('NFKC').trim();
+            if (!newName) {
+                if (status) status.textContent = 'Enter a valid name.';
+                return;
+            }
+            const newKey = normalizeGuestName(newName);
+            if (newKey === selectedGuestRename.oldKey) {
+                if (status) status.textContent = 'The new name is the same as the current name.';
+                return;
+            }
+            const colliding = cachedGuestDocs.some(doc => {
+                const data = doc.data() || {};
+                return normalizeGuestName(data.name) === newKey && normalizeGuestName(data.name) !== selectedGuestRename.oldKey;
+            });
+            if (colliding) {
+                if (status) status.textContent = 'A guest with that name already exists. Choose a more specific name to avoid combining separate people.';
+                return;
+            }
+            const nameParts = newName.split(/\s+/).filter(Boolean);
+            const update = {
+                name: newName,
+                firstName: nameParts.shift() || '',
+                lastName: nameParts.join(' ')
+            };
+            if (!window.confirm('Rename "' + selectedGuestRename.oldName + '" to "' + newName + '"? Existing guest details will be preserved.')) return;
+            saveButton.disabled = true;
+            saveButton.textContent = 'Saving…';
+            if (status) status.textContent = 'Saving name change…';
+            try {
+                // Keep duplicate records for the same normalized person in sync, without touching their other fields.
+                const matchingDocs = cachedGuestDocs.filter(doc => normalizeGuestName((doc.data() || {}).name) === selectedGuestRename.oldKey);
+                if (!matchingDocs.length) throw new Error('The selected guest is no longer in the current guest list. Refresh and try again.');
+                const batch = db.batch();
+                matchingDocs.forEach(doc => batch.update(db.collection('halloween_guests').doc(doc.id), update));
+                await batch.commit();
+                if (status) status.textContent = 'Name updated successfully.';
+                selectedGuestRename = null;
+                document.getElementById('guestRenameEditor').classList.add('hidden');
+                document.getElementById('guestRenameSearch').value = newName;
+                renderGuestRenameResults();
+            } catch (error) {
+                console.error('Guest rename failed:', error);
+                if (status) status.textContent = 'Could not rename this guest. Check the connection and Admin permissions, then try again.';
+            } finally {
+                saveButton.disabled = false;
+                saveButton.textContent = 'Save renamed guest';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const search = document.getElementById('guestRenameSearch');
+            const save = document.getElementById('guestRenameSave');
+            const cancel = document.getElementById('guestRenameCancel');
+            if (search) search.addEventListener('input', renderGuestRenameResults);
+            if (save) save.addEventListener('click', saveGuestRename);
+            if (cancel) cancel.addEventListener('click', clearGuestRenameSelection);
+        });
+
         function loadLiveGuestlist() {
             const listError = document.getElementById('guestlistError');
             if (!db) {
@@ -3817,6 +4165,25 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 cachedGuestSnapshot = snapshot;
                 const effectiveGuestDocs = snapshot.docs.map(makeEffectiveGuestDoc);
                 cachedGuestDocs = effectiveGuestDocs;
+                updateRegistrationAdminControls();
+                const currentGuestCount = currentGuestListCount();
+                if (currentStaffRole === 'admin' && !snapshot.metadata.fromCache && !registrationCountSyncInProgress) {
+                    const registrationRef = db.collection('event_settings').doc(REGISTRATION_SETTINGS_DOC_ID);
+                    registrationRef.get({ source: 'server' }).then((registrationDoc) => {
+                        if (!registrationDoc.exists) return;
+                        const savedCount = Number((registrationDoc.data() || {}).count) || 0;
+                        if (savedCount === currentGuestCount) return;
+                        registrationCountSyncInProgress = true;
+                        return registrationRef.set({
+                            count: currentGuestCount,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            updatedBy: activeStaffUid || null
+                        }, { merge: true }).finally(() => { registrationCountSyncInProgress = false; });
+                    }).catch((error) => {
+                        console.warn('Could not reconcile registration count with the guest list:', error);
+                    });
+                }
+                renderGuestRenameResults();
                 // Rebuild cancellation matches whenever the authoritative guest snapshot changes.
                 // The cancellation queue can load before the guest list; without this refresh, its
                 // first render may incorrectly show no exact or close matches.
