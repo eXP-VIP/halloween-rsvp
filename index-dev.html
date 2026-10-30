@@ -1314,6 +1314,7 @@
         const REGISTRATION_SETTINGS_DOC_ID = 'registration';
         let registrationSettings = { enabled: true, capacity: 0, count: 0 };
         let registrationSettingsLoaded = false;
+        let registrationSettingsExists = false;
         let registrationSettingsLoadError = false;
         let registrationSettingsUnsubscribe = null;
         let registrationCountSyncInProgress = false;
@@ -2883,7 +2884,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if (open && registrationSettingsLoaded && document.activeElement !== open) open.checked = registrationSettings.enabled !== false;
             if (capacity && registrationSettingsLoaded && document.activeElement !== capacity) capacity.value = String(Number(registrationSettings.capacity) || 0);
             if (count) {
-                const current = registrationSettingsLoaded ? Number(registrationSettings.count) || 0 : cachedGuestDocs.length;
+                const current = registrationSettingsLoaded && registrationSettingsExists
+                    ? Number(registrationSettings.count) || 0 : cachedGuestDocs.length;
                 const limit = Number(registrationSettings.capacity) || 0;
                 count.textContent = 'Current guest-list count: ' + current + (limit > 0 ? ' / ' + limit : ' · No capacity limit');
             }
@@ -2929,6 +2931,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         if (db) {
             registrationSettingsUnsubscribe = db.collection('event_settings').doc(REGISTRATION_SETTINGS_DOC_ID).onSnapshot((doc) => {
                 registrationSettingsLoaded = true;
+                registrationSettingsExists = doc.exists;
                 registrationSettingsLoadError = false;
                 const value = doc.exists ? doc.data() || {} : {};
                 registrationSettings = {
@@ -2941,6 +2944,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }, (error) => {
                 console.error('Public registration settings could not be read:', error);
                 registrationSettingsLoaded = false;
+                registrationSettingsExists = false;
                 registrationSettingsLoadError = true;
                 renderRegistrationAvailability();
             });
@@ -3000,7 +3004,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     const currentCount = Math.max(0, Number(settings.count) || 0);
                     const capacity = Math.max(0, Number(settings.capacity) || 0);
                     if (settings.enabled === false || (capacity > 0 && currentCount >= capacity)) {
-                        const fullError = new Error('Registration is closed or the guest list is full.');
+                        const fullError = new Error(settings.enabled === false ? 'closed' : 'full');
                         fullError.code = 'registration/full';
                         throw fullError;
                     }
@@ -3032,11 +3036,10 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 document.getElementById('registerAnotherBtn').textContent = 'Register another guest';
             } catch (error) {
                 if (error && error.code === 'registration/full') {
-                    registrationSettings.enabled = error.message.includes('closed') ? false : registrationSettings.enabled;
-                    if (registrationIsFull() || registrationSettings.enabled === false) {
-                        registrationSettingsLoaded = true;
-                        renderRegistrationAvailability();
-                    }
+                    if (error.message === 'closed') registrationSettings.enabled = false;
+                    else if (Number(registrationSettings.capacity) > 0) registrationSettings.count = registrationSettings.capacity;
+                    registrationSettingsLoaded = true;
+                    renderRegistrationAvailability();
                     errorMessage.textContent = 'The guest list has just filled up or registration has closed. Please check back later; places may become available if someone cancels.';
                 } else {
                     console.error('Guest-list database save failed:', error);
