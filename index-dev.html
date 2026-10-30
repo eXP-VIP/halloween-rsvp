@@ -2833,6 +2833,13 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         const errorMessage = document.getElementById('errorMessage');
         let lastSubmittedGuest = null;
 
+        function currentGuestListCount() {
+            return new Set(cachedGuestDocs.map((guestDoc) => {
+                const data = guestDoc.data() || {};
+                return normalizeGuestName(data.name) || guestDoc.id;
+            })).size;
+        }
+
         function registrationIsFull(settings = registrationSettings) {
             const capacity = Number(settings.capacity) || 0;
             return capacity > 0 && Number(settings.count || 0) >= capacity;
@@ -2885,7 +2892,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if (capacity && registrationSettingsLoaded && document.activeElement !== capacity) capacity.value = String(Number(registrationSettings.capacity) || 0);
             if (count) {
                 const current = registrationSettingsLoaded && registrationSettingsExists
-                    ? Number(registrationSettings.count) || 0 : cachedGuestDocs.length;
+                    ? Number(registrationSettings.count) || 0 : currentGuestListCount();
                 const limit = Number(registrationSettings.capacity) || 0;
                 count.textContent = 'Current guest-list count: ' + current + (limit > 0 ? ' / ' + limit : ' · No capacity limit');
             }
@@ -2908,7 +2915,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if (button) button.disabled = true;
             if (status) status.textContent = 'Saving registration settings…';
             try {
-                const currentCount = cachedGuestDocs.length;
+                const currentCount = currentGuestListCount();
                 await db.collection('event_settings').doc(REGISTRATION_SETTINGS_DOC_ID).set({
                     enabled: open.checked,
                     capacity,
@@ -4160,15 +4167,16 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const effectiveGuestDocs = snapshot.docs.map(makeEffectiveGuestDoc);
                 cachedGuestDocs = effectiveGuestDocs;
                 updateRegistrationAdminControls();
+                const currentGuestCount = currentGuestListCount();
                 if (currentStaffRole === 'admin' && !snapshot.metadata.fromCache && !registrationCountSyncInProgress) {
                     const registrationRef = db.collection('event_settings').doc(REGISTRATION_SETTINGS_DOC_ID);
                     registrationRef.get({ source: 'server' }).then((registrationDoc) => {
                         if (!registrationDoc.exists) return;
                         const savedCount = Number((registrationDoc.data() || {}).count) || 0;
-                        if (savedCount === snapshot.size) return;
+                        if (savedCount === currentGuestCount) return;
                         registrationCountSyncInProgress = true;
                         return registrationRef.set({
-                            count: snapshot.size,
+                            count: currentGuestCount,
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                             updatedBy: activeStaffUid || null
                         }, { merge: true }).finally(() => { registrationCountSyncInProgress = false; });
