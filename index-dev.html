@@ -1146,9 +1146,9 @@
                             <h4 class="staff-panel__title">Import InterNations guest list</h4>
                             <span class="staff-panel__meta">CSV / Excel · repeatable import</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-3">Choose the full current InterNations Members-List export. Missing names are removed from the imported member list; matched guests keep their check-in, payment and chip status. An RSVP guest who is also a member remains a member for calculations.</p>
-                        <label for="internationsFileInput" class="form-label">Guest-list spreadsheet</label>
-                        <input id="internationsFileInput" type="file" accept=".xlsx,.xls,.csv,.ods" class="form-field text-sm mb-3">
+                        <p class="text-xs text-gray-300 mb-3">Import a complete InterNations page capture (.json) or a full Members-List spreadsheet. JSON captures match members by InterNations ID; waiting-list entries are kept separate. Incomplete captures are rejected.</p>
+                        <label for="internationsFileInput" class="form-label">Guest-list capture or spreadsheet</label>
+                        <input id="internationsFileInput" type="file" accept=".json,.xlsx,.xls,.csv,.ods" class="form-field text-sm mb-3">
                         <div id="internationsImportOptions" class="hidden space-y-3">
                             <p class="text-xs text-sky-100">Names are combined automatically from First Name + Last Name. Membership Type (or Status) sets the member category and badges; Country is retained and shown as a flag.</p>
                             <div id="internationsImportPreview" class="rounded-lg border border-sky-400/20 bg-black/30 p-3 text-xs text-gray-200"></div>
@@ -1271,7 +1271,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.30.115</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.30.116</p>
         </div>
     </footer>
 
