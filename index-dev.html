@@ -1300,7 +1300,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.128</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.129</p>
         </div>
     </footer>
 
@@ -5232,13 +5232,13 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if (statusNode) statusNode.textContent = status;
             if (nameNode) nameNode.textContent = guestData ? sanitizeGuestDisplayName(guestData.name) : 'Guest not found';
             if (guestData) {
-                const identity = guestData.guestType === 'internations_member' ? 'InterNations member' : 'RSVP guest';
-                const details = [identity];
-                if (currentStaffRole === 'admin' || currentStaffRole === 'internations') {
-                    const membershipType = sanitizeGuestDisplayName(guestData.interNationsStatus || '');
-                    if (membershipType) details.push('InterNations ' + membershipType);
-                }
-                if (metaNode) metaNode.textContent = details.join(' · ');
+                const isMember = guestData.guestType === 'internations_member';
+                const membershipType = (currentStaffRole === 'admin' || currentStaffRole === 'internations')
+                    ? sanitizeGuestDisplayName(guestData.interNationsStatus || '') : '';
+                const identity = isMember
+                    ? (membershipType ? 'InterNations ' + membershipType : 'InterNations member')
+                    : 'RSVP guest';
+                if (metaNode) metaNode.textContent = identity;
             } else if (metaNode) {
                 metaNode.textContent = detail || 'The QR code could not be matched to a guest.';
             }
