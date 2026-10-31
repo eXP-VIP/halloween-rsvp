@@ -242,6 +242,9 @@
         /* Compact filter/sort controls; aria-pressed communicates active sorting. */
         .sort-option { border: 1px solid rgba(212,175,55,.35); border-radius: 7px; color: #d8d3c8; padding: 7px 11px; font-size: 10px; letter-spacing: .04em; background: rgba(8,8,10,.55); }
         .sort-option[aria-pressed="true"] { color: #08080a; background: var(--gold); border-color: var(--gold); font-weight: 700; }
+        .checkin-mode-option { min-width: 0; border-radius: 8px; padding: 11px 12px; color: #c9c3b7; background: transparent; font-size: 12px; font-weight: 600; letter-spacing: .035em; transition: background .15s ease, color .15s ease, box-shadow .15s ease; }
+        .checkin-mode-option[aria-pressed="true"] { color: #08080a; background: var(--gold); box-shadow: 0 1px 5px rgba(0,0,0,.35); }
+        .checkin-mode-option:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
         .form-field::placeholder { color: #85818a; }
         .form-label { display: block; margin-bottom: 8px; color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
         @media (max-width: 640px) {
@@ -1021,14 +1024,15 @@
                     <div class="staff-panel__header">
                         <h4 id="hotelCheckInTitle" class="staff-panel__title">Guest-list Verification</h4>
                         <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
-                            <button type="button" id="checkInSearchModeBtn" class="sort-option" aria-pressed="true">Search name</button>
-                            <button type="button" id="checkInQrModeBtn" class="sort-option" aria-pressed="false">Scan QR</button>
                             <button type="button" id="printGuestListBtn" class="sort-option" title="Automatically choose page orientation, columns and font size; include both roster versions in one PDF">Print / Save PDF</button>
                             <span id="printGuestListStatus" class="text-[10px] text-gray-400" role="status" aria-live="polite"></span>
-                            <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                         </div>
                     </div>
-                    <p id="hotelCheckInDescription" class="text-xs text-gray-400 mb-3">Search by name or switch to QR scanning. Both methods use the same check-in action.</p>
+                    <div id="checkInModeSwitch" class="grid grid-cols-2 w-full rounded-xl border border-gold/40 bg-black/50 p-1 mb-3" role="group" aria-label="Check-in method">
+                        <button type="button" id="checkInSearchModeBtn" class="checkin-mode-option" aria-pressed="true">Search name</button>
+                        <button type="button" id="checkInQrModeBtn" class="checkin-mode-option" aria-pressed="false">Scan QR</button>
+                    </div>
+                    <p id="hotelCheckInDescription" class="text-xs text-gray-400 mb-3">Choose how to identify the guest. Both methods use the same check-in action.</p>
                     <div id="checkInQrPanel" class="hidden mb-4 rounded-xl border border-gold/30 bg-black/40 p-3">
                         <div class="flex items-center justify-between gap-3 mb-2">
                             <span class="text-xs uppercase tracking-wider text-amber-100">QR check-in</span>
@@ -1049,6 +1053,7 @@
                         <p class="text-[10px] text-gray-500 text-center mt-2">Camera access requires HTTPS and browser permission. Manual name search remains available at any time.</p>
                     </div>
                     <div id="checkInManualPanel">
+                    <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full text-sm mb-3">
                     <div id="hotelSortControls" class="flex flex-wrap items-center gap-2 mb-4" role="group" aria-label="Sort check-in lists">
                         <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                         <button type="button" class="sort-option" data-sort-group="checkin" data-sort="firstName" aria-pressed="false" onclick="setGuestSort('firstName')">First name</button>
@@ -1295,7 +1300,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.124</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.125</p>
         </div>
     </footer>
 
