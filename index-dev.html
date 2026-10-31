@@ -1300,7 +1300,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.129</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.130</p>
         </div>
     </footer>
 
@@ -5235,8 +5235,15 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const isMember = guestData.guestType === 'internations_member';
                 const membershipType = (currentStaffRole === 'admin' || currentStaffRole === 'internations')
                     ? sanitizeGuestDisplayName(guestData.interNationsStatus || '') : '';
+                const importedAt = guestData.importedAt && typeof guestData.importedAt.toDate === 'function'
+                    ? guestData.importedAt.toDate()
+                    : guestData.importedAt ? new Date(guestData.importedAt) : null;
+                const addedToday = isMember && importedAt && Number.isFinite(importedAt.getTime())
+                    && importedAt.getFullYear() === new Date().getFullYear()
+                    && importedAt.getMonth() === new Date().getMonth()
+                    && importedAt.getDate() === new Date().getDate();
                 const identity = isMember
-                    ? (membershipType ? 'InterNations ' + membershipType : 'InterNations member')
+                    ? ((addedToday ? 'NEW IN MEMBER LIST · ' : '') + (membershipType ? 'InterNations ' + membershipType : 'InterNations member'))
                     : 'RSVP guest';
                 if (metaNode) metaNode.textContent = identity;
             } else if (metaNode) {
@@ -5247,9 +5254,28 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         }
 
         async function handleCheckInQr(rawValue) {
-            const identifier = parseCheckInQrPayload(rawValue);
+            const rawPayload = String(rawValue || '');
+            const identifier = parseCheckInQrPayload(rawPayload);
+            let archiveSaved = false;
+            // Preserve the exact QR payload before any matching/early-return path, including unknown and already checked-in scans.
+            try {
+                if (!db) throw new Error('Database unavailable');
+                await db.collection('qr_scan_archive').add({
+                    rawValue: rawPayload,
+                    parsedType: identifier ? identifier.type : 'unrecognised',
+                    parsedId: identifier && identifier.id ? identifier.id : null,
+                    parsedIds: identifier && identifier.ids ? identifier.ids : [],
+                    eventId: '1063593',
+                    capturedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    capturedByRole: currentStaffRole || 'unknown'
+                });
+                archiveSaved = true;
+            } catch (archiveError) {
+                console.error('QR archive capture failed:', archiveError);
+            }
             if (!identifier) {
-                showCheckInQrResult('QR NOT RECOGNISED', null, 'This QR format is not supported yet. Switch to name search or use a supported guest QR.');
+                showCheckInQrResult('QR NOT RECOGNISED', null,
+                    'This QR format is not supported yet. ' + (archiveSaved ? 'Original QR data archived. ' : 'QR archive could not be saved. ') + 'Switch to name search or use a supported guest QR.');
                 return;
             }
             const matches = cachedGuestDocs.filter(doc => {
@@ -5262,18 +5288,23 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             });
             if (matches.length !== 1) {
                 showCheckInQrResult(matches.length > 1 ? 'AMBIGUOUS QR' : 'GUEST NOT FOUND', null,
-                    matches.length > 1 ? 'More than one guest record has this QR identifier. Use name search and report the duplicate.' : 'No guest matches this QR identifier. Use name search.');
+                    (matches.length > 1 ? 'More than one guest record has this QR identifier. Use name search and report the duplicate. ' : 'No guest matches this QR identifier. Use name search. ')
+                    + (archiveSaved ? 'Original QR data archived.' : 'QR archive could not be saved; check Firestore permissions.'));
                 return;
             }
             const doc = matches[0];
             const data = doc.data() || {};
             if (data.checkedIn) {
-                showCheckInQrResult('ALREADY CHECKED IN', data, 'This guest is already marked as checked in.');
+                showCheckInQrResult('ALREADY CHECKED IN', data,
+                    'This guest is already marked as checked in. ' + (archiveSaved ? 'Original QR data archived.' : 'QR archive could not be saved; check Firestore permissions.'));
                 return;
             }
             const saved = await toggleCheckIn(doc.id, false);
-            if (saved) showCheckInQrResult('CHECKED IN', data, 'Check-in saved successfully.', twoStepCheckInEnabled ? 'none' : 'single');
-            else showCheckInQrResult('CHECK-IN FAILED', data, 'The check-in could not be saved. Check the error message and use name search if needed.');
+            if (saved) showCheckInQrResult('CHECKED IN', data,
+                'Check-in saved successfully. ' + (archiveSaved ? 'Original QR data archived.' : 'QR archive could not be saved; check Firestore permissions.'),
+                twoStepCheckInEnabled ? 'none' : 'single');
+            else showCheckInQrResult('CHECK-IN FAILED', data,
+                'The check-in could not be saved. ' + (archiveSaved ? 'Original QR data archived. ' : 'QR archive could not be saved. ') + 'Check the error message and use name search if needed.');
         }
 
         function resumeCheckInQrCamera() {
