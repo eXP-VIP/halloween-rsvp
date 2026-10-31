@@ -1037,12 +1037,12 @@
                         <div class="relative overflow-hidden rounded-lg bg-black aspect-video max-h-[42vh]">
                             <video id="checkInQrVideo" class="w-full h-full object-cover" autoplay muted playsinline></video>
                             <div class="pointer-events-none absolute inset-6 border-2 border-amber-300/80 rounded-lg"></div>
-                            <div id="checkInQrResult" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-5 sm:p-8 bg-black/95 backdrop-blur-sm" aria-live="polite">
+                            <button type="button" id="checkInQrResult" onclick="resumeCheckInQrCamera()" class="hidden absolute inset-0 z-20 w-full flex flex-col items-center justify-center text-center p-5 sm:p-8 bg-black/95 backdrop-blur-sm cursor-pointer focus-visible:outline focus-visible:outline-4 focus-visible:outline-amber-300" aria-label="Tap to scan the next guest" aria-live="polite">
                                 <p id="checkInQrResultStatus" class="text-base sm:text-lg font-bold uppercase tracking-[0.18em] text-emerald-200">Checked in</p>
                                 <p id="checkInQrResultName" class="text-3xl sm:text-5xl font-bold leading-tight text-white mt-4 break-words"></p>
                                 <p id="checkInQrResultMeta" class="text-lg sm:text-2xl text-gray-200 mt-4"></p>
-                                <p class="text-sm sm:text-base text-gray-400 mt-6">Next guest ready in a moment…</p>
-                            </div>
+                                <p class="text-sm sm:text-base text-amber-200 mt-6">Tap here to scan the next guest</p>
+                            </button>
                         </div>
                         <canvas id="checkInQrCanvas" class="hidden"></canvas>
                         <p id="checkInQrStatus" class="text-sm text-center text-gray-300 mt-3" role="status" aria-live="polite">Starting camera…</p>
@@ -1295,7 +1295,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.123</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.124</p>
         </div>
     </footer>
 
@@ -5246,6 +5246,13 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             else showCheckInQrResult('CHECK-IN FAILED', data, 'The check-in could not be saved. Check the error message and use name search if needed.');
         }
 
+        function resumeCheckInQrCamera() {
+            if (!checkInQrModeActive) return;
+            const result = document.getElementById('checkInQrResult');
+            if (result) result.classList.add('hidden');
+            startCheckInQrCamera();
+        }
+
         async function startCheckInQrCamera() {
             const status = document.getElementById('checkInQrStatus');
             const video = document.getElementById('checkInQrVideo');
@@ -5287,13 +5294,10 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                                 console.error('QR check-in failed:', error);
                                 showCheckInQrResult('CHECK-IN ERROR', null, 'An unexpected error occurred. Use name search or retry.');
                             }).finally(() => {
-                                window.setTimeout(() => {
-                                    const resultNode = document.getElementById('checkInQrResult');
-                                    if (resultNode) resultNode.classList.add('hidden');
-                                    checkInQrBusy = false;
-                                    const statusNode = document.getElementById('checkInQrStatus');
-                                    if (statusNode && checkInQrModeActive) statusNode.textContent = 'Point the camera at the next guest QR code.';
-                                }, 2000);
+                                // Keep the last result visible and release the camera until staff are ready.
+                                stopCheckInQrCamera();
+                                const statusNode = document.getElementById('checkInQrStatus');
+                                if (statusNode && checkInQrModeActive) statusNode.textContent = 'Camera paused. Tap the result to scan the next guest.';
                             });
                         }
                     }
