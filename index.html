@@ -2470,11 +2470,11 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             const existingIds = new Set(cachedGuestDocs.map(doc => String((doc.data() || {}).memberId || '')).filter(Boolean));
             const newNames = result.entries.filter(item => !(item.memberId && existingIds.has(String(item.memberId))) && !existingKeys.has(item.key));
             const matchingNames = result.entries.length - newNames.length;
-            const missingMembers = cachedGuestDocs.filter(doc => {
+            const missingMembers = pendingInternationsCaptureVerified ? cachedGuestDocs.filter(doc => {
                 const data = doc.data() || {};
                 return isImportedMemberRecord(data) && getStoredGuestNameKeys(data).length > 0 &&
                     !(data.memberId && inputIds.has(String(data.memberId))) && !storedGuestMatchesInput(data, inputKeys);
-            });
+            }) : [];
             const looksLikeRsvp = data => Boolean(
                 data.rsvpSubmitted === true ||
                 data.rsvpSource === 'website' ||
@@ -2492,7 +2492,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             preview.appendChild(summary);
             const note = document.createElement('p');
             note.className = 'text-gray-300 mb-2';
-            note.textContent = 'Confirming synchronizes to this full Members-List: new members are added, matches are updated, member-only records missing from the file are removed, and records marked as separate RSVPs are retained as RSVPs. Existing status is preserved for matches.';
+            note.textContent = pendingInternationsCaptureVerified
+                ? 'Confirming synchronizes this verified full Members-List: new members are added, matches are updated and member-only records missing from the file are removed. Existing RSVPs and operational status are retained.'
+                : 'This capture is available for review and non-destructive import only. New members can be added and matching records updated; existing members missing from this file will NOT be removed because capture completeness is not verified.';
             preview.appendChild(note);
             const appendNameList = (label, items, getName, toneClass) => {
                 const details = document.createElement('details');
