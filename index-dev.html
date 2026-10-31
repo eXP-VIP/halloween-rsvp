@@ -2385,6 +2385,10 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 .join(' ').toLocaleLowerCase();
         }
 
+        // Incomplete captures remain loadable for review; they are never allowed to remove existing members.
+        let pendingInternationsCaptureVerified = true;
+        let pendingInternationsCaptureSummary = '';
+
         /** Read the member's residence country across supported capture/export field names. */
         function getImportedCountryValue(member) {
             const candidates = [member && member.countryOfResidence, member && member.residenceCountry,
@@ -2466,11 +2470,11 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             const existingIds = new Set(cachedGuestDocs.map(doc => String((doc.data() || {}).memberId || '')).filter(Boolean));
             const newNames = result.entries.filter(item => !(item.memberId && existingIds.has(String(item.memberId))) && !existingKeys.has(item.key));
             const matchingNames = result.entries.length - newNames.length;
-            const missingMembers = cachedGuestDocs.filter(doc => {
+            const missingMembers = pendingInternationsCaptureVerified ? cachedGuestDocs.filter(doc => {
                 const data = doc.data() || {};
                 return isImportedMemberRecord(data) && getStoredGuestNameKeys(data).length > 0 &&
                     !(data.memberId && inputIds.has(String(data.memberId))) && !storedGuestMatchesInput(data, inputKeys);
-            });
+            }) : [];
             const looksLikeRsvp = data => Boolean(
                 data.rsvpSubmitted === true ||
                 data.rsvpSource === 'website' ||
@@ -2488,7 +2492,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             preview.appendChild(summary);
             const note = document.createElement('p');
             note.className = 'text-gray-300 mb-2';
-            note.textContent = 'Confirming synchronizes to this full Members-List: new members are added, matches are updated, member-only records missing from the file are removed, and records marked as separate RSVPs are retained as RSVPs. Existing status is preserved for matches.';
+            note.textContent = pendingInternationsCaptureVerified
+                ? 'Confirming synchronizes this verified full Members-List: new members are added, matches are updated and member-only records missing from the file are removed. Existing RSVPs and operational status are retained.'
+                : 'This capture is available for review and non-destructive import only. New members can be added and matching records updated; existing members missing from this file will NOT be removed because capture completeness is not verified.';
             preview.appendChild(note);
             const appendNameList = (label, items, getName, toneClass) => {
                 const details = document.createElement('details');
@@ -2527,6 +2533,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             const options = document.getElementById('internationsImportOptions');
             const file = event.target.files && event.target.files[0];
             pendingInternationsRows = [];
+            pendingInternationsCaptureVerified = true;
+            pendingInternationsCaptureSummary = '';
             pendingInternationsHeaders = [];
             pendingInternationsNameColumn = '';
             options.classList.add('hidden');
@@ -2539,35 +2547,41 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                         throw new Error('This is not a supported InterNations guest-list capture.');
                     }
                     const expectedAttendees = Number(capture.expectedAttendeeCount || 0);
-                    const uniqueAttendingIds = new Set(capture.attending.map(member => String(member.id || '')).filter(Boolean));
-                    const sectionCardEntries = Array.isArray(capture.sections)
-                        ? capture.sections.filter(section => !/waiting list/i.test(String(section.name || ''))).reduce((total, section) => total + Number(section.count || 0), 0)
-                        : 0;
-                    const capturedAttendeeCards = Number(capture.diagnostics && capture.diagnostics.attendingCardEntries || sectionCardEntries || capture.attending.length);
-                    const remainingShowMore = Number(capture.diagnostics && capture.diagnostics.showMoreButtonsRemaining !== undefined
-                        ? capture.diagnostics.showMoreButtonsRemaining
-                        : (Array.isArray(capture.sections) ? capture.sections.reduce((total, section) => total + Number(section.showMore || 0), 0) : 0));
-                    const verifiedByCounts = !!expectedAttendees && capturedAttendeeCards === expectedAttendees && remainingShowMore === 0 && uniqueAttendingIds.size > 0 && uniqueAttendingIds.size <= capturedAttendeeCards;
-                    if (!verifiedByCounts) {
-                        throw new Error('The capture is not verified as complete. InterNations reports ' + (expectedAttendees || 'an unknown number of') + ' attendees, but this file verifies ' + capturedAttendeeCards + ' attendee card entries, ' + uniqueAttendingIds.size + ' unique member IDs and ' + remainingShowMore + ' remaining Show more buttons. No changes were made. Capture the full list again.');
-                    }
+                    const diagnostics = capture.diagnostics || {};
+                    const uniqueAttendingIds = new Set(capture.attending.map(member => String(member && member.id || '').trim()).filter(Boolean));
+                    const cardRows = Number(diagnostics.attendingCardEntries || diagnostics.totalMemberCardsFound || capture.attending.length);
+                    const remainingShowMore = Number(diagnostics.showMoreButtonsRemaining !== undefined
+                        ? diagnostics.showMoreButtonsRemaining
+                        : (diagnostics.showMoreRemaining !== undefined ? diagnostics.showMoreRemaining : 0));
+                    const extractionFailures = Array.isArray(diagnostics.extractionFailures) ? diagnostics.extractionFailures.length : 0;
+                    const unassignedCards = Array.isArray(diagnostics.unassignedCards) ? diagnostics.unassignedCards.length : 0;
+                    pendingInternationsCaptureVerified = capture.complete === true &&
+                        (!expectedAttendees || uniqueAttendingIds.size === expectedAttendees) &&
+                        remainingShowMore === 0 && extractionFailures === 0 && unassignedCards === 0;
+                    pendingInternationsCaptureSummary = 'Expected ' + (expectedAttendees || 'unknown') +
+                        ' attendees; ' + capture.attending.length + ' attendee records; ' +
+                        uniqueAttendingIds.size + ' records with profile IDs; ' + cardRows +
+                        ' reported card rows; ' + remainingShowMore + ' Show more buttons; ' +
+                        extractionFailures + ' extraction failures; ' + unassignedCards + ' unassigned cards.';
                     pendingInternationsHeaders = ['First Name','Last Name','Member ID','Membership Type','Country'];
                     pendingInternationsRows = capture.attending.map(member => {
-                        const name = String(member.name || '').trim();
+                        const name = String(member && member.name || '').trim();
                         const split = name.indexOf(' ');
                         return {
                             'First Name': split < 0 ? name : name.slice(0, split),
                             'Last Name': split < 0 ? '' : name.slice(split + 1),
-                            'Member ID': String(member.id || ''),
-                            'Membership Type': [Array.isArray(member.badges) ? member.badges.join(' ') : (member.membershipType || member.membershipStatus || ''), /members attending for the first time/i.test(String(member.section || '')) || member.firstTime === true ? '1st event' : ''].filter(Boolean).join(' '),
-                            'Country': getImportedCountryValue(member)
+                            'Member ID': String(member && member.id || '').trim(),
+                            'Membership Type': [Array.isArray(member && member.badges) ? member.badges.join(' ') : (member && (member.membershipType || member.membershipStatus) || ''), member && (member.firstTime === true || /members attending for the first time/i.test(String(member.section || ''))) ? '1st event' : ''].filter(Boolean).join(' '),
+                            'Country': getImportedCountryValue(member || {})
                         };
-                    }).filter(row => row['Member ID'] && row['First Name']);
-                    if (!pendingInternationsRows.length) throw new Error('The capture contains no valid attending members.');
+                    }).filter(row => row['First Name']);
+                    if (!pendingInternationsRows.length) throw new Error('The capture contains no attendee names to load.');
                     pendingInternationsNameColumn = '__combined_first_last__';
                     options.classList.remove('hidden');
                     renderInternationsImportPreview();
-                    status.textContent = 'Loaded ' + pendingInternationsRows.length + ' attending members and ' + capture.waitingList.length + ' waiting-list entries. Capture confirmed complete; waiting-list entries are not imported as attendees.';
+                    status.textContent = 'Loaded ' + pendingInternationsRows.length + ' attendee records. ' +
+                        (pendingInternationsCaptureVerified ? 'Capture verified for synchronization. ' : 'INCOMPLETE CAPTURE: review is available, but removals and full synchronization are blocked. ') +
+                        pendingInternationsCaptureSummary + ' Waiting-list entries are not imported.';
                     return;
                 }
                 if (!window.XLSX) throw new Error('Spreadsheet reader could not be loaded. Check the network connection and reload this page.');
@@ -2628,8 +2642,13 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 data.source === 'website' ||
                 String(data.invitedBy || '').trim()
             );
-            const removedPreview = latestPreview.filter(doc => !looksLikeRsvp(doc.data() || {}));
-            if (removedPreview.length) {
+            const removedPreview = pendingInternationsCaptureVerified
+                ? latestPreview.filter(doc => !looksLikeRsvp(doc.data() || {}))
+                : [];
+            if (!pendingInternationsCaptureVerified) {
+                status.textContent = 'SAFE PARTIAL IMPORT: this capture is not verified complete. Existing members absent from the file will be retained.';
+                if (!window.confirm('This capture is incomplete or its completeness cannot be verified. You may add/update the records present in the file, but NO existing members will be removed. Continue with a non-destructive import?')) return;
+            } else if (removedPreview.length) {
                 const names = removedPreview.slice(0, 12).map(doc => doc.data().name || '(No name)').join(', ');
                 const suffix = removedPreview.length > 12 ? ' and ' + (removedPreview.length - 12) + ' more' : '';
                 if (!window.confirm('This must be the FULL current InterNations Members-List. ' +
@@ -2781,6 +2800,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     currentMissing.push({ doc, data });
                 });
                 currentMissing.forEach(({doc, data}) => {
+                    if (!pendingInternationsCaptureVerified) return;
                     const wasRsvp = data.rsvpSubmitted === true ||
                         data.rsvpSource === 'website' ||
                         data.source === 'website' ||
