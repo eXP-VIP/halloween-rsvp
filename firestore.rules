@@ -164,6 +164,20 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Preserve original InterNations QR payloads for post-event processing.
+    // Any active event staff may append a scan; only Admins may review/export the archive.
+    match /qr_scan_archive/{scanId} {
+      allow create: if isActiveStaff()
+        && request.resource.data.keys().hasAll(['rawValue', 'parsedType', 'eventId', 'capturedAt'])
+        && request.resource.data.rawValue is string
+        && request.resource.data.rawValue.size() > 0
+        && request.resource.data.rawValue.size() <= 8192
+        && request.resource.data.eventId == '1063593'
+        && request.resource.data.capturedAt == request.time;
+      allow get, list: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
     // Public visitors may submit a cancellation request, but cannot read or alter requests.
     // Existing guest deletion permissions remain unchanged.
     match /cancellation_requests/{requestId} {
