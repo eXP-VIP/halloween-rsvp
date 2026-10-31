@@ -1300,7 +1300,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.127</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.128</p>
         </div>
     </footer>
 
@@ -2385,6 +2385,22 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 .join(' ').toLocaleLowerCase();
         }
 
+        /** Read the member's residence country across supported capture/export field names. */
+        function getImportedCountryValue(member) {
+            const candidates = [member && member.countryOfResidence, member && member.residenceCountry,
+                member && member.country, member && member.countries];
+            for (const candidate of candidates) {
+                const values = (Array.isArray(candidate) ? candidate : [candidate]).map(value => {
+                    if (value && typeof value === 'object') {
+                        return value.country || value.countryName || value.name || value.label || value.code || '';
+                    }
+                    return value;
+                }).map(value => sanitizeGuestDisplayName(value).trim()).filter(value => !isMissingCountryValue(value));
+                if (values.length) return values[0];
+            }
+            return '';
+        }
+
         /** Extract first/last-name fields from spreadsheet rows with varying column headers. */
         function readImportedNameParts(row) {
             const cleanHeader = (header) => String(header).replace(/^\uFEFF/, '').trim();
@@ -2543,8 +2559,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                             'First Name': split < 0 ? name : name.slice(0, split),
                             'Last Name': split < 0 ? '' : name.slice(split + 1),
                             'Member ID': String(member.id || ''),
-                            'Membership Type': Array.isArray(member.badges) ? member.badges.join(' ') : '',
-                            'Country': Array.isArray(member.countries) ? member.countries.join(', ') : ''
+                            'Membership Type': Array.isArray(member.badges) ? member.badges.join(' ') : (member.membershipType || member.membershipStatus || ''),
+                            'Country': getImportedCountryValue(member)
                         };
                     }).filter(row => row['Member ID'] && row['First Name']);
                     if (!pendingInternationsRows.length) throw new Error('The capture contains no valid attending members.');
@@ -4377,23 +4393,15 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const recentSignupCount = document.getElementById('newSignups24hCount');
                 if (recentSignupCount) recentSignupCount.textContent = String(recentGuestPersonKeys.size);
 
-                // Count represented countries across all guests. Ignore missing values, normalize recognized aliases,
-                // and retain non-empty country values even if no flag mapping exists.
-                // Merge duplicate RSVP/member records by person; prefer a recognized country when records disagree.
-                const countryByPerson = new Map();
+                // Count every distinct residence country represented in the guest records.
+                // Do not collapse by guest name here: duplicate RSVP/member records can carry the only
+                // populated country value, and collapsing them can silently remove countries from the total.
+                const representedCountryKeys = new Set();
                 effectiveGuestDocs.forEach((guestDoc) => {
                     const data = guestDoc.data() || {};
-                    const personKey = normalizeGuestName(data.name) || guestDoc.id;
-                    const country = sanitizeGuestDisplayName(data.country).trim();
-                    const countryKey = getCountryCountKey(country);
-                    if (!countryKey) return;
-                    const hasKnownFlag = countryKey.startsWith('flag:');
-                    const existingCountry = countryByPerson.get(personKey);
-                    if (!existingCountry || (!existingCountry.hasKnownFlag && hasKnownFlag)) {
-                        countryByPerson.set(personKey, { key: countryKey, hasKnownFlag });
-                    }
+                    const countryKey = getCountryCountKey(data.country);
+                    if (countryKey) representedCountryKeys.add(countryKey);
                 });
-                const representedCountryKeys = new Set(Array.from(countryByPerson.values(), (country) => country.key));
                 const countryCount = document.getElementById('guestCountryCount');
                 if (countryCount) countryCount.textContent = String(representedCountryKeys.size);
                 const hotelCountryCount = document.getElementById('hotelGuestCountryCount');
@@ -4702,7 +4710,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                             ? 'border-amber-300/90 bg-amber-950/70 text-amber-100 shadow-sm shadow-amber-400/20'
                             : 'border-sky-300/70 bg-sky-950/70 text-sky-100');
                     const memberStatus = String(memberDetails.interNationsStatus || data.interNationsStatus || '').trim();
-                    typeBadge.textContent = tier === 'friends' ? 'RSVP' : getGuestCategory(data).toLocaleUpperCase();
+                    typeBadge.textContent = tier === 'friends' ? 'RSVP' : 'INTERNATIONS ' + getGuestCategory(data).toLocaleUpperCase();
                     if (currentStaffRole !== 'hotel' && (isMemberRecord || currentStaffRole === 'admin' || isPaymentCard)) titleLine.appendChild(typeBadge);
                     const memberStatusKey = normalizeGuestName(memberStatus);
                     const appendMemberBadge = (label, title, kind) => {
@@ -5224,13 +5232,11 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if (statusNode) statusNode.textContent = status;
             if (nameNode) nameNode.textContent = guestData ? sanitizeGuestDisplayName(guestData.name) : 'Guest not found';
             if (guestData) {
-                const flag = getCountryFlag(guestData.country);
-                const country = sanitizeGuestDisplayName(guestData.country);
                 const identity = guestData.guestType === 'internations_member' ? 'InterNations member' : 'RSVP guest';
-                const details = [identity, [flag, country].filter(Boolean).join(' ')].filter(Boolean);
+                const details = [identity];
                 if (currentStaffRole === 'admin' || currentStaffRole === 'internations') {
                     const membershipType = sanitizeGuestDisplayName(guestData.interNationsStatus || '');
-                    if (membershipType) details.push('Membership: ' + membershipType);
+                    if (membershipType) details.push('InterNations ' + membershipType);
                 }
                 if (metaNode) metaNode.textContent = details.join(' · ');
             } else if (metaNode) {
