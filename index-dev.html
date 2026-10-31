@@ -5236,7 +5236,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const membershipType = (currentStaffRole === 'admin' || currentStaffRole === 'internations')
                     ? sanitizeGuestDisplayName(guestData.interNationsStatus || '') : '';
                 const memberStatusKey = normalizeGuestName(guestData.interNationsStatus || '');
-                const isFirstEvent = isMember && /(?:\\b1st\\b|\\bfirst\\b)\\s*[-–—]?\\s*event\\b/.test(memberStatusKey);
+                const isFirstEvent = isMember && /(?:\b1st\b|\bfirst\b)\s*[-–—]?\s*event\b/.test(memberStatusKey);
                 const identity = isMember
                     ? ((isFirstEvent ? 'NEW · ' : '') + (membershipType ? 'InterNations ' + membershipType : 'InterNations member'))
                     : 'RSVP guest';
