@@ -1037,14 +1037,15 @@
                         <div class="relative overflow-hidden rounded-lg bg-black aspect-video max-h-[42vh]">
                             <video id="checkInQrVideo" class="w-full h-full object-cover" autoplay muted playsinline></video>
                             <div class="pointer-events-none absolute inset-6 border-2 border-amber-300/80 rounded-lg"></div>
+                            <div id="checkInQrResult" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-5 sm:p-8 bg-black/95 backdrop-blur-sm" aria-live="polite">
+                                <p id="checkInQrResultStatus" class="text-base sm:text-lg font-bold uppercase tracking-[0.18em] text-emerald-200">Checked in</p>
+                                <p id="checkInQrResultName" class="text-3xl sm:text-5xl font-bold leading-tight text-white mt-4 break-words"></p>
+                                <p id="checkInQrResultMeta" class="text-lg sm:text-2xl text-gray-200 mt-4"></p>
+                                <p class="text-sm sm:text-base text-gray-400 mt-6">Next guest ready in a moment…</p>
+                            </div>
                         </div>
                         <canvas id="checkInQrCanvas" class="hidden"></canvas>
                         <p id="checkInQrStatus" class="text-sm text-center text-gray-300 mt-3" role="status" aria-live="polite">Starting camera…</p>
-                        <div id="checkInQrResult" class="hidden mt-3 rounded-lg border border-emerald-400/30 bg-emerald-950/40 p-3 text-center" aria-live="polite">
-                            <p id="checkInQrResultStatus" class="text-xs uppercase tracking-wider text-emerald-200">Checked in</p>
-                            <p id="checkInQrResultName" class="text-lg font-semibold text-white mt-1"></p>
-                            <p id="checkInQrResultMeta" class="text-xs text-gray-300 mt-1"></p>
-                        </div>
                         <p class="text-[10px] text-gray-500 text-center mt-2">Camera access requires HTTPS and browser permission. Manual name search remains available at any time.</p>
                     </div>
                     <div id="checkInManualPanel">
@@ -1294,7 +1295,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.121</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.122</p>
         </div>
     </footer>
 
