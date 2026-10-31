@@ -35,6 +35,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
         <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -241,6 +242,9 @@
         /* Compact filter/sort controls; aria-pressed communicates active sorting. */
         .sort-option { border: 1px solid rgba(212,175,55,.35); border-radius: 7px; color: #d8d3c8; padding: 7px 11px; font-size: 10px; letter-spacing: .04em; background: rgba(8,8,10,.55); }
         .sort-option[aria-pressed="true"] { color: #08080a; background: var(--gold); border-color: var(--gold); font-weight: 700; }
+        .checkin-mode-option { min-width: 0; border-radius: 8px; padding: 11px 12px; color: #c9c3b7; background: transparent; font-size: 12px; font-weight: 600; letter-spacing: .035em; transition: background .15s ease, color .15s ease, box-shadow .15s ease; }
+        .checkin-mode-option[aria-pressed="true"] { color: #08080a; background: var(--gold); box-shadow: 0 1px 5px rgba(0,0,0,.35); }
+        .checkin-mode-option:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
         .form-field::placeholder { color: #85818a; }
         .form-label { display: block; margin-bottom: 8px; color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
         @media (max-width: 640px) {
@@ -749,7 +753,7 @@
             <div id="registrationClosedPanel" class="hidden rounded-xl border-2 border-gold/60 bg-black/55 p-5 sm:p-6 text-center shadow-lg shadow-black/30" role="status" aria-live="polite">
                 <p id="registrationClosedTitle" class="font-serif text-xl sm:text-2xl uppercase tracking-wider text-gold-light mb-2">We're currently full!</p>
                 <p id="registrationClosedMessage" class="text-sm text-gray-100 leading-relaxed mb-4">Our guest list has reached capacity, but places may become available if someone cancels. Check back later!</p>
-                <a href="remove.html" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-lg border-2 border-gold bg-gold px-5 py-3 text-xs font-bold uppercase tracking-wider text-black hover:bg-gold-light">
+                <a href="remove-dev.html" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-lg border-2 border-gold bg-gold px-5 py-3 text-xs font-bold uppercase tracking-wider text-black hover:bg-gold-light">
                     <i class="fa-solid fa-user-minus" aria-hidden="true"></i> Cancel your registration
                 </a>
                 <p class="text-xs text-gray-300 mt-3">Cancelling your place gives someone on the waiting list a chance to join.</p>
@@ -1022,10 +1026,34 @@
                         <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
                             <button type="button" id="printGuestListBtn" class="sort-option" title="Automatically choose page orientation, columns and font size; include both roster versions in one PDF">Print / Save PDF</button>
                             <span id="printGuestListStatus" class="text-[10px] text-gray-400" role="status" aria-live="polite"></span>
-                            <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full sm:w-64 max-w-full text-sm">
                         </div>
                     </div>
-                    <p id="hotelCheckInDescription" class="text-xs text-gray-400 mb-3">Verify that the guest is on the list and record their arrival.</p>
+                    <div id="checkInModeSwitch" class="grid grid-cols-2 w-full rounded-xl border border-gold/40 bg-black/50 p-1 mb-3" role="group" aria-label="Check-in method">
+                        <button type="button" id="checkInSearchModeBtn" class="checkin-mode-option" aria-pressed="true">Search name</button>
+                        <button type="button" id="checkInQrModeBtn" class="checkin-mode-option" aria-pressed="false">Scan QR</button>
+                    </div>
+                    <p id="hotelCheckInDescription" class="text-xs text-gray-400 mb-3">Choose how to identify the guest. Both methods use the same check-in action.</p>
+                    <div id="checkInQrPanel" class="hidden mb-4 rounded-xl border border-gold/30 bg-black/40 p-3">
+                        <div class="flex items-center justify-between gap-3 mb-2">
+                            <span class="text-xs uppercase tracking-wider text-amber-100">QR check-in</span>
+                            <button type="button" id="stopCheckInQrBtn" class="sort-option">Stop camera</button>
+                        </div>
+                        <div class="relative overflow-hidden rounded-lg bg-black aspect-video max-h-[42vh]">
+                            <video id="checkInQrVideo" class="w-full h-full object-cover" autoplay muted playsinline></video>
+                            <div class="pointer-events-none absolute inset-6 border-2 border-amber-300/80 rounded-lg"></div>
+                            <button type="button" id="checkInQrResult" onclick="resumeCheckInQrCamera()" class="hidden absolute inset-0 z-20 w-full flex flex-col items-center justify-center text-center p-5 sm:p-8 bg-black/95 backdrop-blur-sm cursor-pointer focus-visible:outline focus-visible:outline-4 focus-visible:outline-amber-300" aria-label="Tap to scan the next guest" aria-live="polite">
+                                <p id="checkInQrResultStatus" class="text-base sm:text-lg font-bold uppercase tracking-[0.18em] text-emerald-200">Checked in</p>
+                                <p id="checkInQrResultName" class="text-3xl sm:text-5xl font-bold leading-tight text-white mt-4 break-words"></p>
+                                <p id="checkInQrResultMeta" class="text-lg sm:text-2xl text-gray-200 mt-4"></p>
+                                <p class="text-sm sm:text-base text-amber-200 mt-6">Tap here to scan the next guest</p>
+                            </button>
+                        </div>
+                        <canvas id="checkInQrCanvas" class="hidden"></canvas>
+                        <p id="checkInQrStatus" class="text-sm text-center text-gray-300 mt-3" role="status" aria-live="polite">Starting camera…</p>
+                        <p class="text-[10px] text-gray-500 text-center mt-2">Camera access requires HTTPS and browser permission. Manual name search remains available at any time.</p>
+                    </div>
+                    <div id="checkInManualPanel">
+                    <input type="search" id="hotelSearchInput" oninput="filterHotelGuests()" aria-label="Search check-in list" placeholder="Search guests..." class="form-field w-full text-sm mb-3">
                     <div id="hotelSortControls" class="flex flex-wrap items-center gap-2 mb-4" role="group" aria-label="Sort check-in lists">
                         <span class="self-center text-[10px] uppercase tracking-wider text-gray-400 mr-1">Sort by</span>
                         <button type="button" class="sort-option" data-sort-group="checkin" data-sort="firstName" aria-pressed="false" onclick="setGuestSort('firstName')">First name</button>
@@ -1053,6 +1081,7 @@
                             <div class="space-y-2 max-h-64 overflow-y-auto pr-1" id="combinedPaidContainer"></div>
                             <p id="noCombinedPaidGuests" class="text-xs text-gray-500 py-2 hidden">No guests have completed all required steps yet.</p>
                         </div>
+                    </div>
                     </div>
                     </section>
                     <section id="internationsPaymentPanel" class="staff-panel">
@@ -1144,11 +1173,11 @@
                         <section id="internationsImportPanel" class="staff-panel">
                         <div class="staff-panel__header">
                             <h4 class="staff-panel__title">Import InterNations guest list</h4>
-                            <span class="staff-panel__meta">CSV / Excel · repeatable import</span>
+                            <span class="staff-panel__meta">JSON / CSV / Excel · verified import</span>
                         </div>
-                        <p class="text-xs text-gray-300 mb-3">Choose the full current InterNations Members-List export. Missing names are removed from the imported member list; matched guests keep their check-in, payment and chip status. An RSVP guest who is also a member remains a member for calculations.</p>
-                        <label for="internationsFileInput" class="form-label">Guest-list spreadsheet</label>
-                        <input id="internationsFileInput" type="file" accept=".xlsx,.xls,.csv,.ods" class="form-field text-sm mb-3">
+                        <p class="text-xs text-gray-300 mb-3">Import a complete InterNations page capture (.json) or a full Members-List spreadsheet. JSON captures match members by InterNations ID; waiting-list entries are kept separate. Incomplete captures are rejected.</p>
+                        <label for="internationsFileInput" class="form-label">Guest-list capture or spreadsheet</label>
+                        <input id="internationsFileInput" type="file" accept=".json,.xlsx,.xls,.csv,.ods" class="form-field text-sm mb-3">
                         <div id="internationsImportOptions" class="hidden space-y-3">
                             <p class="text-xs text-sky-100">Names are combined automatically from First Name + Last Name. Membership Type (or Status) sets the member category and badges; Country is retained and shown as a flag.</p>
                             <div id="internationsImportPreview" class="rounded-lg border border-sky-400/20 bg-black/30 p-3 text-xs text-gray-200"></div>
@@ -1271,7 +1300,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.30.115</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.125</p>
         </div>
     </footer>
 
@@ -2369,10 +2398,12 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             // Retain the source-cell text in Firestore; normalize names for matching and display only.
             const firstName = firstHeader ? String(row[firstHeader] || '').trim() : '';
             const lastName = lastHeader ? String(row[lastHeader] || '').trim() : '';
+            const memberIdHeader = pendingInternationsHeaders.find((header) => /^(member|membership|internations)?\s*(id|member id)$/i.test(cleanHeader(header)));
             return {
                 name: [firstName, lastName].filter(Boolean).join(' ').trim(),
                 firstName,
                 lastName,
+                memberId: memberIdHeader ? String(row[memberIdHeader] || '').trim() : '',
                 membershipStatus: statusHeader ? sanitizeGuestDisplayName(row[statusHeader]) : '',
                 country: countryHeader ? sanitizeGuestDisplayName(row[countryHeader]) : ''
             };
@@ -2391,10 +2422,11 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const parts = readImportedNameParts(row);
                 const key = normalizeGuestName(parts.name);
                 if (!key) { blankRows++; return; }
-                if (!seen.has(key)) {
-                    seen.set(key, { ...parts, key });
+                const identityKey = parts.memberId ? 'id:' + parts.memberId : 'name:' + key;
+                if (!seen.has(identityKey)) {
+                    seen.set(identityKey, { ...parts, key });
                 } else {
-                    const existingEntry = seen.get(key);
+                    const existingEntry = seen.get(identityKey);
                     if (!existingEntry.membershipStatus && parts.membershipStatus) existingEntry.membershipStatus = parts.membershipStatus;
                     if (!existingEntry.country && parts.country) existingEntry.country = parts.country;
                 }
@@ -2413,13 +2445,15 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
             const result = getUniqueImportedNames();
             const inputKeys = new Set(result.entries.map(item => item.key));
+            const inputIds = new Set(result.entries.map(item => String(item.memberId || '')).filter(Boolean));
             const existingKeys = new Set(cachedGuestDocs.flatMap(doc => getStoredGuestNameKeys(doc.data() || {})));
-            const newNames = result.entries.filter(item => !existingKeys.has(item.key));
+            const existingIds = new Set(cachedGuestDocs.map(doc => String((doc.data() || {}).memberId || '')).filter(Boolean));
+            const newNames = result.entries.filter(item => !(item.memberId && existingIds.has(String(item.memberId))) && !existingKeys.has(item.key));
             const matchingNames = result.entries.length - newNames.length;
             const missingMembers = cachedGuestDocs.filter(doc => {
                 const data = doc.data() || {};
                 return isImportedMemberRecord(data) && getStoredGuestNameKeys(data).length > 0 &&
-                    !storedGuestMatchesInput(data, inputKeys);
+                    !(data.memberId && inputIds.has(String(data.memberId))) && !storedGuestMatchesInput(data, inputKeys);
             });
             const looksLikeRsvp = data => Boolean(
                 data.rsvpSubmitted === true ||
@@ -2483,6 +2517,43 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             status.textContent = '';
             if (!file) return;
             try {
+                if (file.name.toLowerCase().endsWith('.json')) {
+                    const capture = JSON.parse(await file.text());
+                    if (capture.source !== 'InterNations event guest list' || !Array.isArray(capture.attending) || !Array.isArray(capture.waitingList)) {
+                        throw new Error('This is not a supported InterNations guest-list capture.');
+                    }
+                    const expectedAttendees = Number(capture.expectedAttendeeCount || 0);
+                    const uniqueAttendingIds = new Set(capture.attending.map(member => String(member.id || '')).filter(Boolean));
+                    const sectionCardEntries = Array.isArray(capture.sections)
+                        ? capture.sections.filter(section => !/waiting list/i.test(String(section.name || ''))).reduce((total, section) => total + Number(section.count || 0), 0)
+                        : 0;
+                    const capturedAttendeeCards = Number(capture.diagnostics && capture.diagnostics.attendingCardEntries || sectionCardEntries || capture.attending.length);
+                    const remainingShowMore = Number(capture.diagnostics && capture.diagnostics.showMoreButtonsRemaining !== undefined
+                        ? capture.diagnostics.showMoreButtonsRemaining
+                        : (Array.isArray(capture.sections) ? capture.sections.reduce((total, section) => total + Number(section.showMore || 0), 0) : 0));
+                    const verifiedByCounts = !!expectedAttendees && capturedAttendeeCards === expectedAttendees && remainingShowMore === 0 && uniqueAttendingIds.size > 0 && uniqueAttendingIds.size <= capturedAttendeeCards;
+                    if (!verifiedByCounts) {
+                        throw new Error('The capture is not verified as complete. InterNations reports ' + (expectedAttendees || 'an unknown number of') + ' attendees, but this file verifies ' + capturedAttendeeCards + ' attendee card entries, ' + uniqueAttendingIds.size + ' unique member IDs and ' + remainingShowMore + ' remaining Show more buttons. No changes were made. Capture the full list again.');
+                    }
+                    pendingInternationsHeaders = ['First Name','Last Name','Member ID','Membership Type','Country'];
+                    pendingInternationsRows = capture.attending.map(member => {
+                        const name = String(member.name || '').trim();
+                        const split = name.indexOf(' ');
+                        return {
+                            'First Name': split < 0 ? name : name.slice(0, split),
+                            'Last Name': split < 0 ? '' : name.slice(split + 1),
+                            'Member ID': String(member.id || ''),
+                            'Membership Type': Array.isArray(member.badges) ? member.badges.join(' ') : '',
+                            'Country': Array.isArray(member.countries) ? member.countries.join(', ') : ''
+                        };
+                    }).filter(row => row['Member ID'] && row['First Name']);
+                    if (!pendingInternationsRows.length) throw new Error('The capture contains no valid attending members.');
+                    pendingInternationsNameColumn = '__combined_first_last__';
+                    options.classList.remove('hidden');
+                    renderInternationsImportPreview();
+                    status.textContent = 'Loaded ' + pendingInternationsRows.length + ' attending members and ' + capture.waitingList.length + ' waiting-list entries. Capture confirmed complete; waiting-list entries are not imported as attendees.';
+                    return;
+                }
                 if (!window.XLSX) throw new Error('Spreadsheet reader could not be loaded. Check the network connection and reload this page.');
                 const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -2529,10 +2600,11 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if (!result.entries.length) { status.textContent = 'No valid guest names found.'; return; }
 
             const inputKeys = new Set(result.entries.map(item => item.key));
+            const latestInputIdsForPreview = new Set(result.entries.map(entry => String(entry.memberId || '')).filter(Boolean));
             const latestPreview = cachedGuestDocs.filter(doc => {
                 const data = doc.data() || {};
                 return isImportedMemberRecord(data) && getStoredGuestNameKeys(data).length > 0 &&
-                    !storedGuestMatchesInput(data, inputKeys);
+                    !(data.memberId && latestInputIdsForPreview.has(String(data.memberId))) && !storedGuestMatchesInput(data, inputKeys);
             });
             const looksLikeRsvp = data => Boolean(
                 data.rsvpSubmitted === true ||
@@ -2558,9 +2630,11 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             try {
                 const current = await db.collection('halloween_guests').get();
                 const byName = new Map();
+                const byId = new Map();
                 const docsByName = new Map();
                 current.forEach(doc => {
                     const data = doc.data() || {};
+                    if (data.memberId) byId.set(String(data.memberId), doc);
                     getStoredGuestNameKeys(data).forEach((key) => {
                         if (!docsByName.has(key)) docsByName.set(key, []);
                         docsByName.get(key).push(doc);
@@ -2576,7 +2650,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const latestInputKeys = new Set(result.entries.map(item => item.key));
 
                 result.entries.forEach(entry => {
-                    const existing = byName.get(entry.key);
+                    const existing = (entry.memberId && byId.get(String(entry.memberId))) || byName.get(entry.key);
                     if (existing) {
                         matched++;
                         const prior = existing.data() || {};
@@ -2600,6 +2674,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                             source: 'internations_import',
                             rsvpSubmitted: wasRsvp,
                             importNameKey: entry.key,
+                            ...(entry.memberId ? { memberId: String(entry.memberId) } : {}),
                             firstName: entry.firstName,
                             lastName: entry.lastName,
                             membershipRemovedAt: firebase.firestore.FieldValue.delete()
@@ -2671,6 +2746,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                             source: 'internations_import',
                             rsvpSubmitted: false,
                             importNameKey: entry.key,
+                            ...(entry.memberId ? { memberId: String(entry.memberId) } : {}),
                             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                             importedAt: firebase.firestore.FieldValue.serverTimestamp(),
                             welcomeDrinkChipIssued: false,
@@ -2680,9 +2756,11 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     }
                 });
 
+                const latestInputIds = new Set(result.entries.map(entry => String(entry.memberId || '')).filter(Boolean));
                 current.forEach(doc => {
                     const data = doc.data() || {};
                     if (!isImportedMemberRecord(data) || !getStoredGuestNameKeys(data).length ||
+                        (data.memberId && latestInputIds.has(String(data.memberId))) ||
                         storedGuestMatchesInput(data, latestInputKeys)) return;
                     currentMissing.push({ doc, data });
                 });
@@ -5054,9 +5132,195 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
         }
 
+        // QR mode is an alternate guest-identification path; both paths call toggleCheckIn().
+        let checkInQrStream = null;
+        let checkInQrAnimation = null;
+        let checkInQrBusy = false;
+        let checkInQrModeActive = false;
+
+        function stopCheckInQrCamera() {
+            if (checkInQrAnimation) cancelAnimationFrame(checkInQrAnimation);
+            checkInQrAnimation = null;
+            if (checkInQrStream) checkInQrStream.getTracks().forEach(track => track.stop());
+            checkInQrStream = null;
+            const video = document.getElementById('checkInQrVideo');
+            if (video) video.srcObject = null;
+            checkInQrBusy = false;
+        }
+
+        function setCheckInMode(mode) {
+            const qrMode = mode === 'qr';
+            checkInQrModeActive = qrMode;
+            const qrPanel = document.getElementById('checkInQrPanel');
+            const manualPanel = document.getElementById('checkInManualPanel');
+            const searchInput = document.getElementById('hotelSearchInput');
+            const searchButton = document.getElementById('checkInSearchModeBtn');
+            const qrButton = document.getElementById('checkInQrModeBtn');
+            const printButton = document.getElementById('printGuestListBtn');
+            if (qrPanel) qrPanel.classList.toggle('hidden', !qrMode);
+            if (manualPanel) manualPanel.classList.toggle('hidden', qrMode);
+            if (searchInput) searchInput.classList.toggle('hidden', qrMode);
+            if (printButton) printButton.classList.toggle('hidden', qrMode);
+            if (searchButton) searchButton.setAttribute('aria-pressed', String(!qrMode));
+            if (qrButton) qrButton.setAttribute('aria-pressed', String(qrMode));
+            if (qrMode) startCheckInQrCamera();
+            else stopCheckInQrCamera();
+        }
+
+        function parseCheckInQrPayload(rawValue) {
+            const raw = String(rawValue || '').trim();
+            if (!raw) return null;
+            const parseObject = value => {
+                if (!value || typeof value !== 'object') return null;
+                const rsvp = value.rsvpQrId || value.rsvpId || value.guestQrId;
+                if (rsvp) return { type: 'rsvp', id: String(rsvp).trim() };
+                const member = value.memberId || value.internationsUserId || value.userId;
+                if (member) return { type: 'member', id: String(member).trim() };
+                return null;
+            };
+            try {
+                const parsed = JSON.parse(raw);
+                const result = parseObject(parsed);
+                if (result) return result;
+            } catch (_) {}
+            try {
+                const url = new URL(raw);
+                const params = url.searchParams;
+                const rsvp = params.get('rsvpQrId') || params.get('rsvpId') || params.get('guestQrId');
+                if (rsvp) return { type: 'rsvp', id: rsvp.trim() };
+                const member = params.get('memberId') || params.get('userId');
+                if (member) return { type: 'member', id: member.trim() };
+                const profile = url.pathname.match(/\/profile\/(\d+)/i);
+                if (profile) return { type: 'member', id: profile[1] };
+            } catch (_) {}
+            const tagged = raw.match(/^(RSVP|GUEST)[:|/]([A-Za-z0-9_-]{4,})$/i);
+            if (tagged) return { type: 'rsvp', id: tagged[2] };
+            if (/^\d{4,}$/.test(raw)) return { type: 'member', id: raw };
+
+            // InterNations QR payloads contain several fields. We only need the
+            // User ID, so collect numeric candidates and resolve them against
+            // the imported memberId values in our own guest list. Event IDs,
+            // timestamps and unrelated numeric fields will not match a guest.
+            const numericCandidates = [...new Set(raw.match(/\d{4,}/g) || [])];
+            if (numericCandidates.length) return { type: 'member_candidates', ids: numericCandidates };
+            return null;
+        }
+
+        function showCheckInQrResult(status, guestData, detail) {
+            const result = document.getElementById('checkInQrResult');
+            const statusNode = document.getElementById('checkInQrResultStatus');
+            const nameNode = document.getElementById('checkInQrResultName');
+            const metaNode = document.getElementById('checkInQrResultMeta');
+            const cameraStatus = document.getElementById('checkInQrStatus');
+            if (result) result.classList.remove('hidden');
+            if (statusNode) statusNode.textContent = status;
+            if (nameNode) nameNode.textContent = guestData ? sanitizeGuestDisplayName(guestData.name) : 'Guest not found';
+            if (metaNode) metaNode.textContent = guestData
+                ? [guestData.guestType === 'internations_member' ? 'InterNations member' : 'RSVP guest', guestData.country || ''].filter(Boolean).join(' · ')
+                : (detail || 'The QR code could not be matched to a guest.');
+            if (cameraStatus) cameraStatus.textContent = 'Ready for the next guest…';
+        }
+
+        async function handleCheckInQr(rawValue) {
+            const identifier = parseCheckInQrPayload(rawValue);
+            if (!identifier) {
+                showCheckInQrResult('QR NOT RECOGNISED', null, 'This QR format is not supported yet. Switch to name search or use a supported guest QR.');
+                return;
+            }
+            const matches = cachedGuestDocs.filter(doc => {
+                const data = doc.data() || {};
+                if (identifier.type === 'member') return String(data.memberId || '').trim() === identifier.id;
+                if (identifier.type === 'member_candidates') {
+                    return identifier.ids.includes(String(data.memberId || '').trim());
+                }
+                return String(data.rsvpQrId || data.rsvpId || '').trim() === identifier.id;
+            });
+            if (matches.length !== 1) {
+                showCheckInQrResult(matches.length > 1 ? 'AMBIGUOUS QR' : 'GUEST NOT FOUND', null,
+                    matches.length > 1 ? 'More than one guest record has this QR identifier. Use name search and report the duplicate.' : 'No guest matches this QR identifier. Use name search.');
+                return;
+            }
+            const doc = matches[0];
+            const data = doc.data() || {};
+            if (data.checkedIn) {
+                showCheckInQrResult('ALREADY CHECKED IN', data, 'This guest is already marked as checked in.');
+                return;
+            }
+            const saved = await toggleCheckIn(doc.id, false);
+            if (saved) showCheckInQrResult('CHECKED IN', data, 'Check-in saved successfully.');
+            else showCheckInQrResult('CHECK-IN FAILED', data, 'The check-in could not be saved. Check the error message and use name search if needed.');
+        }
+
+        function resumeCheckInQrCamera() {
+            if (!checkInQrModeActive) return;
+            const result = document.getElementById('checkInQrResult');
+            if (result) result.classList.add('hidden');
+            startCheckInQrCamera();
+        }
+
+        async function startCheckInQrCamera() {
+            const status = document.getElementById('checkInQrStatus');
+            const video = document.getElementById('checkInQrVideo');
+            const canvas = document.getElementById('checkInQrCanvas');
+            const result = document.getElementById('checkInQrResult');
+            if (result) result.classList.add('hidden');
+            if (!video || !canvas || !status) return;
+            stopCheckInQrCamera();
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                status.textContent = 'Camera access is unavailable. Open this page over HTTPS or use name search.';
+                return;
+            }
+            if (typeof window.jsQR !== 'function') {
+                status.textContent = 'QR decoder could not be loaded. Use name search or reload the page.';
+                return;
+            }
+            status.textContent = 'Requesting camera permission…';
+            try {
+                checkInQrStream = await navigator.mediaDevices.getUserMedia({
+                    audio: false,
+                    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+                });
+                if (!checkInQrModeActive) { stopCheckInQrCamera(); return; }
+                video.srcObject = checkInQrStream;
+                await video.play();
+                const context = canvas.getContext('2d', { willReadFrequently: true });
+                status.textContent = 'Point the camera at the guest QR code.';
+                const scanFrame = () => {
+                    if (!checkInQrModeActive || !checkInQrStream) return;
+                    if (!checkInQrBusy && video.readyState === video.HAVE_ENOUGH_DATA) {
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+                        const code = window.jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'dontInvert' });
+                        if (code && code.data) {
+                            checkInQrBusy = true;
+                            Promise.resolve(handleCheckInQr(code.data)).catch(error => {
+                                console.error('QR check-in failed:', error);
+                                showCheckInQrResult('CHECK-IN ERROR', null, 'An unexpected error occurred. Use name search or retry.');
+                            }).finally(() => {
+                                // Keep the last result visible and release the camera until staff are ready.
+                                stopCheckInQrCamera();
+                                const statusNode = document.getElementById('checkInQrStatus');
+                                if (statusNode && checkInQrModeActive) statusNode.textContent = 'Camera paused. Tap the result to scan the next guest.';
+                            });
+                        }
+                    }
+                    if (checkInQrModeActive && checkInQrStream) checkInQrAnimation = requestAnimationFrame(scanFrame);
+                };
+                checkInQrAnimation = requestAnimationFrame(scanFrame);
+            } catch (error) {
+                console.error('QR camera start failed:', error);
+                status.textContent = error && error.name === 'NotAllowedError'
+                    ? 'Camera permission was denied. Allow camera access or use name search.'
+                    : 'Could not start the camera. Check camera availability or use name search.';
+                stopCheckInQrCamera();
+            }
+        }
+
         /** Update check-in state while enforcing restrictions required by the active staff workflow. */
         async function toggleCheckIn(id, currentState) {
-            if (!twoStepCheckInEnabled) {
+            if (!twoStepCheckInEnabled && currentStaffRole !== 'admin' && currentStaffRole !== 'internations') {
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'Separate check-in actions are disabled in the one-step workflow.';
                 listError.classList.remove('hidden');
@@ -5100,11 +5364,13 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     checkedInAt: currentState ? null : guestActionTimestamp()
                 };
                 await applyGuestStateUpdate(id, update);
+                return true;
             } catch (error) {
                 console.error('Check-in update failed:', error);
                 const listError = document.getElementById('guestlistError');
                 listError.textContent = 'Could not save the check-in. Check the database access rules and try again.';
                 listError.classList.remove('hidden');
+                return false;
             }
         }
 
@@ -6095,6 +6361,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         document.getElementById('restoreDatabaseBackupBtn').addEventListener('click', restoreSelectedDatabaseBackup);
         document.getElementById('restoreDatabaseFileInput').addEventListener('change', readSelectedDatabaseBackup);
         document.getElementById('printGuestListBtn').addEventListener('click', printGuestList);
+        document.getElementById('checkInSearchModeBtn').addEventListener('click', () => setCheckInMode('search'));
+        document.getElementById('checkInQrModeBtn').addEventListener('click', () => setCheckInMode('qr'));
+        document.getElementById('stopCheckInQrBtn').addEventListener('click', () => setCheckInMode('search'));
 
     </script>
 </body>
