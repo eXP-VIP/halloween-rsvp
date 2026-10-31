@@ -1300,7 +1300,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.125</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.126</p>
         </div>
     </footer>
 
@@ -5206,7 +5206,16 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             return null;
         }
 
-        function showCheckInQrResult(status, guestData, detail) {
+        /** Provide short haptic feedback on supported phones; unsupported devices safely ignore it. */
+        function vibrateCheckIn(pattern) {
+            try {
+                if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+                    navigator.vibrate(pattern === 'double' ? [110, 75, 110] : 110);
+                }
+            } catch (_) {}
+        }
+
+        function showCheckInQrResult(status, guestData, detail, vibration = 'single') {
             const result = document.getElementById('checkInQrResult');
             const statusNode = document.getElementById('checkInQrResultStatus');
             const nameNode = document.getElementById('checkInQrResultName');
@@ -5215,10 +5224,21 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if (result) result.classList.remove('hidden');
             if (statusNode) statusNode.textContent = status;
             if (nameNode) nameNode.textContent = guestData ? sanitizeGuestDisplayName(guestData.name) : 'Guest not found';
-            if (metaNode) metaNode.textContent = guestData
-                ? [guestData.guestType === 'internations_member' ? 'InterNations member' : 'RSVP guest', guestData.country || ''].filter(Boolean).join(' · ')
-                : (detail || 'The QR code could not be matched to a guest.');
+            if (guestData) {
+                const flag = getCountryFlag(guestData.country);
+                const country = sanitizeGuestDisplayName(guestData.country);
+                const identity = guestData.guestType === 'internations_member' ? 'InterNations member' : 'RSVP guest';
+                const details = [identity, [flag, country].filter(Boolean).join(' ')].filter(Boolean);
+                if (currentStaffRole === 'admin' || currentStaffRole === 'internations') {
+                    const membershipType = sanitizeGuestDisplayName(guestData.interNationsStatus || '');
+                    if (membershipType) details.push('Membership: ' + membershipType);
+                }
+                if (metaNode) metaNode.textContent = details.join(' · ');
+            } else if (metaNode) {
+                metaNode.textContent = detail || 'The QR code could not be matched to a guest.';
+            }
             if (cameraStatus) cameraStatus.textContent = 'Ready for the next guest…';
+            if (vibration !== 'none') vibrateCheckIn(vibration);
         }
 
         async function handleCheckInQr(rawValue) {
@@ -5247,7 +5267,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 return;
             }
             const saved = await toggleCheckIn(doc.id, false);
-            if (saved) showCheckInQrResult('CHECKED IN', data, 'Check-in saved successfully.');
+            if (saved) showCheckInQrResult('CHECKED IN', data, 'Check-in saved successfully.', twoStepCheckInEnabled ? 'none' : 'single');
             else showCheckInQrResult('CHECK-IN FAILED', data, 'The check-in could not be saved. Check the error message and use name search if needed.');
         }
 
@@ -5364,6 +5384,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     checkedInAt: currentState ? null : guestActionTimestamp()
                 };
                 await applyGuestStateUpdate(id, update);
+                // In the two-step workflow this arrival moves the guest into Awaiting payment.
+                // Give staff a distinct double pulse for that hand-off, including manual check-in.
+                if (!currentState && twoStepCheckInEnabled) vibrateCheckIn('double');
                 return true;
             } catch (error) {
                 console.error('Check-in update failed:', error);
