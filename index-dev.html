@@ -645,37 +645,37 @@
     <main class="relative z-10 flex-1 container mx-auto px-4 pt-8 pb-3 sm:pt-12 sm:pb-5 max-w-4xl">
         <!-- Event identity, date and primary navigation into registration. -->
         <header class="hero-copy text-center mb-8 sm:mb-10">
-            <p class="font-serif text-gold tracking-[0.28em] uppercase text-xs sm:text-sm mb-3">A Private Halloween Soirée</p>
-            <h1 class="hero-title font-serif text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-wider uppercase leading-tight mb-3">The Dean<br class="sm:hidden"> After Dark</h1>
+            <p id="publicEventKicker" class="font-serif text-gold tracking-[0.28em] uppercase text-xs sm:text-sm mb-3">A Private Halloween Soirée</p>
+            <h1 id="publicEventTitle" class="hero-title font-serif text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-wider uppercase leading-tight mb-3">The Dean After Dark</h1>
             <div class="w-28 h-px bg-gold/70 mx-auto mb-4"></div>
-            <p class="hero-meta font-medium text-xs sm:text-sm tracking-[0.12em] sm:tracking-[0.18em] uppercase leading-relaxed">Halloween Soirée <span class="text-gold px-1">•</span> Saturday, 31 October 2026</p>
-            <p class="hero-time text-sm mt-2">From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
-            <p class="hero-host text-xs font-serif tracking-wider uppercase mt-3">Hosted by Ari</p>
-            <p class="hero-venue text-xs sm:text-sm mt-2">The Dean Munich, Autograph Collection by Marriott</p>
-            <p class="text-xs sm:text-sm text-gray-300 mt-1"><a href="https://www.google.com/maps/search/?api=1&amp;query=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" target="_blank" rel="noopener noreferrer" class="underline decoration-gold/50 underline-offset-4 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Open The Dean Munich address in Google Maps">Landsberger Straße 68, 80339 München <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1" aria-hidden="true"></i></a></p>
+            <p id="publicEventMeta" class="hero-meta font-medium text-xs sm:text-sm tracking-[0.12em] sm:tracking-[0.18em] uppercase leading-relaxed">Halloween Soirée • Saturday, 31 October 2026</p>
+            <p id="publicEventTime" class="hero-time text-sm mt-2">From 20:00 · Open end · Music winds down at 01:00</p>
+            <p id="publicEventHost" class="hero-host text-xs font-serif tracking-wider uppercase mt-3">Hosted by Ari</p>
+            <p id="publicEventVenue" class="hero-venue text-xs sm:text-sm mt-2">The Dean Munich, Autograph Collection by Marriott</p>
+            <p class="text-xs sm:text-sm text-gray-300 mt-1"><a id="publicEventMapLink" href="https://www.google.com/maps/search/?api=1&amp;query=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" target="_blank" rel="noopener noreferrer" class="underline decoration-gold/50 underline-offset-4 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Open event venue in Google Maps"><span id="publicEventAddress">Landsberger Straße 68, 80339 München</span> <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1" aria-hidden="true"></i></a></p>
             <div class="flex items-center justify-center mt-6">
                 <a href="#rsvp-section" class="gold-btn inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg uppercase font-serif text-xs tracking-[0.14em]">Join the Guest List <i class="fa-solid fa-arrow-down-long"></i></a>
             </div>
         </header>
 
 <section class="glass-panel rounded-2xl p-5 sm:p-9 mb-7 sm:mb-9 gold-border">
-            <p class="font-serif text-xs tracking-[0.2em] uppercase text-gold mb-3">One night. Two moods.</p>
-            <h2 class="font-serif text-xl sm:text-2xl text-white uppercase tracking-wider mb-4">A hidden gem, revealed after dark</h2>
-            <p class="text-gray-100 text-sm sm:text-base leading-relaxed mb-3 font-light">Discover a hidden gem tucked deep inside The Dean Munich, Autograph Collection by Marriott. True to its "Exactly like nothing else" spirit, this space has remained off-limits to the public and is now opening its doors for the first time.</p>
-            <p class="text-gray-200 text-sm leading-relaxed mb-6">Two distinct rooms, twin DJ setups and a dedicated bar set the scene—the perfect setting to bring your friends and share an unforgettable evening.</p>
+            <p id="publicDescriptionKicker" class="font-serif text-xs tracking-[0.2em] uppercase text-gold mb-3">One night. Two moods.</p>
+            <h2 id="publicDescriptionTitle" class="font-serif text-xl sm:text-2xl text-white uppercase tracking-wider mb-4">A hidden gem, revealed after dark</h2>
+            <p id="publicDescriptionParagraph1" class="text-gray-100 text-sm sm:text-base leading-relaxed mb-3 font-light">Discover a hidden gem tucked deep inside The Dean Munich, Autograph Collection by Marriott. True to its "Exactly like nothing else" spirit, this space has remained off-limits to the public and is now opening its doors for the first time.</p>
+            <p id="publicDescriptionParagraph2" class="text-gray-200 text-sm leading-relaxed mb-6">Two distinct rooms, twin DJ setups and a dedicated bar set the scene—the perfect setting to bring your friends and share an unforgettable evening.</p>
 
             <div class="venue-gallery mb-7" aria-label="Photos and atmosphere concept for the event spaces">
                 <figure class="venue-shot room">
-                    <img src="The Secret Party Room.jpg" alt="The Dean party rooms" loading="lazy" decoding="async">
-                    <figcaption>The Secret Party Room</figcaption>
+                    <img id="publicGalleryImage1" src="The Secret Party Room.jpg" alt="The Dean party rooms" loading="lazy" decoding="async">
+                    <figcaption id="publicGalleryCaption1">The Secret Party Room</figcaption>
                 </figure>
                 <figure class="venue-shot lobby">
-                    <img src="The chill-out Lounge.jpg" alt="The chill-out Lounge" loading="lazy" decoding="async">
-                    <figcaption>The chill-out Lounge</figcaption>
+                    <img id="publicGalleryImage2" src="The chill-out Lounge.jpg" alt="The chill-out Lounge" loading="lazy" decoding="async">
+                    <figcaption id="publicGalleryCaption2">The chill-out Lounge</figcaption>
                 </figure>
                 <figure class="venue-shot concept">
-                    <img src="Atmosphere Concept 3.jpg" alt="AI-generated concept of the party room decorated for Halloween" loading="lazy" decoding="async">
-                    <figcaption>Atmosphere Concept</figcaption>
+                    <img id="publicGalleryImage3" src="Atmosphere Concept 3.jpg" alt="AI-generated concept of the party room decorated for Halloween" loading="lazy" decoding="async">
+                    <figcaption id="publicGalleryCaption3">Atmosphere Concept</figcaption>
                 </figure>
             </div>
 
@@ -1216,6 +1216,65 @@
                             <button type="button" id="saveRegistrationSettingsBtn" class="sort-option">Save registration settings</button>
                             <p id="registrationSettingsStatus" class="text-xs text-gray-300 mt-3 min-h-[1rem]" role="status" aria-live="polite">Save once to initialise the registration counter from the current guest list.</p>
                         </section>
+                        <section id="publicEventEditorPanel" class="staff-panel" aria-labelledby="publicEventEditorHeading">
+                            <div class="staff-panel__header">
+                                <h4 id="publicEventEditorHeading" class="staff-panel__title">Public event page</h4>
+                                <span class="staff-panel__meta">Admin only</span>
+                            </div>
+                            <p class="text-xs text-gray-300 mb-4">Edit the public event heading, description and gallery. Changes are saved to the public event settings and appear on the sign-up page. Image fields accept public image URLs or existing site image filenames.</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div><label class="form-label" for="eventContentKicker">Hero kicker</label><input id="eventContentKicker" class="form-field" maxlength="100"></div>
+                                <div><label class="form-label" for="eventContentTitle">Event title</label><input id="eventContentTitle" class="form-field" maxlength="120"></div>
+                                <div><label class="form-label" for="eventContentMeta">Event type and date</label><input id="eventContentMeta" class="form-field" maxlength="180"></div>
+                                <div><label class="form-label" for="eventContentTime">Time information</label><input id="eventContentTime" class="form-field" maxlength="180"></div>
+                                <div><label class="form-label" for="eventContentHost">Host line</label><input id="eventContentHost" class="form-field" maxlength="100"></div>
+                                <div><label class="form-label" for="eventContentVenue">Venue</label><input id="eventContentVenue" class="form-field" maxlength="180"></div>
+                                <div><label class="form-label" for="eventContentAddress">Address</label><input id="eventContentAddress" class="form-field" maxlength="180"></div>
+                                <div><label class="form-label" for="eventContentMapUrl">Map link URL</label><input id="eventContentMapUrl" class="form-field" maxlength="500" type="url"></div>
+                                <div><label class="form-label" for="eventContentDescriptionKicker">Description kicker</label><input id="eventContentDescriptionKicker" class="form-field" maxlength="100"></div>
+                                <div><label class="form-label" for="eventContentDescriptionTitle">Description heading</label><input id="eventContentDescriptionTitle" class="form-field" maxlength="180"></div>
+                            </div>
+                            <label class="form-label mt-3" for="eventContentDescription1">Description paragraph 1</label>
+                            <textarea id="eventContentDescription1" class="form-field" rows="3" maxlength="1200"></textarea>
+                            <label class="form-label mt-3" for="eventContentDescription2">Description paragraph 2</label>
+                            <textarea id="eventContentDescription2" class="form-field" rows="3" maxlength="1200"></textarea>
+                            <div class="mt-5 pt-4 border-t border-gold/20">
+                                <h5 class="staff-subheading mb-3">Event gallery</h5>
+                                <p class="text-xs text-gray-400 mb-3">Use a full public URL (https://…) or a filename already hosted beside this page. Preview updates as you edit.</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div class="rounded-lg border border-gold/20 bg-black/25 p-2">
+                                        <img id="eventContentImagePreview1" class="w-full h-28 object-cover rounded mb-2" alt="Gallery image 1 preview">
+                                        <label class="form-label" for="eventContentImageUrl1">Image 1 URL / filename</label>
+                                        <input id="eventContentImageUrl1" class="form-field mb-2" maxlength="500">
+                                        <label class="form-label" for="eventContentImageAlt1">Image description</label>
+                                        <input id="eventContentImageAlt1" class="form-field mb-2" maxlength="180">
+                                        <label class="form-label" for="eventContentImageCaption1">Caption</label>
+                                        <input id="eventContentImageCaption1" class="form-field" maxlength="100">
+                                    </div><div class="rounded-lg border border-gold/20 bg-black/25 p-2">
+                                        <img id="eventContentImagePreview2" class="w-full h-28 object-cover rounded mb-2" alt="Gallery image 2 preview">
+                                        <label class="form-label" for="eventContentImageUrl2">Image 2 URL / filename</label>
+                                        <input id="eventContentImageUrl2" class="form-field mb-2" maxlength="500">
+                                        <label class="form-label" for="eventContentImageAlt2">Image description</label>
+                                        <input id="eventContentImageAlt2" class="form-field mb-2" maxlength="180">
+                                        <label class="form-label" for="eventContentImageCaption2">Caption</label>
+                                        <input id="eventContentImageCaption2" class="form-field" maxlength="100">
+                                    </div><div class="rounded-lg border border-gold/20 bg-black/25 p-2">
+                                        <img id="eventContentImagePreview3" class="w-full h-28 object-cover rounded mb-2" alt="Gallery image 3 preview">
+                                        <label class="form-label" for="eventContentImageUrl3">Image 3 URL / filename</label>
+                                        <input id="eventContentImageUrl3" class="form-field mb-2" maxlength="500">
+                                        <label class="form-label" for="eventContentImageAlt3">Image description</label>
+                                        <input id="eventContentImageAlt3" class="form-field mb-2" maxlength="180">
+                                        <label class="form-label" for="eventContentImageCaption3">Caption</label>
+                                        <input id="eventContentImageCaption3" class="form-field" maxlength="100">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-3 mt-5">
+                                <button type="button" id="savePublicEventContentBtn" class="gold-btn px-5 py-3 rounded-lg text-xs uppercase tracking-widest">Save public event page</button>
+                                <button type="button" id="previewPublicEventContentBtn" class="sort-option">Preview on this page</button>
+                            </div>
+                            <p id="publicEventContentStatus" class="text-xs text-gray-300 mt-3 min-h-[1rem]" role="status" aria-live="polite">Loading saved event content…</p>
+                        </section>
                         <section id="adminPricingPanel" class="staff-panel">
                         <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules, referral eligibility and the admission workflow. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid.</p>
                         <p id="pricingSaveStatus" class="text-xs text-gray-300 mb-3 min-h-[1rem]" role="status" aria-live="polite"></p>
@@ -1300,7 +1359,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.132</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.01.001</p>
         </div>
     </footer>
 
@@ -1348,6 +1407,27 @@
         let registrationSettingsLoadError = false;
         let registrationSettingsUnsubscribe = null;
         let registrationCountSyncInProgress = false;
+        let publicEventContentDirty = false;
+        const DEFAULT_PUBLIC_EVENT_CONTENT = {
+            kicker: 'A Private Halloween Soirée',
+            title: 'The Dean After Dark',
+            meta: 'Halloween Soirée • Saturday, 31 October 2026',
+            time: 'From 20:00 · Open end · Music winds down at 01:00',
+            host: 'Hosted by Ari',
+            venue: 'The Dean Munich, Autograph Collection by Marriott',
+            address: 'Landsberger Straße 68, 80339 München',
+            mapUrl: 'https://www.google.com/maps/search/?api=1&query=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany',
+            descriptionKicker: 'One night. Two moods.',
+            descriptionTitle: 'A hidden gem, revealed after dark',
+            description1: 'Discover a hidden gem tucked deep inside The Dean Munich, Autograph Collection by Marriott. True to its "Exactly like nothing else" spirit, this space has remained off-limits to the public and is now opening its doors for the first time.',
+            description2: 'Two distinct rooms, twin DJ setups and a dedicated bar set the scene—the perfect setting to bring your friends and share an unforgettable evening.',
+            images: [
+                { url: 'The Secret Party Room.jpg', alt: 'The Dean party rooms', caption: 'The Secret Party Room' },
+                { url: 'The chill-out Lounge.jpg', alt: 'The chill-out Lounge', caption: 'The chill-out Lounge' },
+                { url: 'Atmosphere Concept 3.jpg', alt: 'AI-generated concept of the party room decorated for Halloween', caption: 'Atmosphere Concept' }
+            ]
+        };
+        let publicEventContent = JSON.parse(JSON.stringify(DEFAULT_PUBLIC_EVENT_CONTENT));
         let currentStaffRole = null;
         let activeStaffPage = 'overview';
         let currentAuthUser = null;
@@ -3013,6 +3093,142 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             }
         }
 
+        function safePublicImageUrl(value) {
+            const url = String(value || '').trim();
+            if (!url || url.length > 500 || /^(javascript|data|vbscript):/i.test(url)) return '';
+            if (/^https:\/\//i.test(url) || /^\/(?!\/)/.test(url) || /^[\w .()'-]+\.(?:jpe?g|png|webp|gif)$/i.test(url)) return url;
+            return '';
+        }
+
+        function applyPublicEventContent(raw, updateEditor = true) {
+            const value = raw && typeof raw === 'object' ? raw : {};
+            const merged = {
+                ...DEFAULT_PUBLIC_EVENT_CONTENT,
+                ...value,
+                images: [0,1,2].map(i => ({
+                    ...DEFAULT_PUBLIC_EVENT_CONTENT.images[i],
+                    ...((Array.isArray(value.images) && value.images[i]) || {})
+                }))
+            };
+            publicEventContent = merged;
+            const setText = (id, text) => { const el=document.getElementById(id); if(el) el.textContent=String(text ?? ''); };
+            setText('publicEventKicker', merged.kicker);
+            setText('publicEventTitle', merged.title);
+            setText('publicEventMeta', merged.meta);
+            setText('publicEventTime', merged.time);
+            setText('publicEventHost', merged.host);
+            setText('publicEventVenue', merged.venue);
+            setText('publicEventAddress', merged.address);
+            setText('publicDescriptionKicker', merged.descriptionKicker);
+            setText('publicDescriptionTitle', merged.descriptionTitle);
+            setText('publicDescriptionParagraph1', merged.description1);
+            setText('publicDescriptionParagraph2', merged.description2);
+            const mapLink=document.getElementById('publicEventMapLink');
+            if(mapLink) {
+                const mapUrl=String(merged.mapUrl || '').trim();
+                mapLink.href=/^https:\/\//i.test(mapUrl) ? mapUrl : '#';
+                mapLink.classList.toggle('pointer-events-none', !/^https:\/\//i.test(mapUrl));
+            }
+            merged.images.forEach((item,i)=>{
+                const n=i+1, img=document.getElementById('publicGalleryImage'+n), caption=document.getElementById('publicGalleryCaption'+n);
+                const src=safePublicImageUrl(item.url);
+                if(img) { if(src) img.src=src; img.alt=String(item.alt || 'Event image'); img.closest('figure')?.classList.toggle('hidden',!src); }
+                if(caption) caption.textContent=String(item.caption || '');
+            });
+            if(updateEditor && !publicEventContentDirty) populatePublicEventContentEditor(merged);
+            return merged;
+        }
+
+        function populatePublicEventContentEditor(value = publicEventContent) {
+            const fields = {
+                eventContentKicker:value.kicker, eventContentTitle:value.title, eventContentMeta:value.meta,
+                eventContentTime:value.time, eventContentHost:value.host, eventContentVenue:value.venue,
+                eventContentAddress:value.address, eventContentMapUrl:value.mapUrl,
+                eventContentDescriptionKicker:value.descriptionKicker, eventContentDescriptionTitle:value.descriptionTitle,
+                eventContentDescription1:value.description1, eventContentDescription2:value.description2
+            };
+            Object.entries(fields).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=String(val ?? '');});
+            (value.images || []).forEach((item,i)=>{
+                const n=i+1;
+                [['Url',item.url],['Alt',item.alt],['Caption',item.caption]].forEach(([suffix,val])=>{
+                    const el=document.getElementById('eventContentImage'+suffix+n);if(el)el.value=String(val ?? '');
+                });
+                updatePublicEventImagePreview(n);
+            });
+        }
+
+        function readPublicEventContentEditor() {
+            const get=id=>String(document.getElementById(id)?.value || '').trim();
+            const images=[1,2,3].map(n=>({
+                url:get('eventContentImageUrl'+n),
+                alt:get('eventContentImageAlt'+n),
+                caption:get('eventContentImageCaption'+n)
+            }));
+            images.forEach((item,i)=>{if(item.url && !safePublicImageUrl(item.url)) throw new Error('Image '+(i+1)+' must be an HTTPS URL, a root-relative path or a site image filename.');});
+            const content={
+                kicker:get('eventContentKicker'), title:get('eventContentTitle'), meta:get('eventContentMeta'),
+                time:get('eventContentTime'), host:get('eventContentHost'), venue:get('eventContentVenue'),
+                address:get('eventContentAddress'), mapUrl:get('eventContentMapUrl'),
+                descriptionKicker:get('eventContentDescriptionKicker'), descriptionTitle:get('eventContentDescriptionTitle'),
+                description1:get('eventContentDescription1'), description2:get('eventContentDescription2'), images
+            };
+            if(!content.title || !content.descriptionTitle) throw new Error('Event title and description heading are required.');
+            if(content.mapUrl && !/^https:\/\//i.test(content.mapUrl)) throw new Error('Map link must start with https://.');
+            return content;
+        }
+
+        function updatePublicEventImagePreview(n) {
+            const input=document.getElementById('eventContentImageUrl'+n), preview=document.getElementById('eventContentImagePreview'+n);
+            if(!input || !preview) return;
+            const src=safePublicImageUrl(input.value);
+            if(src) { preview.src=src; preview.classList.remove('hidden'); }
+            else { preview.removeAttribute('src'); preview.classList.add('hidden'); }
+        }
+
+        async function savePublicEventContent() {
+            const status=document.getElementById('publicEventContentStatus'), button=document.getElementById('savePublicEventContentBtn');
+            if(currentStaffRole!=='admin' || !db) { if(status)status.textContent='Only an authenticated Admin can edit the public event page.'; return; }
+            let content;
+            try { content=readPublicEventContentEditor(); }
+            catch(error) { if(status)status.textContent=error.message; return; }
+            button.disabled=true;
+            if(status)status.textContent='Saving public event content…';
+            try {
+                await db.collection('event_settings').doc(REGISTRATION_SETTINGS_DOC_ID).set({
+                    publicContent:content,
+                    publicContentUpdatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+                    publicContentUpdatedBy:activeStaffUid || null
+                },{merge:true});
+                publicEventContentDirty=false;
+                applyPublicEventContent(content,true);
+                if(status)status.textContent='Public event page saved. Visitors will see the updated description and images after the page refreshes.';
+            } catch(error) {
+                console.error('Public event content save failed:',error);
+                if(status)status.textContent='Could not save the event page. Check your Admin access and Firestore connection.';
+            } finally { button.disabled=false; }
+        }
+
+        function previewPublicEventContent() {
+            try {
+                const content=readPublicEventContentEditor();
+                applyPublicEventContent(content,false);
+                if(document.getElementById('publicEventContentStatus'))document.getElementById('publicEventContentStatus').textContent='Preview applied locally only. Save to publish it to visitors.';
+                window.scrollTo({top:0,behavior:'smooth'});
+            } catch(error) {
+                const status=document.getElementById('publicEventContentStatus');if(status)status.textContent=error.message;
+            }
+        }
+
+        function initializePublicEventContentEditor() {
+            const ids=['eventContentKicker','eventContentTitle','eventContentMeta','eventContentTime','eventContentHost','eventContentVenue','eventContentAddress','eventContentMapUrl','eventContentDescriptionKicker','eventContentDescriptionTitle','eventContentDescription1','eventContentDescription2','eventContentImageUrl1','eventContentImageAlt1','eventContentImageCaption1','eventContentImageUrl2','eventContentImageAlt2','eventContentImageCaption2','eventContentImageUrl3','eventContentImageAlt3','eventContentImageCaption3'];
+            ids.forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',()=>{publicEventContentDirty=true;});}});
+            [1,2,3].forEach(n=>document.getElementById('eventContentImageUrl'+n)?.addEventListener('input',()=>updatePublicEventImagePreview(n)));
+            document.getElementById('savePublicEventContentBtn')?.addEventListener('click',savePublicEventContent);
+            document.getElementById('previewPublicEventContentBtn')?.addEventListener('click',previewPublicEventContent);
+            populatePublicEventContentEditor();
+        }
+        initializePublicEventContentEditor();
+
         async function saveRegistrationSettings() {
             const status = document.getElementById('registrationSettingsStatus');
             const button = document.getElementById('saveRegistrationSettingsBtn');
@@ -3056,6 +3272,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 registrationSettingsExists = doc.exists;
                 registrationSettingsLoadError = false;
                 const value = doc.exists ? doc.data() || {} : {};
+                applyPublicEventContent(value.publicContent || DEFAULT_PUBLIC_EVENT_CONTENT, true);
                 registrationSettings = {
                     enabled: value.enabled !== false,
                     capacity: Math.max(0, Number(value.capacity) || 0),
