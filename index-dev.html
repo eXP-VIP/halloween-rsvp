@@ -1275,30 +1275,6 @@
                             </div>
                             <p id="publicEventContentStatus" class="text-xs text-gray-300 mt-3 min-h-[1rem]" role="status" aria-live="polite">Loading saved event content…</p>
                         </section>
-        <div id="publicEventPreviewModal" class="fixed inset-0 z-[220] hidden items-start justify-center overflow-y-auto bg-black/90 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="eventPreviewTitle">
-            <div class="w-full max-w-4xl my-3 rounded-2xl border border-amber-300/40 bg-[#101014] shadow-2xl overflow-hidden">
-                <div class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-amber-300/20 bg-[#101014] px-4 py-3">
-                    <div><p class="text-[10px] uppercase tracking-[0.2em] text-amber-200">Unpublished preview</p><h2 id="eventPreviewTitle" class="font-serif text-sm text-white">Public event page preview</h2></div>
-                    <button type="button" id="closePublicEventPreview" class="rounded-lg border border-amber-200/40 px-3 py-2 text-xs text-white hover:bg-white/10">Close preview</button>
-                </div>
-                <div class="px-4 py-8 sm:px-10 sm:py-12 text-center">
-                    <p id="eventPreviewKicker" class="font-serif text-xs uppercase tracking-[0.25em] text-amber-200 mb-3"></p>
-                    <h1 id="eventPreviewHeading" class="font-serif text-3xl sm:text-5xl font-bold uppercase tracking-wider text-white mb-4"></h1>
-                    <p id="eventPreviewMeta" class="text-xs uppercase tracking-widest text-gray-300"></p>
-                    <p id="eventPreviewTime" class="text-sm text-gray-200 mt-2"></p>
-                    <p id="eventPreviewHost" class="text-xs uppercase tracking-widest text-amber-100 mt-4"></p>
-                    <p id="eventPreviewVenue" class="text-sm text-gray-200 mt-2"></p>
-                    <p id="eventPreviewAddress" class="text-xs text-gray-400 mt-1"></p>
-                </div>
-                <section class="mx-3 mb-4 rounded-xl border border-amber-200/20 bg-white/5 p-5 sm:mx-6 sm:p-8">
-                    <p id="eventPreviewDescriptionKicker" class="font-serif text-xs uppercase tracking-widest text-amber-200 mb-3"></p>
-                    <h2 id="eventPreviewDescriptionTitle" class="font-serif text-xl sm:text-2xl uppercase text-white mb-4"></h2>
-                    <p id="eventPreviewDescription1" class="text-sm leading-relaxed text-gray-100 mb-3"></p>
-                    <p id="eventPreviewDescription2" class="text-sm leading-relaxed text-gray-300"></p>
-                    <div id="eventPreviewGallery" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6"></div>
-                </section>
-                <div class="px-4 pb-6 text-center text-xs text-amber-100/70">Preview only · Nothing is published until you save the event page.</div>
-            </div>
         </div>
                         <section id="adminPricingPanel" class="staff-panel">
                         <p class="text-xs text-gray-300 mb-4">Set admission prices, welcome-drink rules, referral eligibility and the admission workflow. Included drinks are already covered; a referral reward does not add a second drink. A referral counts toward the threshold only after the referred guest has checked in and paid.</p>
@@ -6723,5 +6699,30 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         document.getElementById('stopCheckInQrBtn').addEventListener('click', () => setCheckInMode('search'));
 
     </script>
+        <div id="publicEventPreviewModal" class="fixed inset-0 z-[220] hidden items-start justify-center overflow-y-auto bg-black/90 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="eventPreviewTitle">
+            <div class="w-full max-w-4xl my-3 rounded-2xl border border-amber-300/40 bg-[#101014] shadow-2xl overflow-hidden">
+                <div class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-amber-300/20 bg-[#101014] px-4 py-3">
+                    <div><p class="text-[10px] uppercase tracking-[0.2em] text-amber-200">Unpublished preview</p><h2 id="eventPreviewTitle" class="font-serif text-sm text-white">Public event page preview</h2></div>
+                    <button type="button" id="closePublicEventPreview" class="rounded-lg border border-amber-200/40 px-3 py-2 text-xs text-white hover:bg-white/10">Close preview</button>
+                </div>
+                <div class="px-4 py-8 sm:px-10 sm:py-12 text-center">
+                    <p id="eventPreviewKicker" class="font-serif text-xs uppercase tracking-[0.25em] text-amber-200 mb-3"></p>
+                    <h1 id="eventPreviewHeading" class="font-serif text-3xl sm:text-5xl font-bold uppercase tracking-wider text-white mb-4"></h1>
+                    <p id="eventPreviewMeta" class="text-xs uppercase tracking-widest text-gray-300"></p>
+                    <p id="eventPreviewTime" class="text-sm text-gray-200 mt-2"></p>
+                    <p id="eventPreviewHost" class="text-xs uppercase tracking-widest text-amber-100 mt-4"></p>
+                    <p id="eventPreviewVenue" class="text-sm text-gray-200 mt-2"></p>
+                    <p id="eventPreviewAddress" class="text-xs text-gray-400 mt-1"></p>
+                </div>
+                <section class="mx-3 mb-4 rounded-xl border border-amber-200/20 bg-white/5 p-5 sm:mx-6 sm:p-8">
+                    <p id="eventPreviewDescriptionKicker" class="font-serif text-xs uppercase tracking-widest text-amber-200 mb-3"></p>
+                    <h2 id="eventPreviewDescriptionTitle" class="font-serif text-xl sm:text-2xl uppercase text-white mb-4"></h2>
+                    <p id="eventPreviewDescription1" class="text-sm leading-relaxed text-gray-100 mb-3"></p>
+                    <p id="eventPreviewDescription2" class="text-sm leading-relaxed text-gray-300"></p>
+                    <div id="eventPreviewGallery" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6"></div>
+                </section>
+                <div class="px-4 pb-6 text-center text-xs text-amber-100/70">Preview only · Nothing is published until you save the event page.</div>
+            </div>
+
 </body>
 </html>
