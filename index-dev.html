@@ -833,7 +833,7 @@
                         </div>
                         <p id="staffViewportHelp" class="staff-view-help">Showing the detected layout. Tap Phone or Desktop only if the layout looks wrong. Your choice is saved in this browser.</p>
                     </div>
-                    <button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white shrink-0"><i class="fa-solid fa-xmark text-xl"></i></button>
+                    <div class="flex items-center gap-3 shrink-0"><button type="button" onclick="showPublicEntryPage()" class="text-xs font-semibold uppercase tracking-wider text-amber-100 border border-gold/40 rounded-lg px-3 py-2 hover:bg-gold/10">View entry page</button><button type="button" onclick="toggleHostessPortal()" aria-label="Sign out and close staff check-in" title="Sign out" class="text-gray-300 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button></div>
                 </div>
                 <div id="staffLoginSection" class="space-y-4 py-5">
                     <div class="text-center mb-5">
@@ -1309,7 +1309,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.014</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.015</p>
         </div>
     </footer>
 
@@ -3428,6 +3428,39 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             staffActivationPromise = activation;
             try { await activation; }
             finally { if (staffActivationPromise === activation) staffActivationPromise = null; }
+        }
+
+        /** Show the public event entry page without ending the authenticated staff session. */
+        function showPublicEntryPage() {
+            const portal = document.getElementById('hostessPortal');
+            if (!portal) return;
+            portal.classList.add('hidden');
+            document.body.classList.remove('staff-mode');
+            updateAdminViewportMode();
+            let returnButton = document.getElementById('returnToStaffPortalButton');
+            if (!returnButton) {
+                returnButton = document.createElement('button');
+                returnButton.id = 'returnToStaffPortalButton';
+                returnButton.type = 'button';
+                returnButton.textContent = 'STAFF CONSOLE';
+                returnButton.className = 'fixed bottom-4 right-4 z-50 rounded-full border border-amber-300/60 bg-black/90 px-5 py-3 text-xs font-bold tracking-widest text-amber-100 shadow-xl';
+                returnButton.onclick = returnToStaffPortal;
+                document.body.appendChild(returnButton);
+            }
+            returnButton.classList.toggle('hidden', !(currentStaffRole && activeStaffUid));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        /** Return to the staff console with the existing Firebase session intact. */
+        function returnToStaffPortal() {
+            const portal = document.getElementById('hostessPortal');
+            if (!portal) return;
+            portal.classList.remove('hidden');
+            document.body.classList.add('staff-mode');
+            updateAdminViewportMode();
+            const returnButton = document.getElementById('returnToStaffPortalButton');
+            if (returnButton) returnButton.classList.add('hidden');
+            portal.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         /** Switch between the public event page and staff portal while preserving the login boundary. */
