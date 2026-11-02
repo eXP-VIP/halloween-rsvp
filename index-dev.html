@@ -3,6 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        #dev-deploy-status{position:fixed;z-index:2147483647;left:50%;top:16px;transform:translateX(-50%);width:min( calc(100% - 28px), 460px );padding:14px 18px;border:1px solid rgba(212,175,55,.65);border-radius:12px;background:rgba(8,8,10,.96);box-shadow:0 12px 40px rgba(0,0,0,.55);color:#f8fafc;font:500 13px/1.45 Montserrat,Arial,sans-serif;text-align:center}
+        #dev-deploy-status strong{display:block;color:#f3e5ab;font-size:13px;letter-spacing:.04em;margin-bottom:3px}
+        #dev-deploy-status small{display:block;color:#cbd5e1;font-size:11px;margin-top:4px}
+        #dev-deploy-status.ready{border-color:rgba(74,222,128,.75)}
+        #dev-deploy-status.ready strong{color:#86efac}
+    </style>
+    <script>
+    (() => {
+        const params = new URLSearchParams(location.search);
+        const expected = params.get('waitFor');
+        if (!expected) return;
+        const path = location.pathname || '/index-dev.html';
+        const status = document.createElement('div');
+        status.id = 'dev-deploy-status';
+        status.setAttribute('role', 'status');
+        status.setAttribute('aria-live', 'polite');
+        document.addEventListener('DOMContentLoaded', () => document.body.appendChild(status));
+        const ownVersion = (document.querySelector('.build-version-label')?.textContent || '').match(/\\d{4}\\.\\d{2}\\.\\d{2}\\.\\d{3}/)?.[0] || 'unknown';
+        let finished = false;
+        const show = (ready, detail) => {
+            status.classList.toggle('ready', ready);
+            status.innerHTML = ready
+                ? '<strong>✓ DEV VERSION READY</strong>' + detail
+                : '<strong>DEV VERSION NOT READY YET</strong>' + detail + '<small>This page will check again automatically.</small>';
+        };
+        const finish = () => {
+            if (finished) return;
+            finished = true;
+            show(true, 'Build ' + expected + ' is loaded.');
+            setTimeout(() => {
+                const clean = new URL(location.href);
+                clean.searchParams.delete('waitFor');
+                history.replaceState(null, '', clean.pathname + clean.search + clean.hash);
+                status.remove();
+            }, 2600);
+        };
+        if (ownVersion === expected) {
+            document.addEventListener('DOMContentLoaded', finish, { once: true });
+            if (document.readyState !== 'loading') finish();
+            return;
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            show(false, 'Expected build ' + expected + '. Currently loaded: ' + ownVersion + '.');
+        }, { once: true });
+        const check = async () => {
+            if (finished) return;
+            try {
+                const response = await fetch(path + '?_dev_version_check=' + Date.now(), {
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const html = await response.text();
+                const match = html.match(/class=["'][^"']*build-version-label[^"']*["'][^>]*>[^<]*?(\\d{4}\\.\\d{2}\\.\\d{2}\\.\\d{3})/i);
+                const deployed = match?.[1] || 'unknown';
+                if (deployed === expected) {
+                    show(true, 'Build ' + expected + ' is available. Reloading the page now…');
+                    finished = true;
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    show(false, 'Expected build ' + expected + '. Server currently reports: ' + deployed + '.');
+                }
+            } catch (error) {
+                show(false, 'Expected build ' + expected + '. Checking deployment…');
+            }
+        };
+        check();
+        setInterval(check, 3500);
+    })();
+    </script>
+
     <meta name="theme-color" content="#08080a">
     <meta name="description" content="A private, guest-list-only Halloween soirée at The Dean Munich, Autograph Collection by Marriott. A hidden event space, two rooms, twin DJ setups and a dedicated bar. Saturday, 31 October 2026, from 20:00, open end; music winds down at 01:00.">
 
@@ -1300,7 +1372,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.10.31.133</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.014</p>
         </div>
     </footer>
 
