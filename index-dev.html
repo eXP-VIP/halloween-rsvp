@@ -1269,6 +1269,20 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="mt-6 pt-5 border-t border-gold/20">
+                                <h5 class="staff-subheading mb-2">All remaining public page content</h5>
+                                <p class="text-xs text-gray-400 mb-3">Every visible text block, image and public link on the event page and footer is listed below. Edit any item here; this complements the fields above.</p>
+                                <div class="flex flex-wrap items-center gap-2 mb-3">
+                                    <input id="publicPageEditorFilter" class="form-field flex-1 min-w-[180px]" placeholder="Filter content (e.g. dinner, room, RSVP)">
+                                    <span id="publicPageEditorCount" class="text-xs text-gray-400"></span>
+                                </div>
+                                <div id="publicPageEditorFields" class="space-y-3"></div>
+                                <div class="flex flex-wrap items-center gap-3 mt-4">
+                                    <button type="button" id="saveWholePublicPageBtn" class="gold-btn px-5 py-3 rounded-lg text-xs uppercase tracking-widest">Save all page edits</button>
+                                    <button type="button" id="resetWholePublicPageBtn" class="sort-option">Discard unsaved page edits</button>
+                                </div>
+                                <p id="wholePublicPageStatus" class="text-xs text-gray-300 mt-3 min-h-[1rem]" role="status" aria-live="polite"></p>
+                            </div>
                             <div class="flex flex-wrap items-center gap-3 mt-5">
                                 <button type="button" id="savePublicEventContentBtn" class="gold-btn px-5 py-3 rounded-lg text-xs uppercase tracking-widest">Save public event page</button>
                                 <button type="button" id="previewPublicEventContentBtn" class="sort-option">Preview on this page</button>
@@ -1360,7 +1374,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.004</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.005</p>
         </div>
     </footer>
 
@@ -3209,11 +3223,137 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             } finally { button.disabled=false; }
         }
 
+        // Full-page editor: indexes the real public DOM so no section is silently omitted.
+        let wholePageEditorItems = [];
+        let wholePageEditorDraft = {};
+        const PUBLIC_EDITOR_SKIP = '.staff-panel, #hostessPortal, script, style, noscript, button, input, textarea, select, option, svg, [aria-hidden="true"]';
+        function publicEditorRoot(kind) { return document.querySelector(kind === 'footer' ? 'body > footer' : 'body > main'); }
+        function publicNodePath(root,node) {
+            const path=[]; let current=node;
+            while(current && current!==root) {
+                const parent=current.parentNode; if(!parent) return null;
+                path.unshift(Array.prototype.indexOf.call(parent.childNodes,current)); current=parent;
+            }
+            return current===root ? path : null;
+        }
+        function publicResolvePath(root,path) {
+            let node=root; for(const index of path||[]) { node=node?.childNodes?.[index]; if(!node)return null; } return node;
+        }
+        function publicEditorAllowed(node,root) {
+            let el=node.nodeType===1?node:node.parentElement;
+            while(el && el!==root) { if(el.matches?.(PUBLIC_EDITOR_SKIP)) return false; el=el.parentElement; }
+            return true;
+        }
+        function collectWholePublicPageItems() {
+            const items=[];
+            ['main','footer'].forEach(kind=>{
+                const root=publicEditorRoot(kind); if(!root)return;
+                const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+                let node;
+                while((node=walker.nextNode())) {
+                    const value=node.nodeValue || '';
+                    if(!value.trim() || !publicEditorAllowed(node,root)) continue;
+                    const path=publicNodePath(root,node); if(!path)continue;
+                    const key=kind+':t:'+path.join('.');
+                    const parent=node.parentElement;
+                    const context=parent?.closest('section,article,header,footer,div')?.querySelector('h1,h2,h3,h4,h5')?.textContent?.trim();
+                    items.push({key,kind,type:'text',path,label:(context?context+' · ':'')+value.trim().replace(/\\s+/g,' ').slice(0,90),value});
+                }
+                root.querySelectorAll('img').forEach(img=>{
+                    if(!publicEditorAllowed(img,root))return;
+                    const path=publicNodePath(root,img); if(!path)return;
+                    items.push({key:kind+':i:'+path.join('.'),kind,type:'image',path,label:'Image · '+(img.alt||img.getAttribute('src')||'unnamed'),value:img.getAttribute('src')||'',alt:img.alt||''});
+                });
+                root.querySelectorAll('a[href]').forEach(a=>{
+                    if(!publicEditorAllowed(a,root))return;
+                    const path=publicNodePath(root,a); if(!path)return;
+                    const label=(a.textContent||'').trim(); if(!label)return;
+                    items.push({key:kind+':a:'+path.join('.'),kind,type:'link',path,label:'Link · '+label.slice(0,90),value:a.getAttribute('href')||''});
+                });
+            });
+            return items;
+        }
+        function applyWholePublicPageOverrides(overrides) {
+            const data=overrides && typeof overrides==='object'?overrides:{};
+            ['main','footer'].forEach(kind=>{
+                const root=publicEditorRoot(kind); if(!root)return;
+                Object.entries(data).forEach(([key,value])=>{
+                    const [target,type,pathText]=key.split(':'); if(target!==kind)return;
+                    const node=publicResolvePath(root,pathText?pathText.split('.').map(Number):[]);
+                    if(!node)return;
+                    if(type==='t' && node.nodeType===Node.TEXT_NODE) node.nodeValue=String(value ?? '');
+                    if(type==='i' && node.tagName==='IMG') { const src=safePublicImageUrl(value?.src ?? value); if(src)node.setAttribute('src',src); if(value?.alt!==undefined)node.alt=String(value.alt); }
+                    if(type==='a' && node.tagName==='A' && /^https?:|^#|^\\//i.test(String(value||''))) node.setAttribute('href',String(value));
+                });
+            });
+        }
+        function renderWholePublicPageEditor(overrides={}) {
+            const host=document.getElementById('publicPageEditorFields'); if(!host)return;
+            wholePageEditorItems=collectWholePublicPageItems(); wholePageEditorDraft={...overrides};
+            host.replaceChildren();
+            wholePageEditorItems.forEach(item=>{
+                const wrap=document.createElement('div'); wrap.className='rounded-lg border border-gold/15 bg-black/20 p-3 public-page-editor-item';
+                const label=document.createElement('label'); label.className='form-label'; label.textContent=item.label; wrap.appendChild(label);
+                const input=item.type==='text'?document.createElement('textarea'):document.createElement('input');
+                input.className='form-field'; if(item.type==='text'){input.rows=2;input.value=String(overrides[item.key]??item.value);}
+                else {input.type='text';input.value=String(overrides[item.key]?.src??overrides[item.key]??item.value);input.placeholder=item.type==='image'?'Image URL or site filename':'https://…';}
+                input.addEventListener('input',()=>{wholePageEditorDraft[item.key]=item.type==='image'?{src:input.value,alt:item.alt}:input.value;});
+                wrap.appendChild(input);
+                if(item.type==='image') {
+                    const alt=document.createElement('input'); alt.className='form-field mt-2'; alt.placeholder='Image description / alt text'; alt.value=String(overrides[item.key]?.alt??item.alt);
+                    alt.addEventListener('input',()=>{wholePageEditorDraft[item.key]={src:input.value,alt:alt.value};}); wrap.appendChild(alt);
+                }
+                host.appendChild(wrap);
+            });
+            const filter=document.getElementById('publicPageEditorFilter');
+            if(filter && !filter.dataset.bound){filter.dataset.bound='1';filter.addEventListener('input',()=>filterWholePublicPageEditor(filter.value));}
+            filterWholePublicPageEditor(filter?.value||'');
+        }
+        function filterWholePublicPageEditor(query) {
+            const q=String(query||'').trim().toLowerCase(); let shown=0;
+            document.querySelectorAll('#publicPageEditorFields .public-page-editor-item').forEach((el,i)=>{
+                const visible=!q || (wholePageEditorItems[i]?.label||'').toLowerCase().includes(q);
+                el.classList.toggle('hidden',!visible); if(visible)shown++;
+            });
+            const count=document.getElementById('publicPageEditorCount'); if(count)count.textContent=shown+' of '+wholePageEditorItems.length+' fields';
+        }
+        async function saveWholePublicPage() {
+            const status=document.getElementById('wholePublicPageStatus'),button=document.getElementById('saveWholePublicPageBtn');
+            if(currentStaffRole!=='admin'||!db){if(status)status.textContent='Only an authenticated Admin can save page content.';return;}
+            button.disabled=true;if(status)status.textContent='Saving all public page edits…';
+            try {
+                const merged={...(wholePageEditorDraft||{})};
+                for(const item of wholePageEditorItems) if(!(item.key in merged)) merged[item.key]=item.type==='image'?{src:item.value,alt:item.alt}:item.value;
+                for(const [key,value] of Object.entries(merged)) if(key.includes(':i:') && value?.src && !safePublicImageUrl(value.src)) throw new Error('Image URLs must be HTTPS, root-relative or existing site filenames.');
+                await db.collection('event_settings').doc(REGISTRATION_SETTINGS_DOC_ID).set({publicPageOverrides:merged,publicPageOverridesUpdatedAt:firebase.firestore.FieldValue.serverTimestamp(),publicPageOverridesUpdatedBy:activeStaffUid||null},{merge:true});
+                applyWholePublicPageOverrides(merged);wholePageEditorDraft=merged;
+                if(status)status.textContent='All page edits saved. Reload the public page to verify the published result.';
+            } catch(error){console.error('Whole-page save failed:',error);if(status)status.textContent=error.message||'Could not save page edits.';}
+            finally{button.disabled=false;}
+        }
+        function initializeWholePublicPageEditor() {
+            document.getElementById('saveWholePublicPageBtn')?.addEventListener('click',saveWholePublicPage);
+            document.getElementById('resetWholePublicPageBtn')?.addEventListener('click',()=>renderWholePublicPageEditor({}));
+            renderWholePublicPageEditor();
+        }
+        initializeWholePublicPageEditor();
+
         function closePublicEventPreview() {
             const modal=document.getElementById('publicEventPreviewModal');
             if(modal){modal.classList.add('hidden');modal.classList.remove('flex');}
+            document.body.classList.remove('overflow-hidden');
         }
 
+        function applyWholePublicPageOverridesToNode(root, overrides={}, forcedKind='main') {
+            Object.entries(overrides||{}).forEach(([key,value])=>{
+                const [kind,type,pathText]=key.split(':'); if(kind!==(forcedKind||'main'))return;
+                const node=publicResolvePath(root,pathText?pathText.split('.').map(Number):[]);
+                if(!node)return;
+                if(type==='t'&&node.nodeType===Node.TEXT_NODE)node.nodeValue=String(value??'');
+                if(type==='i'&&node.tagName==='IMG'){const src=safePublicImageUrl(value?.src??value);if(src)node.setAttribute('src',src);if(value?.alt!==undefined)node.alt=String(value.alt);}
+                if(type==='a'&&node.tagName==='A'&&/^https?:|^#|^\\//i.test(String(value||'')))node.setAttribute('href',String(value));
+            });
+        }
         function previewPublicEventContent() {
             const status=document.getElementById('publicEventContentStatus');
             try {
@@ -3231,6 +3371,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 if(!liveMain) throw new Error('Could not locate the public event page.');
                 const page=liveMain.cloneNode(true);
                 page.querySelector('#hostessPortal')?.remove();
+                page.querySelectorAll('.staff-panel, [data-staff-only="true"]').forEach(node=>node.remove());
                 page.querySelectorAll('script').forEach(node=>node.remove());
                 // Keep IDs temporarily so the edited fields can be mapped onto their matching live-page elements.
                 const mapped=[
@@ -3261,12 +3402,14 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     if(node.tagName==='BUTTON') node.disabled=true;
                 });
                 canvas.appendChild(page);
+                applyWholePublicPageOverridesToNode(page, wholePageEditorDraft);
                 if(liveFooter){
                     const footer=liveFooter.cloneNode(true);
                     footer.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
                     footer.querySelectorAll('button,a').forEach(node=>{node.setAttribute('tabindex','-1');});
                     footer.querySelector('.build-version-label')?.remove();
                     canvas.appendChild(footer);
+                    applyWholePublicPageOverridesToNode(footer, wholePageEditorDraft, 'footer');
                 }
                 modal.classList.remove('hidden');modal.classList.add('flex');
                 document.body.classList.add('overflow-hidden');
@@ -3286,7 +3429,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             document.getElementById('previewPublicEventContentBtn')?.addEventListener('click',previewPublicEventContent);
             document.getElementById('closePublicEventPreview')?.addEventListener('click',()=>{closePublicEventPreview();document.body.classList.remove('overflow-hidden');});
             document.getElementById('publicEventPreviewModal')?.addEventListener('click',event=>{if(event.target.id==='publicEventPreviewModal'){closePublicEventPreview();document.body.classList.remove('overflow-hidden');}});
-            document.addEventListener('keydown',event=>{if(event.key==='Escape'){closePublicEventPreview();document.body.classList.remove('overflow-hidden');}});
+            document.addEventListener('keydown',event=>{if(event.key==='Escape')closePublicEventPreview();});
             populatePublicEventContentEditor();
         }
         initializePublicEventContentEditor();
@@ -3335,6 +3478,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 registrationSettingsLoadError = false;
                 const value = doc.exists ? doc.data() || {} : {};
                 applyPublicEventContent(value.publicContent || DEFAULT_PUBLIC_EVENT_CONTENT, true);
+                applyWholePublicPageOverrides(value.publicPageOverrides || {});
+                renderWholePublicPageEditor(value.publicPageOverrides || {});
                 registrationSettings = {
                     enabled: value.enabled !== false,
                     capacity: Math.max(0, Number(value.capacity) || 0),
