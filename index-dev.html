@@ -1286,6 +1286,7 @@
                             <div class="flex flex-wrap items-center gap-3 mt-5">
                                 <button type="button" id="savePublicEventContentBtn" class="gold-btn px-5 py-3 rounded-lg text-xs uppercase tracking-widest">Save public event page</button>
                                 <button type="button" id="previewPublicEventContentBtn" class="sort-option">Preview on this page</button>
+                                <button type="button" id="startLivePageEditorBtn" class="sort-option">Edit directly on the page</button>
                             </div>
                             <p id="publicEventContentStatus" class="text-xs text-gray-300 mt-3 min-h-[1rem]" role="status" aria-live="polite">Loading saved event content…</p>
                         </section>
@@ -1374,7 +1375,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.008</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.009</p>
         </div>
     </footer>
 
@@ -3340,6 +3341,138 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         }
         initializeWholePublicPageEditor();
 
+        // In-place editor for the actual public page. No second preview DOM is involved.
+        let livePageEditMode=false;
+        let livePageEditSnapshot=null;
+        let livePageEditDraft={texts:{},images:{},links:{}};
+        const LIVE_EDIT_SKIP='.staff-panel, #hostessPortal, script, style, noscript, svg, [aria-hidden="true"]';
+        function liveEditRoot(kind){return document.querySelector(kind==='footer'?'body > footer':'body > main');}
+        function liveEditKey(kind,type,path){return kind+':'+type+':'+path.join('.');}
+        function liveEditPath(root,node){
+            const path=[];let n=node;
+            while(n&&n!==root){const p=n.parentNode;if(!p)return null;path.unshift(Array.prototype.indexOf.call(p.childNodes,n));n=p;}
+            return n===root?path:null;
+        }
+        function liveEditResolve(root,path){
+            let n=root;for(const i of path||[]){n=n?.childNodes?.[i];if(!n)return null;}return n;
+        }
+        function liveEditExcluded(node,root){
+            let el=node.nodeType===1?node:node.parentElement;
+            while(el&&el!==root){if(el.matches?.(LIVE_EDIT_SKIP))return true;el=el.parentElement;}
+            return false;
+        }
+        function applyLivePageEdits(edits){
+            const data=edits&&typeof edits==='object'?edits:{};
+            ['main','footer'].forEach(kind=>{
+                const root=liveEditRoot(kind);if(!root)return;
+                Object.entries(data.texts||{}).forEach(([key,value])=>{
+                    const [k,type,path]=key.split(':');if(k!==kind||type!=='t')return;
+                    const node=liveEditResolve(root,path?path.split('.').map(Number):[]);
+                    if(node?.nodeType===Node.TEXT_NODE)node.nodeValue=String(value??'');
+                });
+                Object.entries(data.images||{}).forEach(([key,value])=>{
+                    const [k,type,path]=key.split(':');if(k!==kind||type!=='i')return;
+                    const node=liveEditResolve(root,path?path.split('.').map(Number):[]);
+                    if(node?.tagName==='IMG'){const src=safePublicImageUrl(value?.src);if(src)node.src=src;if(value?.alt!==undefined)node.alt=String(value.alt);}
+                });
+                Object.entries(data.links||{}).forEach(([key,value])=>{
+                    const [k,type,path]=key.split(':');if(k!==kind||type!=='a')return;
+                    const node=liveEditResolve(root,path?path.split('.').map(Number):[]);
+                    if(node?.tagName==='A'&&/^(https?:|mailto:|tel:|\/|#)/i.test(String(value||'')))node.setAttribute('href',String(value));
+                });
+            });
+        }
+        function livePageEditStatus(message){const el=document.getElementById('livePageEditorStatus');if(el)el.textContent=message;}
+        function startLivePageEditor(){
+            if(currentStaffRole!=='admin'){alert('Only an authenticated Admin can edit the public page.');return;}
+            if(livePageEditMode)return;
+            livePageEditSnapshot={texts:{},images:{},links:{}};
+            livePageEditDraft={texts:{},images:{},links:{}};
+            ['main','footer'].forEach(kind=>{
+                const root=liveEditRoot(kind);if(!root)return;
+                const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+                const textNodes=[];let node;while((node=walker.nextNode()))if(node.nodeValue.trim()&&!liveEditExcluded(node,root))textNodes.push(node);
+                textNodes.forEach(textNode=>{
+                    const path=liveEditPath(root,textNode);if(!path)return;
+                    const key=liveEditKey(kind,'t',path);
+                    livePageEditSnapshot.texts[key]=textNode.nodeValue;
+                    const span=document.createElement('span');span.dataset.liveEditKey=key;span.contentEditable='true';span.spellcheck=false;
+                    textNode.parentNode.insertBefore(span,textNode);span.appendChild(textNode);
+                });
+                root.querySelectorAll('img').forEach(img=>{
+                    if(liveEditExcluded(img,root))return;
+                    const path=liveEditPath(root,img);if(!path)return;
+                    const key=liveEditKey(kind,'i',path);
+                    livePageEditSnapshot.images[key]={src:img.getAttribute('src')||'',alt:img.alt||''};
+                    img.dataset.liveImageKey=key;
+                });
+                root.querySelectorAll('a[href]').forEach(link=>{
+                    if(liveEditExcluded(link,root))return;
+                    const path=liveEditPath(root,link);if(!path)return;
+                    const key=liveEditKey(kind,'a',path);
+                    livePageEditSnapshot.links[key]=link.getAttribute('href')||'';
+                    link.dataset.liveLinkKey=key;
+                });
+            });
+            livePageEditMode=true;document.body.classList.add('live-page-editing');
+            document.getElementById('livePageEditorBar')?.classList.remove('hidden');
+            livePageEditStatus('Click any outlined text to edit. Click an outlined image to replace it. Click a link to change its destination.');
+        }
+        function collectLivePageEdits(){
+            const result={texts:{},images:{},links:{}};
+            document.querySelectorAll('[data-live-edit-key]').forEach(el=>{result.texts[el.dataset.liveEditKey]=el.textContent;});
+            document.querySelectorAll('[data-live-image-key]').forEach(el=>{result.images[el.dataset.liveImageKey]={src:el.getAttribute('src')||'',alt:el.alt||''};});
+            document.querySelectorAll('[data-live-link-key]').forEach(el=>{result.links[el.dataset.liveLinkKey]=el.getAttribute('href')||'';});
+            return result;
+        }
+        function endLivePageEditor(restore){
+            if(restore&&livePageEditSnapshot){
+                // Restore the exact original strings and attributes from the edit-session snapshot.
+                document.querySelectorAll('[data-live-edit-key]').forEach(el=>{const value=livePageEditSnapshot.texts[el.dataset.liveEditKey];if(value!==undefined)el.textContent=value;});
+                document.querySelectorAll('[data-live-image-key]').forEach(el=>{const value=livePageEditSnapshot.images[el.dataset.liveImageKey];if(value){el.setAttribute('src',value.src);el.alt=value.alt;}});
+                document.querySelectorAll('[data-live-link-key]').forEach(el=>{const value=livePageEditSnapshot.links[el.dataset.liveLinkKey];if(value!==undefined)el.setAttribute('href',value);});
+            }
+            document.querySelectorAll('[data-live-edit-key]').forEach(el=>{
+                el.removeAttribute('contenteditable');el.removeAttribute('spellcheck');el.removeAttribute('data-live-edit-key');
+                while(el.firstChild)el.parentNode.insertBefore(el.firstChild,el);el.remove();
+            });
+            document.querySelectorAll('[data-live-image-key]').forEach(el=>el.removeAttribute('data-live-image-key'));
+            document.querySelectorAll('[data-live-link-key]').forEach(el=>el.removeAttribute('data-live-link-key'));
+            livePageEditMode=false;document.body.classList.remove('live-page-editing');
+            document.getElementById('livePageEditorBar')?.classList.add('hidden');
+            livePageEditSnapshot=null;
+        }
+        async function saveLivePageEdits(){
+            const button=document.getElementById('saveLivePageEditsBtn');
+            if(currentStaffRole!=='admin'||!db){livePageEditStatus('Admin access and a database connection are required.');return;}
+            const edits=collectLivePageEdits();
+            for(const value of Object.values(edits.images))if(value.src&&!safePublicImageUrl(value.src)){livePageEditStatus('Image URL must be HTTPS, root-relative or an existing site filename.');return;}
+            button.disabled=true;livePageEditStatus('Saving page changes…');
+            try{
+                await db.collection('event_settings').doc(REGISTRATION_SETTINGS_DOC_ID).set({livePageEdits:edits,livePageEditsUpdatedAt:firebase.firestore.FieldValue.serverTimestamp(),livePageEditsUpdatedBy:activeStaffUid||null},{merge:true});
+                livePageEditDraft=edits;endLivePageEditor(false);applyLivePageEdits(edits);
+                livePageEditStatus('Changes saved. The public page will display them after refresh.');
+            }catch(error){console.error('Live page edit save failed:',error);livePageEditStatus('Save failed. Your edits are still on screen; retry or Cancel.');}
+            finally{button.disabled=false;}
+        }
+        function initializeLivePageEditor(){
+            document.getElementById('startLivePageEditorBtn')?.addEventListener('click',startLivePageEditor);
+            document.getElementById('saveLivePageEditsBtn')?.addEventListener('click',saveLivePageEdits);
+            document.getElementById('cancelLivePageEditsBtn')?.addEventListener('click',()=>endLivePageEditor(true));
+            document.addEventListener('click',event=>{
+                if(!livePageEditMode)return;
+                const img=event.target.closest?.('[data-live-image-key]');
+                if(img){event.preventDefault();event.stopPropagation();const next=prompt('Image URL or filename',img.getAttribute('src')||'');if(next===null)return;if(next&&!safePublicImageUrl(next)){alert('Use an HTTPS URL, root-relative path or existing site filename.');return;}if(next)img.setAttribute('src',next);const alt=prompt('Image description (alt text)',img.alt||'');if(alt!==null)img.alt=alt;return;}
+                const link=event.target.closest?.('[data-live-link-key]');
+                if(link){event.preventDefault();event.stopPropagation();const next=prompt('Link destination',link.getAttribute('href')||'');if(next!==null){if(!/^(https?:|mailto:|tel:|\/|#)/i.test(next)){alert('Enter a valid https://, mailto:, tel:, / or # destination.');return;}link.setAttribute('href',next);}return;}
+                if(event.target.closest?.('#livePageEditorBar'))return;
+                if(event.target.closest?.('[data-live-edit-key]')){event.stopPropagation();return;}
+                if(event.target.closest?.('button'))event.preventDefault();
+            },true);
+            document.addEventListener('keydown',event=>{if(livePageEditMode&&event.key==='Escape'){endLivePageEditor(true);}});
+        }
+        initializeLivePageEditor();
+
         function closePublicEventPreview() {
             const modal=document.getElementById('publicEventPreviewModal');
             if(modal){modal.classList.add('hidden');modal.classList.remove('flex');}
@@ -3481,6 +3614,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const value = doc.exists ? doc.data() || {} : {};
                 applyPublicEventContent(value.publicContent || DEFAULT_PUBLIC_EVENT_CONTENT, true);
                 applyWholePublicPageOverrides(value.publicPageOverrides || {});
+                applyLivePageEdits(value.livePageEdits || {});
                 renderWholePublicPageEditor(value.publicPageOverrides || {});
                 registrationSettings = {
                     enabled: value.enabled !== false,
@@ -6748,7 +6882,20 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 '@media print{html,body{margin:0;padding:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.print-page{width:100%;height:' + printableHeightMm + 'mm;padding:0}}' +
                 '@media screen{body{background:#eee;padding:10px}.print-page{background:#fff;box-shadow:0 1px 8px #bbb;margin:0 auto 14px;padding:' +
                     pageMarginTopMm + 'mm ' + pageMarginRightMm + 'mm ' + pageMarginBottomMm + 'mm ' + pageMarginLeftMm + 'mm;width:' + physicalPageWidthMm + 'mm;height:' + physicalPageHeightMm + 'mm}}' +
-                '</style></head><body>' + compactPage + readablePages.join('') + '</body></html>';
+                '</style></head><body>' + compactPage + readablePages.join('') + '    <div id="livePageEditorBar" class="hidden fixed bottom-3 left-3 right-3 z-[300] mx-auto max-w-xl rounded-xl border border-amber-300/50 bg-[#101014]/95 p-3 shadow-2xl backdrop-blur">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="min-w-0"><p class="text-xs font-semibold text-amber-200">LIVE PAGE EDITOR</p><p id="livePageEditorStatus" class="text-[11px] text-gray-300">Click text to edit. Click an image or link to change it.</p></div>
+            <div class="flex gap-2"><button type="button" id="cancelLivePageEditsBtn" class="sort-option">Cancel</button><button type="button" id="saveLivePageEditsBtn" class="gold-btn px-4 py-2 rounded-lg text-xs uppercase tracking-widest">Save changes</button></div>
+        </div>
+    </div>
+    <style>
+      body.live-page-editing [data-live-edit-key] { outline: 1px dashed rgba(245,190,75,.75); outline-offset: 2px; cursor: text; }
+      body.live-page-editing img[data-live-image-key] { outline: 2px dashed rgba(245,190,75,.9); outline-offset: 3px; cursor: pointer; }
+      body.live-page-editing a[data-live-link-key] { cursor: pointer; outline: 1px dashed rgba(245,190,75,.65); outline-offset: 2px; }
+      body.live-page-editing [contenteditable="true"]:focus { outline: 2px solid #f5c15d; background: rgba(245,193,93,.10); }
+    </style>
+
+</body></html>';
 
             printWindow.document.open();
             printWindow.document.write(printDocument);
