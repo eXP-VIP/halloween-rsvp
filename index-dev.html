@@ -1360,7 +1360,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.003</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.004</p>
         </div>
     </footer>
 
@@ -3232,14 +3232,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 const page=liveMain.cloneNode(true);
                 page.querySelector('#hostessPortal')?.remove();
                 page.querySelectorAll('script').forEach(node=>node.remove());
-                page.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
-
-                const setText=(selector,value)=>{
-                    const target=page.querySelector(selector);
-                    if(target) target.textContent=String(value ?? '');
-                };
-                setText('[aria-label="Event identity, date and primary navigation into registration"] #publicEventKicker',content.kicker);
-                // IDs are retained until the content is mapped; remove them only after all mapped fields are set.
+                // Keep IDs temporarily so the edited fields can be mapped onto their matching live-page elements.
                 const mapped=[
                     ['publicEventKicker',content.kicker],['publicEventTitle',content.title],
                     ['publicEventMeta',content.meta],['publicEventTime',content.time],
