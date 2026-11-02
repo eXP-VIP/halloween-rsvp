@@ -1375,7 +1375,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.009</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.010</p>
         </div>
     </footer>
 
@@ -3372,7 +3372,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 });
                 Object.entries(data.images||{}).forEach(([key,value])=>{
                     const [k,type,path]=key.split(':');if(k!==kind||type!=='i')return;
-                    const node=liveEditResolve(root,path?path.split('.').map(Number):[]);
+                    const node=root.querySelectorAll('img')[Number(path)];
                     if(node?.tagName==='IMG'){const src=safePublicImageUrl(value?.src);if(src)node.src=src;if(value?.alt!==undefined)node.alt=String(value.alt);}
                 });
                 Object.entries(data.links||{}).forEach(([key,value])=>{
@@ -3399,17 +3399,15 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                     const span=document.createElement('span');span.dataset.liveEditKey=key;span.contentEditable='true';span.spellcheck=false;
                     textNode.parentNode.insertBefore(span,textNode);span.appendChild(textNode);
                 });
-                root.querySelectorAll('img').forEach(img=>{
+                root.querySelectorAll('img').forEach((img,index)=>{
                     if(liveEditExcluded(img,root))return;
-                    const path=liveEditPath(root,img);if(!path)return;
-                    const key=liveEditKey(kind,'i',path);
+                    const key=liveEditKey(kind,'i',[index]);
                     livePageEditSnapshot.images[key]={src:img.getAttribute('src')||'',alt:img.alt||''};
                     img.dataset.liveImageKey=key;
                 });
-                root.querySelectorAll('a[href]').forEach(link=>{
+                root.querySelectorAll('a[href]').forEach((link,index)=>{
                     if(liveEditExcluded(link,root))return;
-                    const path=liveEditPath(root,link);if(!path)return;
-                    const key=liveEditKey(kind,'a',path);
+                    const key=liveEditKey(kind,'a',[index]);
                     livePageEditSnapshot.links[key]=link.getAttribute('href')||'';
                     link.dataset.liveLinkKey=key;
                 });
