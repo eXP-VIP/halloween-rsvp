@@ -1416,9 +1416,6 @@
             }
         }
 
-        // Public event copy is intentionally readable without authentication; only Admins can publish changes.
-        loadPublicPageContent();
-
         /** Convert a Firestore Timestamp, Date or serialized date into milliseconds; invalid values return null. */
         function signupAlertTimestampMillis(value) {
             if (!value) return null;
@@ -3451,6 +3448,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         let publicPageEditing = false;
         let publicPageOriginalContent = null;
         let publicPageLoadError = null;
+
+        // Load the published copy after its state and helpers have been initialized.
+        loadPublicPageContent();
 
         function publicPageRoots() {
             return [document.querySelector('main'), document.querySelector('footer')].filter(Boolean);
