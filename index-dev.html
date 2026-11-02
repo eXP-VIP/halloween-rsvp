@@ -647,6 +647,17 @@
         body.staff-mode.staff-layout-desktop #hostessPortal .sm\:w-64 { width: 16rem !important; }
         body.staff-mode.staff-layout-desktop #hostessPortal .sm\:w-auto { width: auto !important; }
         body.staff-mode.staff-layout-desktop #hostessPortal .sm\:ml-auto { margin-left: auto !important; }
+        /* Inline public-page editor is only activated for authenticated Admins. */
+        #publicPageEditorToolbar { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 120; display: flex; align-items: center; gap: 8px; max-width: calc(100vw - 24px); padding: 10px 12px; border: 1px solid rgba(212,175,55,.65); border-radius: 12px; background: rgba(8,8,10,.96); box-shadow: 0 12px 35px rgba(0,0,0,.55); }
+        #publicPageEditorToolbar button, #publicPageEditButton { border: 1px solid rgba(212,175,55,.5); border-radius: 8px; padding: 9px 12px; color: #f3e5ab; background: rgba(212,175,55,.12); font-size: 11px; font-weight: 700; letter-spacing: .06em; white-space: nowrap; }
+        #publicPageEditorToolbar button.primary { color: #08080a; background: #d4af37; }
+        #publicPageEditorToolbar button:disabled { opacity: .45; cursor: wait; }
+        #publicPageEditButton { position: fixed; left: 16px; bottom: 16px; z-index: 110; background: rgba(8,8,10,.94); box-shadow: 0 8px 24px rgba(0,0,0,.45); }
+        .public-page-editable-text[contenteditable="true"] { outline: 1px dashed rgba(243,229,171,.72); outline-offset: 3px; border-radius: 2px; cursor: text; }
+        .public-page-editable-text[contenteditable="true"]:focus { outline: 2px solid #d4af37; background: rgba(212,175,55,.09); }
+        body.public-page-editing img { cursor: pointer; outline: 1px dashed rgba(243,229,171,.75); outline-offset: 3px; }
+        body.public-page-editing a { cursor: pointer; outline: 1px dashed rgba(96,165,250,.55); outline-offset: 2px; }
+        @media (max-width: 520px) { #publicPageEditorToolbar { top: 8px; gap: 5px; padding: 8px; } #publicPageEditorToolbar button { padding: 8px 9px; font-size: 10px; } }
 </style>
 </head>
 <body class="halloween-bg min-h-screen relative flex flex-col selection:bg-gold selection:text-black admin-stats-compact">
@@ -1309,7 +1320,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.016</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.017</p>
         </div>
     </footer>
 
@@ -1404,6 +1415,9 @@
                 console.error('Firebase initialisation failed:', error);
             }
         }
+
+        // Public event copy is intentionally readable without authentication; only Admins can publish changes.
+        loadPublicPageContent();
 
         /** Convert a Firestore Timestamp, Date or serialized date into milliseconds; invalid values return null. */
         function signupAlertTimestampMillis(value) {
@@ -3271,6 +3285,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         function applyStaffRole(role) {
             if (!STAFF_ROLES.includes(role)) throw new Error('The account does not have a valid staff role.');
             currentStaffRole = role;
+            updatePublicPageAdminControls();
             const portalDescription = document.getElementById('adminPortalDescription');
             if (portalDescription) portalDescription.textContent = role === 'admin'
                 ? 'Guest list, check-in, payment and event administration'
@@ -3430,6 +3445,291 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             finally { if (staffActivationPromise === activation) staffActivationPromise = null; }
         }
 
+        // Public entry-page content is stored separately from staff settings and guest records.
+        const PUBLIC_PAGE_CONTENT_DOC = 'public_page';
+        let publicPageContentReady = false;
+        let publicPageEditing = false;
+        let publicPageOriginalContent = null;
+        let publicPageLoadError = null;
+
+        function publicPageRoots() {
+            return [document.querySelector('main'), document.querySelector('footer')].filter(Boolean);
+        }
+
+        function publicPageElementKey(element) {
+            const parts = [];
+            let node = element;
+            while (node && node !== document.body) {
+                const parent = node.parentNode;
+                if (!parent) break;
+                parts.unshift(node.tagName.toLowerCase() + ':' + Array.prototype.indexOf.call(parent.childNodes, node));
+                node = parent;
+            }
+            return parts.join('/');
+        }
+
+        function publicPageTextKey(textNode) {
+            return publicPageElementKey(textNode.parentElement) + '|text:' +
+                Array.prototype.indexOf.call(textNode.parentNode.childNodes, textNode);
+        }
+
+        function publicPageTextNodes() {
+            const nodes = [];
+            publicPageRoots().forEach(root => {
+                const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+                let node;
+                while ((node = walker.nextNode())) {
+                    const parent = node.parentElement;
+                    if (!parent || parent.closest('#hostessPortal') || parent.closest('script,style,svg') ||
+                        parent.closest('.build-version-label') || !node.nodeValue.trim()) continue;
+                    nodes.push(node);
+                }
+            });
+            return nodes;
+        }
+
+        function loadPublicPageContent() {
+            if (!db) { publicPageContentReady = true; publicPageLoadError = 'Firebase is not configured.'; return; }
+            db.collection('event_settings').doc(PUBLIC_PAGE_CONTENT_DOC).get()
+                .then(doc => {
+                    const data = doc.exists ? doc.data() || {} : {};
+                    applyPublicPageContent(data);
+                    publicPageContentReady = true;
+                    updatePublicPageAdminControls();
+                })
+                .catch(error => {
+                    console.error('Public page content could not be loaded:', error);
+                    publicPageLoadError = error.message || 'Content could not be loaded.';
+                    publicPageContentReady = true;
+                    updatePublicPageAdminControls();
+                });
+        }
+
+        function applyPublicPageContent(data) {
+            const textValues = data.text && typeof data.text === 'object' ? data.text : {};
+            publicPageTextNodes().forEach(node => {
+                const key = publicPageTextKey(node);
+                if (Object.prototype.hasOwnProperty.call(textValues, key) && typeof textValues[key] === 'string') {
+                    node.nodeValue = textValues[key];
+                }
+            });
+            const images = data.images && typeof data.images === 'object' ? data.images : {};
+            const links = data.links && typeof data.links === 'object' ? data.links : {};
+            publicPageRoots().forEach(root => {
+                root.querySelectorAll('img').forEach(img => {
+                    if (img.closest('#hostessPortal')) return;
+                    const value = images[publicPageElementKey(img)];
+                    if (value && typeof value.src === 'string' && isSafePublicImageUrl(value.src)) img.setAttribute('src', value.src);
+                    if (value && typeof value.alt === 'string') img.setAttribute('alt', value.alt);
+                });
+                root.querySelectorAll('a[href]').forEach(link => {
+                    if (link.closest('#hostessPortal')) return;
+                    const value = links[publicPageElementKey(link)];
+                    if (typeof value === 'string' && isSafePublicLinkUrl(value)) link.setAttribute('href', value);
+                });
+            });
+        }
+
+        function isSafePublicImageUrl(value) {
+            const url = String(value || '').trim();
+            return Boolean(url) && !/^\s*(javascript|data|vbscript):/i.test(url);
+        }
+
+        function isSafePublicLinkUrl(value) {
+            const url = String(value || '').trim();
+            return Boolean(url) && !/^\s*(javascript|data|vbscript):/i.test(url);
+        }
+
+        function updatePublicPageAdminControls() {
+            const allowed = currentStaffRole === 'admin' && Boolean(activeStaffUid);
+            let button = document.getElementById('publicPageEditButton');
+            if (!allowed || document.getElementById('hostessPortal')?.classList.contains('hidden') === false) {
+                if (button) button.remove();
+                if (publicPageEditing) cancelPublicPageEditing();
+                return;
+            }
+            if (!button) {
+                button = document.createElement('button');
+                button.id = 'publicPageEditButton';
+                button.type = 'button';
+                button.textContent = 'EDIT PAGE';
+                button.addEventListener('click', startPublicPageEditing);
+                document.body.appendChild(button);
+            }
+            button.disabled = !publicPageContentReady || Boolean(publicPageLoadError);
+            button.title = publicPageLoadError || (button.disabled ? 'Loading published page content…' : 'Edit the public event page inline');
+            button.classList.toggle('hidden', publicPageEditing);
+        }
+
+        function createPublicPageEditorToolbar() {
+            let toolbar = document.getElementById('publicPageEditorToolbar');
+            if (toolbar) return toolbar;
+            toolbar = document.createElement('div');
+            toolbar.id = 'publicPageEditorToolbar';
+            toolbar.setAttribute('role', 'toolbar');
+            toolbar.setAttribute('aria-label', 'Public page editing controls');
+            toolbar.innerHTML = '<span class="text-[10px] font-bold tracking-wider text-amber-100 px-1">EDITING PAGE</span>' +
+                '<button type="button" class="primary" id="publicPageSaveButton">Save</button>' +
+                '<button type="button" id="publicPageCancelButton">Cancel</button>';
+            toolbar.querySelector('#publicPageSaveButton').addEventListener('click', savePublicPageEditing);
+            toolbar.querySelector('#publicPageCancelButton').addEventListener('click', cancelPublicPageEditing);
+            document.body.appendChild(toolbar);
+            return toolbar;
+        }
+
+        function startPublicPageEditing() {
+            if (currentStaffRole !== 'admin' || !activeStaffUid || !publicPageContentReady || publicPageLoadError || publicPageEditing) return;
+            publicPageEditing = true;
+            publicPageOriginalContent = { text: {}, images: {}, links: {} };
+            document.body.classList.add('public-page-editing');
+            publicPageTextNodes().forEach(node => {
+                const key = publicPageTextKey(node);
+                const span = document.createElement('span');
+                span.className = 'public-page-editable-text';
+                span.contentEditable = 'true';
+                span.spellcheck = true;
+                span.dataset.publicEditKey = key;
+                span.dataset.originalText = node.nodeValue;
+                span.textContent = node.nodeValue;
+                node.parentNode.replaceChild(span, node);
+                publicPageOriginalContent.text[key] = span.textContent;
+            });
+            publicPageRoots().forEach(root => {
+                root.querySelectorAll('img').forEach(img => {
+                    if (img.closest('#hostessPortal')) return;
+                    const key = publicPageElementKey(img);
+                    img.dataset.publicEditKey = key;
+                    img.dataset.originalSrc = img.getAttribute('src') || '';
+                    img.dataset.originalAlt = img.getAttribute('alt') || '';
+                    publicPageOriginalContent.images[key] = { src: img.dataset.originalSrc, alt: img.dataset.originalAlt };
+                });
+                root.querySelectorAll('a[href]').forEach(link => {
+                    if (link.closest('#hostessPortal')) return;
+                    const key = publicPageElementKey(link);
+                    link.dataset.publicEditKey = key;
+                    link.dataset.originalHref = link.getAttribute('href') || '';
+                    publicPageOriginalContent.links[key] = link.dataset.originalHref;
+                });
+                root.addEventListener('click', handlePublicPageEditClick, true);
+                root.dataset.publicEditorListener = 'true';
+            });
+            createPublicPageEditorToolbar();
+            const editButton = document.getElementById('publicPageEditButton');
+            if (editButton) editButton.classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function handlePublicPageEditClick(event) {
+            if (!publicPageEditing) return;
+            const image = event.target.closest('img[data-public-edit-key]');
+            if (image) {
+                event.preventDefault(); event.stopPropagation();
+                const src = window.prompt('Image URL or relative file path:', image.getAttribute('src') || '');
+                if (src === null) return;
+                if (!isSafePublicImageUrl(src)) { window.alert('Please use a valid image URL or relative path.'); return; }
+                image.setAttribute('src', src.trim());
+                const alt = window.prompt('Image description (alt text):', image.getAttribute('alt') || '');
+                if (alt !== null) image.setAttribute('alt', alt.trim());
+                return;
+            }
+            const link = event.target.closest('a[data-public-edit-key]');
+            if (link) {
+                event.preventDefault(); event.stopPropagation();
+                const href = window.prompt('Link destination:', link.getAttribute('href') || '');
+                if (href === null) return;
+                if (!isSafePublicLinkUrl(href)) { window.alert('Please use a valid web address or relative link.'); return; }
+                link.setAttribute('href', href.trim());
+                return;
+            }
+            if (event.target.closest('button, input, select, textarea, label')) {
+                event.preventDefault(); event.stopPropagation();
+            }
+        }
+
+        function finishPublicPageEditing() {
+            publicPageRoots().forEach(root => {
+                if (root.dataset.publicEditorListener === 'true') {
+                    root.removeEventListener('click', handlePublicPageEditClick, true);
+                    delete root.dataset.publicEditorListener;
+                }
+                root.querySelectorAll('span.public-page-editable-text[data-public-edit-key]').forEach(span => {
+                    const text = document.createTextNode(span.textContent || '');
+                    span.parentNode.replaceChild(text, span);
+                });
+                root.querySelectorAll('[data-public-edit-key]').forEach(element => {
+                    delete element.dataset.publicEditKey;
+                    delete element.dataset.originalSrc;
+                    delete element.dataset.originalAlt;
+                    delete element.dataset.originalHref;
+                    delete element.dataset.originalText;
+                });
+            });
+            document.body.classList.remove('public-page-editing');
+            const toolbar = document.getElementById('publicPageEditorToolbar');
+            if (toolbar) toolbar.remove();
+            publicPageEditing = false;
+            publicPageOriginalContent = null;
+            updatePublicPageAdminControls();
+        }
+
+        function cancelPublicPageEditing() {
+            if (!publicPageEditing) return;
+            publicPageRoots().forEach(root => {
+                root.querySelectorAll('span.public-page-editable-text[data-public-edit-key]').forEach(span => {
+                    span.textContent = span.dataset.originalText || '';
+                });
+                root.querySelectorAll('img[data-public-edit-key]').forEach(img => {
+                    img.setAttribute('src', img.dataset.originalSrc || '');
+                    img.setAttribute('alt', img.dataset.originalAlt || '');
+                });
+                root.querySelectorAll('a[data-public-edit-key]').forEach(link => {
+                    link.setAttribute('href', link.dataset.originalHref || '');
+                });
+            });
+            finishPublicPageEditing();
+        }
+
+        async function savePublicPageEditing() {
+            if (!publicPageEditing || currentStaffRole !== 'admin' || !activeStaffUid || !db) return;
+            const saveButton = document.getElementById('publicPageSaveButton');
+            const cancelButton = document.getElementById('publicPageCancelButton');
+            const status = document.createElement('span');
+            status.className = 'text-[10px] text-gray-200';
+            status.textContent = 'Saving…';
+            document.getElementById('publicPageEditorToolbar')?.appendChild(status);
+            if (saveButton) saveButton.disabled = true;
+            if (cancelButton) cancelButton.disabled = true;
+            const payload = { text: {}, images: {}, links: {} };
+            document.querySelectorAll('.public-page-editable-text[data-public-edit-key]').forEach(span => {
+                payload.text[span.dataset.publicEditKey] = span.innerText.replace(/\r/g, '');
+            });
+            publicPageRoots().forEach(root => {
+                root.querySelectorAll('img[data-public-edit-key]').forEach(img => {
+                    payload.images[img.dataset.publicEditKey] = { src: img.getAttribute('src') || '', alt: img.getAttribute('alt') || '' };
+                });
+                root.querySelectorAll('a[data-public-edit-key]').forEach(link => {
+                    payload.links[link.dataset.publicEditKey] = link.getAttribute('href') || '';
+                });
+            });
+            try {
+                await db.collection('event_settings').doc(PUBLIC_PAGE_CONTENT_DOC).set({
+                    version: 1,
+                    text: payload.text,
+                    images: payload.images,
+                    links: payload.links,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedBy: activeStaffUid
+                });
+                finishPublicPageEditing();
+                window.alert('Public event page saved and published.');
+            } catch (error) {
+                console.error('Public page save failed:', error);
+                if (status) status.textContent = 'Save failed: ' + (error.message || 'unknown error');
+                if (saveButton) saveButton.disabled = false;
+                if (cancelButton) cancelButton.disabled = false;
+            }
+        }
+
         /** Show the public event entry page without ending the authenticated staff session. */
         function showPublicEntryPage() {
             const portal = document.getElementById('hostessPortal');
@@ -3448,6 +3748,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 document.body.appendChild(returnButton);
             }
             returnButton.classList.toggle('hidden', !(currentStaffRole && activeStaffUid));
+            updatePublicPageAdminControls();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -3460,6 +3761,9 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             updateAdminViewportMode();
             const returnButton = document.getElementById('returnToStaffPortalButton');
             if (returnButton) returnButton.classList.add('hidden');
+            if (publicPageEditing) cancelPublicPageEditing();
+            const editButton = document.getElementById('publicPageEditButton');
+            if (editButton) editButton.remove();
             portal.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
