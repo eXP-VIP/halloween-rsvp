@@ -13,7 +13,7 @@
 
 
     <meta name="theme-color" content="#08080a">
-    <meta name="description" content="A private, guest-list-only Halloween soirée at The Dean Munich, Autograph Collection by Marriott. A hidden event space, two rooms, twin DJ setups and a dedicated bar. Saturday, 31 October 2026, from 20:00, open end; music winds down at 01:00.">
+    <meta name="description" content="A private, guest-list-only Naughty Nikolaus soirée at The Dean Munich. Two distinctive rooms, two bars and two DJs. Saturday, 5 December 2026, from 19:30.">
 
     <!-- Open Graph / WhatsApp Preview -->
     <meta property="og:type" content="website" />
@@ -657,6 +657,8 @@
         .public-page-editable-text[contenteditable="true"]:focus { outline: 2px solid #d4af37; background: rgba(212,175,55,.09); }
         body.public-page-editing img { cursor: pointer; outline: 1px dashed rgba(243,229,171,.75); outline-offset: 3px; }
         body.public-page-editing a { cursor: pointer; outline: 1px dashed rgba(96,165,250,.55); outline-offset: 2px; }
+        #publicEventSettingsPanel .form-field{width:100%;min-width:0;background:rgba(0,0,0,.45);border:1px solid rgba(212,175,55,.28);color:#fff;border-radius:8px;padding:10px;font-size:13px}
+        #publicEventSettingsPanel label{min-width:0}
         @media (max-width: 520px) { #publicPageEditorToolbar { top: 8px; gap: 5px; padding: 8px; } #publicPageEditorToolbar button { padding: 8px 9px; font-size: 10px; } }
 </style>
 </head>
@@ -665,55 +667,36 @@
     <main class="relative z-10 flex-1 container mx-auto px-4 pt-8 pb-3 sm:pt-12 sm:pb-5 max-w-4xl">
         <!-- Event identity, date and primary navigation into registration. -->
         <header class="hero-copy text-center mb-8 sm:mb-10">
-            <p class="font-serif text-gold tracking-[0.28em] uppercase text-xs sm:text-sm mb-3">A Private Halloween Soirée</p>
-            <h1 class="hero-title font-serif text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-wider uppercase leading-tight mb-3">The Dean<br class="sm:hidden"> After Dark</h1>
+            <p data-event-field="eyebrow" class="font-serif text-gold tracking-[0.28em] uppercase text-xs sm:text-sm mb-3">A Private Soirée</p>
+            <h1 data-event-field="title" class="hero-title font-serif text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-wider uppercase leading-tight mb-3">Naughty<br class="sm:hidden"> Nikolaus</h1>
             <div class="w-28 h-px bg-gold/70 mx-auto mb-4"></div>
-            <p class="hero-meta font-medium text-xs sm:text-sm tracking-[0.12em] sm:tracking-[0.18em] uppercase leading-relaxed">Halloween Soirée <span class="text-gold px-1">•</span> Saturday, 31 October 2026</p>
-            <p class="hero-time text-sm mt-2">From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
-            <p class="hero-host text-xs font-serif tracking-wider uppercase mt-3">Hosted by Ari</p>
-            <p class="hero-venue text-xs sm:text-sm mt-2">The Dean Munich, Autograph Collection by Marriott</p>
-            <p class="text-xs sm:text-sm text-gray-300 mt-1"><a href="https://www.google.com/maps/search/?api=1&amp;query=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" target="_blank" rel="noopener noreferrer" class="underline decoration-gold/50 underline-offset-4 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Open The Dean Munich address in Google Maps">Landsberger Straße 68, 80339 München <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1" aria-hidden="true"></i></a></p>
+            <p data-event-field="subtitle" class="hero-meta font-medium text-xs sm:text-sm tracking-[0.12em] sm:tracking-[0.18em] uppercase leading-relaxed">Nikolaus Soirée <span class="text-gold px-1">•</span> Saturday, 5 December 2026</p>
+            <p data-event-field="time" class="hero-time text-sm mt-2">From 19:30 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
+            <p data-event-field="host" class="hero-host text-xs font-serif tracking-wider uppercase mt-3">Hosted by Ari</p>
+            <p data-event-field="venue" class="hero-venue text-xs sm:text-sm mt-2">The Dean Munich, Autograph Collection</p>
+            <p class="text-xs sm:text-sm text-gray-300 mt-1"><a data-event-map href="https://www.google.com/maps/search/?api=1&amp;query=The%20Dean%20Munich%2C%20Autograph%20Collection%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen" target="_blank" rel="noopener noreferrer" class="underline decoration-gold/50 underline-offset-4 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Open The Dean Munich address in Google Maps"><span data-event-field="address">Landsberger Straße 68, 80339 München</span> <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1" aria-hidden="true"></i></a></p>
             <div class="flex items-center justify-center mt-6">
                 <a href="#rsvp-section" class="gold-btn inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg uppercase font-serif text-xs tracking-[0.14em]">Join the Guest List <i class="fa-solid fa-arrow-down-long"></i></a>
             </div>
         </header>
 
-<section class="glass-panel rounded-2xl p-5 sm:p-9 mb-7 sm:mb-9 gold-border">
-            <p class="font-serif text-xs tracking-[0.2em] uppercase text-gold mb-3">One night. Two moods.</p>
-            <h2 class="font-serif text-xl sm:text-2xl text-white uppercase tracking-wider mb-4">A hidden gem, revealed after dark</h2>
-            <p class="text-gray-100 text-sm sm:text-base leading-relaxed mb-3 font-light">Discover a hidden gem tucked deep inside The Dean Munich, Autograph Collection by Marriott. True to its "Exactly like nothing else" spirit, this space has remained off-limits to the public and is now opening its doors for the first time.</p>
-            <p class="text-gray-200 text-sm leading-relaxed mb-6">Two distinct rooms, twin DJ setups and a dedicated bar set the scene—the perfect setting to bring your friends and share an unforgettable evening.</p>
-
-            <div class="venue-gallery mb-7" aria-label="Photos and atmosphere concept for the event spaces">
-                <figure class="venue-shot room">
-                    <img src="The Secret Party Room.jpg" alt="The Dean party rooms" loading="lazy" decoding="async">
-                    <figcaption>The Secret Party Room</figcaption>
-                </figure>
-                <figure class="venue-shot lobby">
-                    <img src="The chill-out Lounge.jpg" alt="The chill-out Lounge" loading="lazy" decoding="async">
-                    <figcaption>The chill-out Lounge</figcaption>
-                </figure>
-                <figure class="venue-shot concept">
-                    <img src="Atmosphere Concept 3.jpg" alt="AI-generated concept of the party room decorated for Halloween" loading="lazy" decoding="async">
-                    <figcaption>Atmosphere Concept</figcaption>
-                </figure>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-5 border-t border-gold/25">
-                <div class="bg-black/35 p-4 rounded-xl border border-gold/20">
-                    <p class="text-xs uppercase text-gold font-serif font-bold tracking-wider mb-2"><i class="fa-solid fa-compact-disc mr-2"></i>The Secret Party Room</p>
-                    <p class="text-sm text-gray-200 leading-relaxed">High-energy DJ sets, heavy bass and an electric dance floor.</p>
+<section class="glass-panel rounded-2xl p-5 sm:p-7 mb-7 sm:mb-9 gold-border" aria-label="Admission and dress code">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+                <div>
+                    <h2 class="font-serif text-base text-gold uppercase tracking-wider mb-2"><i class="fa-solid fa-ticket mr-2"></i>Admission</h2>
+                    <p class="text-white font-medium text-xl">€20 · cash only</p>
+                    <p class="text-gray-300 text-sm mt-2">Includes one welcome drink.</p>
                 </div>
-                <div class="bg-black/35 p-4 rounded-xl border border-gold/20">
-                    <p class="text-xs uppercase text-gold font-serif font-bold tracking-wider mb-2"><i class="fa-solid fa-couch mr-2"></i>The Chill-Out Lounge</p>
-                    <p class="text-sm text-gray-200 leading-relaxed">Its own bar, ambient music, signature drinks and quieter conversation.</p>
+                <div>
+                    <h2 class="font-serif text-base text-gold uppercase tracking-wider mb-2"><i class="fa-solid fa-mask mr-2"></i>Dress to impress</h2>
+                    <p class="text-gray-200 text-sm leading-relaxed">Seductive red, elegant black, festive sparkle, glamorous outfits or a playful Santa-inspired look. Be an angel, a devil or somewhere in between.</p>
                 </div>
             </div>
         </section>
 
-        <section class="glass-panel rounded-2xl p-5 sm:p-7 mb-7 sm:mb-9 gold-border" aria-labelledby="dinner-before-party">
+        <section id="optionalDinnerSection" class="hidden glass-panel rounded-2xl p-5 sm:p-7 mb-7 sm:mb-9 gold-border" aria-labelledby="dinner-before-party">
             <h2 id="dinner-before-party" class="font-serif text-xl text-white uppercase tracking-wider mb-3"><i class="fa-solid fa-utensils mr-2 text-gold"></i>Dinner before the party</h2>
-            <p class="text-gray-100 text-sm sm:text-base leading-relaxed font-light">Thinking of making your evening extra special? Start the night with a Japanese culinary experience at Ibasho, The Dean’s signature restaurant. Especially curated for our party guests, this 8-course dinner features fresh seafood and sushi, seasonal pumpkin specialities, robata-grilled beef and mochi.</p>
+            <p class="text-gray-100 text-sm sm:text-base leading-relaxed font-light">Thinking of making your evening extra special? Start the night with a Japanese culinary experience at Ibasho, The Dean’s signature restaurant. Especially curated for our party guests, this 8-course dinner features fresh seafood and sushi, seasonal specialities, robata-grilled beef and mochi.</p>
             <div class="mt-4 flex flex-wrap items-center gap-3">
                 <button type="button" onclick="openHalloweenDinnerMenu()" class="inline-flex items-center rounded-lg border border-gold px-4 py-2 text-sm font-semibold text-gold hover:bg-gold hover:text-black transition-colors"><i class="fa-solid fa-book-open mr-2"></i>View the 8-course menu &amp; join us for dinner</button>
             </div>
@@ -722,7 +705,7 @@
         <div id="halloween-dinner-menu" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="halloween-dinner-title" onclick="if(event.target===this) closeHalloweenDinnerMenu()">
             <div class="glass-panel gold-border w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl p-5 sm:p-7 shadow-2xl">
                 <div class="flex items-start justify-between gap-4 mb-5">
-                    <h2 id="halloween-dinner-title" class="font-serif text-xl sm:text-2xl text-white uppercase tracking-wider">Halloween Dinner Menu</h2>
+                    <h2 id="halloween-dinner-title" class="font-serif text-xl sm:text-2xl text-white uppercase tracking-wider">Dinner Menu</h2>
                     <button type="button" onclick="closeHalloweenDinnerMenu()" aria-label="Close menu" class="text-gray-300 hover:text-white text-2xl leading-none">&times;</button>
                 </div>
                 <p class="text-gold font-semibold text-lg mb-1">€79 per person</p>
@@ -768,7 +751,7 @@
             <div id="rsvpIntro" class="text-center mb-7">
                 <p class="font-serif text-xs tracking-[0.2em] text-gold uppercase mb-2">Your place starts here</p>
                 <h2 class="font-serif text-2xl sm:text-3xl text-white uppercase tracking-wider mb-3">Join the Guest List</h2>
-                <p class="text-gray-200 text-sm leading-relaxed max-w-2xl mx-auto">This is a private, guest-list-only event, so please register in advance. The hostess will welcome you and check your name at the entrance.</p>
+                <p class="text-gray-200 text-sm leading-relaxed max-w-2xl mx-auto">This is a private, guest-list-only event. Please register in advance. Your name will be checked at the entrance.</p>
             </div>
             <div id="registrationClosedPanel" class="hidden rounded-xl border-2 border-gold/60 bg-black/55 p-5 sm:p-6 text-center shadow-lg shadow-black/30" role="status" aria-live="polite">
                 <p id="registrationClosedTitle" class="font-serif text-xl sm:text-2xl uppercase tracking-wider text-gold-light mb-2">We're currently full!</p>
@@ -1314,13 +1297,12 @@
         <div id="whatsapp-contact" class="text-center mb-6 px-2">
             <a href="https://wa.me/4917681117359" target="_blank" rel="noopener noreferrer" class="whatsapp-contact-btn"><i class="fa-brands fa-whatsapp"></i> Questions? Chat with Ari on WhatsApp</a>
         </div>
-        <p class="font-serif tracking-wider">THE DEAN AFTER DARK</p>
-        <p class="mt-1">The Dean Munich, Autograph Collection by Marriott</p>
-        <p class="mt-1 text-gray-400"><a href="https://www.google.com/maps/search/?api=1&amp;query=The%20Dean%20Munich%2C%20Autograph%20Collection%20by%20Marriott%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen%2C%20Germany" target="_blank" rel="noopener noreferrer" class="underline decoration-gold/50 underline-offset-4 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Open The Dean Munich address in Google Maps">Landsberger Straße 68, 80339 München <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1" aria-hidden="true"></i></a></p>
-        <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
+        <p id="eventFooterTitle" class="font-serif tracking-wider">NAUGHTY NIKOLAUS</p>
+        <p id="eventFooterVenue" class="mt-1">The Dean Munich, Autograph Collection</p>
+        <p id="eventFooterDateTime" class="mt-2 text-gray-400">Saturday, 5 December 2026 · From 19:30 · Open end · Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.018</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.019</p>
         </div>
     </footer>
 
@@ -2905,7 +2887,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         function downloadCalendarFile() {
             const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
             const location = escapeIcsText('The Dean Munich, Autograph Collection by Marriott, Landsberger Straße 68, 80339 München, Germany');
-            const description = escapeIcsText('Private Halloween soirée. €20 cash at the door, including one welcome drink. Event details and guest list: https://exp-vip.github.io/halloween-rsvp/');
+            const description = escapeIcsText('Private Naughty Nikolaus Soirée. €20 cash at the door, including one welcome drink. Event details and guest list: https://exp-vip.github.io/halloween-rsvp/');
             const lines = [
                 'BEGIN:VCALENDAR',
                 'VERSION:2.0',
@@ -3448,12 +3430,67 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         let publicPageEditing = false;
         let publicPageOriginalContent = null;
         let publicPageLoadError = null;
+        let publicEventSettingsOriginal = null;
+        const DEFAULT_PUBLIC_EVENT = {
+            eyebrow:'A Private Soirée', title:'Naughty Nikolaus',
+            subtitle:'Nikolaus Soirée • Saturday, 5 December 2026',
+            date:'Saturday, 5 December 2026',
+            time:'From 19:30 · Open end · Music winds down at 01:00',
+            host:'Hosted by Ari', venue:'The Dean Munich, Autograph Collection',
+            address:'Landsberger Straße 68, 80339 München',
+            mapUrl:'https://www.google.com/maps/search/?api=1&query=The%20Dean%20Munich%2C%20Autograph%20Collection%2C%20Landsberger%20Stra%C3%9Fe%2068%2C%2080339%20M%C3%BCnchen',
+            dinnerEnabled:false
+        };
+        let currentPublicEvent={...DEFAULT_PUBLIC_EVENT};
+        function applyPublicEventData(data){
+            currentPublicEvent={...DEFAULT_PUBLIC_EVENT,...(data&&typeof data==='object'?data:{})};
+            const put=(sel,val)=>{const el=document.querySelector(sel);if(el)el.textContent=val||'';};
+            put('[data-event-field="eyebrow"]',currentPublicEvent.eyebrow);
+            put('[data-event-field="title"]',currentPublicEvent.title);
+            put('[data-event-field="subtitle"]',currentPublicEvent.subtitle);
+            put('[data-event-field="time"]',currentPublicEvent.time);
+            put('[data-event-field="host"]',currentPublicEvent.host);
+            put('[data-event-field="venue"]',currentPublicEvent.venue);
+            put('[data-event-field="address"]',currentPublicEvent.address);
+            const map=document.querySelector('[data-event-map]');
+            if(map&&isSafePublicLinkUrl(currentPublicEvent.mapUrl))map.href=currentPublicEvent.mapUrl;
+            const dinner=document.getElementById('optionalDinnerSection');
+            if(dinner)dinner.classList.toggle('hidden',!currentPublicEvent.dinnerEnabled);
+            const title=document.getElementById('eventFooterTitle'),venue=document.getElementById('eventFooterVenue'),dateTime=document.getElementById('eventFooterDateTime');
+            if(title)title.textContent=(currentPublicEvent.title||'').toUpperCase();
+            if(venue)venue.textContent=currentPublicEvent.venue||'';
+            if(dateTime)dateTime.textContent=(currentPublicEvent.date||'')+' · '+(currentPublicEvent.time||'');
+            updatePublicEventSettingsForm();
+        }
+        function updatePublicEventSettingsForm(){
+            const panel=document.getElementById('publicEventSettingsPanel');if(!panel)return;
+            Object.entries(currentPublicEvent).forEach(([key,value])=>{const input=panel.querySelector('[name="'+key+'"]');if(input){if(input.type==='checkbox')input.checked=Boolean(value);else input.value=value||'';}});
+        }
+        function openPublicEventSettings(){
+            let panel=document.getElementById('publicEventSettingsPanel');
+            if(!panel){
+                panel=document.createElement('div');panel.id='publicEventSettingsPanel';panel.className='fixed inset-0 z-[130] flex items-center justify-center bg-black/80 p-3';
+                const fields=[['eyebrow','Page eyebrow'],['title','Event title'],['subtitle','Event subtitle'],['date','Date'],['time','Time details'],['host','Host'],['venue','Venue name'],['address','Venue address'],['mapUrl','Google Maps URL']];
+                panel.innerHTML='<div class="glass-panel gold-border w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-5 sm:p-7"><div class="flex items-center justify-between gap-3 mb-4"><h2 class="font-serif text-xl text-white uppercase tracking-wider">Shared event details</h2><button type="button" id="closeEventSettings" class="text-gray-300 text-2xl">×</button></div><p class="text-gray-300 text-xs mb-4">Edit each shared value once. The footer is generated automatically from these fields.</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-3">'+fields.map(([k,l])=>'<label class="block text-xs text-amber-100">'+l+'<input name="'+k+'" class="form-field mt-1" type="text"></label>').join('')+'<label class="sm:col-span-2 flex items-center gap-3 text-sm text-gray-100 mt-2"><input name="dinnerEnabled" type="checkbox" class="accent-amber-300"> Show optional dinner section</label></div><div class="flex justify-end gap-2 mt-6"><button type="button" id="cancelEventSettings" class="rounded-lg border border-gold/40 px-4 py-2 text-sm text-gray-100">Cancel</button><button type="button" id="applyEventSettings" class="gold-btn rounded-lg px-4 py-2 text-sm font-semibold">Apply to preview</button></div></div>';
+                document.body.appendChild(panel);
+                panel.querySelector('#closeEventSettings').onclick=()=>panel.remove();
+                panel.querySelector('#cancelEventSettings').onclick=()=>{updatePublicEventSettingsForm();panel.remove();};
+                panel.querySelector('#applyEventSettings').onclick=()=>{
+                    const next={};Object.keys(DEFAULT_PUBLIC_EVENT).forEach(k=>{const i=panel.querySelector('[name="'+k+'"]');next[k]=i?.type==='checkbox'?Boolean(i.checked):(i?.value||'').trim();});
+                    if(!next.title||!next.date||!next.venue){alert('Event title, date and venue are required.');return;}
+                    if(!isSafePublicLinkUrl(next.mapUrl)){alert('Please provide a valid map URL.');return;}
+                    applyPublicEventData(next);panel.remove();
+                };
+            }
+            updatePublicEventSettingsForm();panel.classList.remove('hidden');
+        }
 
         // Load the published copy after its state and helpers have been initialized.
         loadPublicPageContent();
 
         function publicPageRoots() {
-            return [document.querySelector('main'), document.querySelector('footer')].filter(Boolean);
+            // Footer fields are generated from the shared event record, never edited independently.
+            return [document.querySelector('main')].filter(Boolean);
         }
 
         function publicPageElementKey(element) {
@@ -3480,7 +3517,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 let node;
                 while ((node = walker.nextNode())) {
                     const parent = node.parentElement;
-                    if (!parent || parent.closest('#hostessPortal') || parent.closest('script,style,svg,option') ||
+                    if (!parent || parent.closest('#hostessPortal') || parent.closest('[data-event-field]') || parent.closest('script,style,svg,option') ||
                         parent.closest('.build-version-label') || !node.nodeValue.trim()) continue;
                     nodes.push(node);
                 }
@@ -3493,6 +3530,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             db.collection('event_settings').doc(PUBLIC_PAGE_CONTENT_DOC).get()
                 .then(doc => {
                     const data = doc.exists ? doc.data() || {} : {};
+                    applyPublicEventData(data.event || DEFAULT_PUBLIC_EVENT);
                     applyPublicPageContent(data);
                     publicPageContentReady = true;
                     updatePublicPageAdminControls();
@@ -3569,8 +3607,10 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             toolbar.setAttribute('role', 'toolbar');
             toolbar.setAttribute('aria-label', 'Public page editing controls');
             toolbar.innerHTML = '<span class="text-[10px] font-bold tracking-wider text-amber-100 px-1">EDITING PAGE</span>' +
+                '<button type="button" id="publicEventSettingsButton">Event settings</button>' +
                 '<button type="button" class="primary" id="publicPageSaveButton">Save</button>' +
                 '<button type="button" id="publicPageCancelButton">Cancel</button>';
+            toolbar.querySelector('#publicEventSettingsButton').addEventListener('click', openPublicEventSettings);
             toolbar.querySelector('#publicPageSaveButton').addEventListener('click', savePublicPageEditing);
             toolbar.querySelector('#publicPageCancelButton').addEventListener('click', cancelPublicPageEditing);
             document.body.appendChild(toolbar);
@@ -3581,6 +3621,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if (currentStaffRole !== 'admin' || !activeStaffUid || !publicPageContentReady || publicPageLoadError || publicPageEditing) return;
             publicPageEditing = true;
             publicPageOriginalContent = { text: {}, images: {}, links: {} };
+            publicEventSettingsOriginal={...currentPublicEvent};
             document.body.classList.add('public-page-editing');
             publicPageTextNodes().forEach(node => {
                 const key = publicPageTextKey(node);
@@ -3674,6 +3715,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
 
         function cancelPublicPageEditing() {
             if (!publicPageEditing) return;
+            if(publicEventSettingsOriginal)applyPublicEventData(publicEventSettingsOriginal);
             publicPageRoots().forEach(root => {
                 root.querySelectorAll('span.public-page-editable-text[data-public-edit-key]').forEach(span => {
                     span.textContent = span.dataset.originalText || '';
@@ -3713,7 +3755,8 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             });
             try {
                 await db.collection('event_settings').doc(PUBLIC_PAGE_CONTENT_DOC).set({
-                    version: 1,
+                    version: 2,
+                    event: currentPublicEvent,
                     text: payload.text,
                     images: payload.images,
                     links: payload.links,
