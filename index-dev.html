@@ -1374,7 +1374,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.007</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.008</p>
         </div>
     </footer>
 
@@ -3226,7 +3226,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         // Full-page editor: indexes the real public DOM so no section is silently omitted.
         let wholePageEditorItems = [];
         let wholePageEditorDraft = {};
-        const PUBLIC_EDITOR_SKIP = '.staff-panel, #hostessPortal, script, style, noscript, button, input, textarea, select, option, svg, [aria-hidden="true"]';
+        const PUBLIC_EDITOR_SKIP = '.staff-panel, #hostessPortal, script, style, noscript, input, textarea, select, option, svg, [aria-hidden="true"]';
         const PUBLIC_EDITOR_LEGACY_IDS = '#publicEventKicker, #publicEventTitle, #publicEventMeta, #publicEventTime, #publicEventHost, #publicEventVenue, #publicEventAddress, #publicEventMapLink, #publicDescriptionKicker, #publicDescriptionTitle, #publicDescriptionParagraph1, #publicDescriptionParagraph2, #publicGalleryImage1, #publicGalleryImage2, #publicGalleryImage3, #publicGalleryCaption1, #publicGalleryCaption2, #publicGalleryCaption3';
         function publicEditorRoot(kind) { return document.querySelector(kind === 'footer' ? 'body > footer' : 'body > main'); }
         function publicNodePath(root,node) {
