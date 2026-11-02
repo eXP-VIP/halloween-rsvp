@@ -10,70 +10,7 @@
         #dev-deploy-status.ready{border-color:rgba(74,222,128,.75)}
         #dev-deploy-status.ready strong{color:#86efac}
     </style>
-    <script>
-    (() => {
-        const params = new URLSearchParams(location.search);
-        const expected = params.get('waitFor');
-        if (!expected) return;
-        const path = location.pathname || '/index-dev.html';
-        const status = document.createElement('div');
-        status.id = 'dev-deploy-status';
-        status.setAttribute('role', 'status');
-        status.setAttribute('aria-live', 'polite');
-        document.addEventListener('DOMContentLoaded', () => document.body.appendChild(status));
-        const ownVersion = (document.querySelector('.build-version-label')?.textContent || '').match(/[0-9]{4}[.][0-9]{2}[.][0-9]{2}[.][0-9]{3}/)?.[0] || 'unknown';
-        let finished = false;
-        const show = (ready, detail) => {
-            status.classList.toggle('ready', ready);
-            status.innerHTML = ready
-                ? '<strong>✓ DEV VERSION READY</strong>' + detail
-                : '<strong>DEV VERSION NOT READY YET</strong>' + detail + '<small>This page will check again automatically.</small>';
-        };
-        const finish = () => {
-            if (finished) return;
-            finished = true;
-            show(true, 'Build ' + expected + ' is loaded.');
-            setTimeout(() => {
-                const clean = new URL(location.href);
-                clean.searchParams.delete('waitFor');
-                history.replaceState(null, '', clean.pathname + clean.search + clean.hash);
-                status.remove();
-            }, 2600);
-        };
-        if (ownVersion === expected) {
-            document.addEventListener('DOMContentLoaded', finish, { once: true });
-            if (document.readyState !== 'loading') finish();
-            return;
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            show(false, 'Expected build ' + expected + '. Currently loaded: ' + ownVersion + '.');
-        }, { once: true });
-        const check = async () => {
-            if (finished) return;
-            try {
-                const response = await fetch(path + '?_dev_version_check=' + Date.now(), {
-                    cache: 'no-store',
-                    headers: { 'Cache-Control': 'no-cache' }
-                });
-                if (!response.ok) throw new Error('HTTP ' + response.status);
-                const html = await response.text();
-                const match = html.match(/class=["'][^"']*build-version-label[^"']*["'][^>]*>[^<]*?([0-9]{4}[.][0-9]{2}[.][0-9]{2}[.][0-9]{3})/i);
-                const deployed = match?.[1] || 'unknown';
-                if (deployed === expected) {
-                    show(true, 'Build ' + expected + ' is available. Reloading the page now…');
-                    finished = true;
-                    setTimeout(() => location.reload(), 500);
-                } else {
-                    show(false, 'Expected build ' + expected + '. Server currently reports: ' + deployed + '.');
-                }
-            } catch (error) {
-                show(false, 'Expected build ' + expected + '. Checking deployment…');
-            }
-        };
-        check();
-        setInterval(check, 3500);
-    })();
-    </script>
+
 
     <meta name="theme-color" content="#08080a">
     <meta name="description" content="A private, guest-list-only Halloween soirée at The Dean Munich, Autograph Collection by Marriott. A hidden event space, two rooms, twin DJ setups and a dedicated bar. Saturday, 31 October 2026, from 20:00, open end; music winds down at 01:00.">
@@ -6512,6 +6449,70 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         document.getElementById('checkInQrModeBtn').addEventListener('click', () => setCheckInMode('qr'));
         document.getElementById('stopCheckInQrBtn').addEventListener('click', () => setCheckInMode('search'));
 
+    </script>
+    <script>
+    (() => {
+        const params = new URLSearchParams(location.search);
+        const expected = params.get('waitFor');
+        if (!expected) return;
+        const path = location.pathname || '/index-dev.html';
+        const status = document.createElement('div');
+        status.id = 'dev-deploy-status';
+        status.setAttribute('role', 'status');
+        status.setAttribute('aria-live', 'polite');
+        document.addEventListener('DOMContentLoaded', () => document.body.appendChild(status));
+        const ownVersion = (document.querySelector('.build-version-label')?.textContent || '').match(/[0-9]{4}[.][0-9]{2}[.][0-9]{2}[.][0-9]{3}/)?.[0] || 'unknown';
+        let finished = false;
+        const show = (ready, detail) => {
+            status.classList.toggle('ready', ready);
+            status.innerHTML = ready
+                ? '<strong>✓ DEV VERSION READY</strong>' + detail
+                : '<strong>DEV VERSION NOT READY YET</strong>' + detail + '<small>This page will check again automatically.</small>';
+        };
+        const finish = () => {
+            if (finished) return;
+            finished = true;
+            show(true, 'Build ' + expected + ' is loaded.');
+            setTimeout(() => {
+                const clean = new URL(location.href);
+                clean.searchParams.delete('waitFor');
+                history.replaceState(null, '', clean.pathname + clean.search + clean.hash);
+                status.remove();
+            }, 2600);
+        };
+        if (ownVersion === expected) {
+            document.addEventListener('DOMContentLoaded', finish, { once: true });
+            if (document.readyState !== 'loading') finish();
+            return;
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            show(false, 'Expected build ' + expected + '. Currently loaded: ' + ownVersion + '.');
+        }, { once: true });
+        const check = async () => {
+            if (finished) return;
+            try {
+                const response = await fetch(path + '?_dev_version_check=' + Date.now(), {
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const html = await response.text();
+                const match = html.match(/class=["'][^"']*build-version-label[^"']*["'][^>]*>[^<]*?([0-9]{4}[.][0-9]{2}[.][0-9]{2}[.][0-9]{3})/i);
+                const deployed = match?.[1] || 'unknown';
+                if (deployed === expected) {
+                    show(true, 'Build ' + expected + ' is available. Reloading the page now…');
+                    finished = true;
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    show(false, 'Expected build ' + expected + '. Server currently reports: ' + deployed + '.');
+                }
+            } catch (error) {
+                show(false, 'Expected build ' + expected + '. Checking deployment…');
+            }
+        };
+        check();
+        setInterval(check, 3500);
+    })();
     </script>
 </body>
 </html>
