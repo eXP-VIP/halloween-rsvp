@@ -1374,7 +1374,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.006</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.007</p>
         </div>
     </footer>
 
@@ -3323,12 +3323,13 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             if(currentStaffRole!=='admin'||!db){if(status)status.textContent='Only an authenticated Admin can save page content.';return;}
             button.disabled=true;if(status)status.textContent='Saving all public page edits…';
             try {
+                const coreContent=readPublicEventContentEditor();
                 const merged={...(wholePageEditorDraft||{})};
                 for(const item of wholePageEditorItems) if(!(item.key in merged)) merged[item.key]=item.type==='image'?{src:item.value,alt:item.alt}:item.value;
                 for(const [key,value] of Object.entries(merged)) if(key.includes(':i:') && value?.src && !safePublicImageUrl(value.src)) throw new Error('Image URLs must be HTTPS, root-relative or existing site filenames.');
-                await db.collection('event_settings').doc(REGISTRATION_SETTINGS_DOC_ID).set({publicPageOverrides:merged,publicPageOverridesUpdatedAt:firebase.firestore.FieldValue.serverTimestamp(),publicPageOverridesUpdatedBy:activeStaffUid||null},{merge:true});
-                applyWholePublicPageOverrides(merged);wholePageEditorDraft=merged;
-                if(status)status.textContent='All page edits saved. Reload the public page to verify the published result.';
+                await db.collection('event_settings').doc(REGISTRATION_SETTINGS_DOC_ID).set({publicContent:coreContent,publicContentUpdatedAt:firebase.firestore.FieldValue.serverTimestamp(),publicContentUpdatedBy:activeStaffUid||null,publicPageOverrides:merged,publicPageOverridesUpdatedAt:firebase.firestore.FieldValue.serverTimestamp(),publicPageOverridesUpdatedBy:activeStaffUid||null},{merge:true});
+                publicEventContentDirty=false;applyPublicEventContent(coreContent,true);applyWholePublicPageOverrides(merged);wholePageEditorDraft=merged;
+                if(status)status.textContent='All event page content saved. Reload the public page to verify the published result.';
             } catch(error){console.error('Whole-page save failed:',error);if(status)status.textContent=error.message||'Could not save page edits.';}
             finally{button.disabled=false;}
         }
