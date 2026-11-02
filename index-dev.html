@@ -1285,8 +1285,7 @@
                             </div>
                             <div class="flex flex-wrap items-center gap-3 mt-5">
                                 <button type="button" id="savePublicEventContentBtn" class="gold-btn px-5 py-3 rounded-lg text-xs uppercase tracking-widest">Save public event page</button>
-                                <button type="button" id="previewPublicEventContentBtn" class="sort-option">Preview on this page</button>
-                                <button type="button" id="startLivePageEditorBtn" class="sort-option">Edit directly on the page</button>
+                                <button type="button" id="previewPublicEventContentBtn" class="sort-option">Preview on this page</button><button type="button" id="startLivePageEditorBtn" class="sort-option">Edit directly on the page</button>
                             </div>
                             <p id="publicEventContentStatus" class="text-xs text-gray-300 mt-3 min-h-[1rem]" role="status" aria-live="polite">Loading saved event content…</p>
                         </section>
@@ -1375,7 +1374,7 @@
         <p class="mt-2 text-gray-400">Saturday, 31 October 2026 <span class="text-gold">·</span> From 20:00 <span class="text-gold">·</span> Open end <span class="text-gold">·</span> Music winds down at 01:00</p>
         <div class="text-center mt-8 pt-6 border-t border-gold/20">
             <button type="button" onclick="toggleHostessPortal()" class="text-[10px] font-serif text-gray-400 hover:text-gold uppercase tracking-[0.18em] transition-colors"><i class="fa-solid fa-clipboard-check mr-2"></i>Check-in</button>
-            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.011</p>
+            <p tabindex="0" title="Hover or focus to enlarge the build version" class="build-version-label text-[9px] text-gray-600 mt-1 tracking-wide text-center cursor-zoom-in">Development build 2026.11.02.012</p>
         </div>
     </footer>
 
@@ -3341,7 +3340,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         }
         initializeWholePublicPageEditor();
 
-        // In-place editor for the actual public page. No second preview DOM is involved.
+// In-place editor for the actual public page. No second preview DOM is involved.
         let livePageEditMode=false;
         let livePageEditSnapshot=null;
         let livePageEditDraft={texts:{},images:{},links:{}};
@@ -3377,7 +3376,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 });
                 Object.entries(data.links||{}).forEach(([key,value])=>{
                     const [k,type,path]=key.split(':');if(k!==kind||type!=='a')return;
-                    const node=liveEditResolve(root,path?path.split('.').map(Number):[]);
+                    const node=root.querySelectorAll('a[href]')[Number(path)];
                     if(node?.tagName==='A'&&/^(https?:|mailto:|tel:|\/|#)/i.test(String(value||'')))node.setAttribute('href',String(value));
                 });
             });
@@ -3471,7 +3470,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
         }
         initializeLivePageEditor();
 
-        function closePublicEventPreview() {
+                function closePublicEventPreview() {
             const modal=document.getElementById('publicEventPreviewModal');
             if(modal){modal.classList.add('hidden');modal.classList.remove('flex');}
             document.body.classList.remove('overflow-hidden');
@@ -6880,20 +6879,7 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
                 '@media print{html,body{margin:0;padding:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.print-page{width:100%;height:' + printableHeightMm + 'mm;padding:0}}' +
                 '@media screen{body{background:#eee;padding:10px}.print-page{background:#fff;box-shadow:0 1px 8px #bbb;margin:0 auto 14px;padding:' +
                     pageMarginTopMm + 'mm ' + pageMarginRightMm + 'mm ' + pageMarginBottomMm + 'mm ' + pageMarginLeftMm + 'mm;width:' + physicalPageWidthMm + 'mm;height:' + physicalPageHeightMm + 'mm}}' +
-                '</style></head><body>' + compactPage + readablePages.join('') + '    <div id="livePageEditorBar" class="hidden fixed bottom-3 left-3 right-3 z-[300] mx-auto max-w-xl rounded-xl border border-amber-300/50 bg-[#101014]/95 p-3 shadow-2xl backdrop-blur">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="min-w-0"><p class="text-xs font-semibold text-amber-200">LIVE PAGE EDITOR</p><p id="livePageEditorStatus" class="text-[11px] text-gray-300">Click text to edit. Click an image or link to change it.</p></div>
-            <div class="flex gap-2"><button type="button" id="cancelLivePageEditsBtn" class="sort-option">Cancel</button><button type="button" id="saveLivePageEditsBtn" class="gold-btn px-4 py-2 rounded-lg text-xs uppercase tracking-widest">Save changes</button></div>
-        </div>
-    </div>
-    <style>
-      body.live-page-editing [data-live-edit-key] { outline: 1px dashed rgba(245,190,75,.75); outline-offset: 2px; cursor: text; }
-      body.live-page-editing img[data-live-image-key] { outline: 2px dashed rgba(245,190,75,.9); outline-offset: 3px; cursor: pointer; }
-      body.live-page-editing a[data-live-link-key] { cursor: pointer; outline: 1px dashed rgba(245,190,75,.65); outline-offset: 2px; }
-      body.live-page-editing [contenteditable="true"]:focus { outline: 2px solid #f5c15d; background: rgba(245,193,93,.10); }
-    </style>
-
-</body></html>';
+                '</style></head><body>' + compactPage + readablePages.join('') + '</body></html>';
 
             printWindow.document.open();
             printWindow.document.write(printDocument);
@@ -7022,5 +7008,6 @@ Afghanistan:AF|Albania:AL|Algeria:DZ|American Samoa:AS|Andorra:AD|Angola:AO|Angu
             </div>
         </div>
 
+    <div id="livePageEditorBar" class="hidden fixed bottom-3 left-3 right-3 z-[300] mx-auto max-w-xl rounded-xl border border-amber-300/50 bg-[#101014]/95 p-3 shadow-2xl backdrop-blur"><div class="flex flex-wrap items-center justify-between gap-2"><div class="min-w-0"><p class="text-xs font-semibold text-amber-200">LIVE PAGE EDITOR</p><p id="livePageEditorStatus" class="text-[11px] text-gray-300">Click text to edit. Click an image or link to change it.</p></div><div class="flex gap-2"><button type="button" id="cancelLivePageEditsBtn" class="sort-option">Cancel</button><button type="button" id="saveLivePageEditsBtn" class="gold-btn px-4 py-2 rounded-lg text-xs uppercase tracking-widest">Save changes</button></div></div></div><style>body.live-page-editing [data-live-edit-key]{outline:1px dashed rgba(245,190,75,.75);outline-offset:2px;cursor:text}body.live-page-editing img[data-live-image-key]{outline:2px dashed rgba(245,190,75,.9);outline-offset:3px;cursor:pointer}body.live-page-editing a[data-live-link-key]{cursor:pointer;outline:1px dashed rgba(245,190,75,.65);outline-offset:2px}body.live-page-editing [contenteditable="true"]:focus{outline:2px solid #f5c15d;background:rgba(245,193,93,.10)}</style>
 </body>
 </html>
