@@ -21,7 +21,7 @@
         status.setAttribute('role', 'status');
         status.setAttribute('aria-live', 'polite');
         document.addEventListener('DOMContentLoaded', () => document.body.appendChild(status));
-        const ownVersion = (document.querySelector('.build-version-label')?.textContent || '').match(/\\d{4}\\.\\d{2}\\.\\d{2}\\.\\d{3}/)?.[0] || 'unknown';
+        const ownVersion = (document.querySelector('.build-version-label')?.textContent || '').match(/[0-9]{4}[.][0-9]{2}[.][0-9]{2}[.][0-9]{3}/)?.[0] || 'unknown';
         let finished = false;
         const show = (ready, detail) => {
             status.classList.toggle('ready', ready);
@@ -57,7 +57,7 @@
                 });
                 if (!response.ok) throw new Error('HTTP ' + response.status);
                 const html = await response.text();
-                const match = html.match(/class=["'][^"']*build-version-label[^"']*["'][^>]*>[^<]*?(\\d{4}\\.\\d{2}\\.\\d{2}\\.\\d{3})/i);
+                const match = html.match(/class=["'][^"']*build-version-label[^"']*["'][^>]*>[^<]*?([0-9]{4}[.][0-9]{2}[.][0-9]{2}[.][0-9]{3})/i);
                 const deployed = match?.[1] || 'unknown';
                 if (deployed === expected) {
                     show(true, 'Build ' + expected + ' is available. Reloading the page now…');
