@@ -236,7 +236,8 @@ service cloud.firestore {
 
     // Registration availability is public; all other event settings remain staff-only.
     match /event_settings/{settingId} {
-      allow get: if isActiveStaff() || settingId == 'registration';
+      // Public entry-page copy is readable by visitors; all other settings remain staff-only.
+      allow get: if isActiveStaff() || settingId in ['registration', 'public_page'];
       allow list: if isActiveStaff();
       allow create: if isAdmin() || (settingId == 'registration' && publicRegistrationCounterCreate());
       allow update: if isAdmin() || (settingId == 'registration' && publicRegistrationCounterUpdate());
