@@ -189,13 +189,27 @@ service cloud.firestore {
         && request.resource.data.status == 'pending'
         && request.resource.data.createdAt == request.time;
       allow get, list: if isAdmin();
+      // Admins may either complete a cancellation by deleting the matched RSVP,
+      // or dismiss a request when no matching registration exists.
       allow update: if isAdmin()
         && resource.data.status == 'pending'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'completedAt', 'completedBy'])
-        && request.resource.data.status == 'completed'
-        && request.resource.data.completedAt == request.time
-        && request.resource.data.completedBy is string
-        && request.resource.data.completedBy.size() <= 128;
+        && (
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'completedAt', 'completedBy'])
+            && request.resource.data.status == 'completed'
+            && request.resource.data.completedAt == request.time
+            && request.resource.data.completedBy is string
+            && request.resource.data.completedBy.size() <= 128
+          )
+          ||
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'dismissedAt', 'dismissedBy'])
+            && request.resource.data.status == 'dismissed'
+            && request.resource.data.dismissedAt == request.time
+            && request.resource.data.dismissedBy is string
+            && request.resource.data.dismissedBy.size() <= 128
+          )
+        );
       allow delete: if false;
     }
 
